@@ -16,7 +16,7 @@ const About = () => {
           About
         </h1>
         <p className="text-lg text-white/80 max-w-3xl mx-auto leading-relaxed">
-          At Velric, we believe students don’t learn by watching — they learn by doing. Our mission is to provide immersive AI-powered challenges that simulate real work, not classroom theory.
+          At Velric, we believe students don’t learn by watching. They learn by doing. Our mission is to provide immersive AI-powered challenges that simulate real work, not classroom theory.
         </p>
       </section>
 
