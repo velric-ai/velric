@@ -11,7 +11,7 @@ const Contact = () => {
       <section className="text-center pt-48 pb-20 px-4 md:px-8 lg:px-16 max-w-2xl mx-auto">
         <h1 className="text-4xl md:text-5xl font-bold mb-6">Contact Us</h1>
         <p className="text-lg text-white/80 mb-10">
-          Whether you're a student, partner, or investor — we'd love to hear from you.
+          Whether you're a student, partner, or investor, we would love to hear from you.
         </p>
 
         {/* Contact Info */}
