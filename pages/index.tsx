@@ -5,7 +5,6 @@ import CTAButton from "@/components/CTAButton";
 import ValuePropCard from "@/components/ValuePropCard";
 import WaitlistForm from "@/components/WaitlistForm";
 import TeamCard from "@/components/TeamCard";
-import TestimonialCard from "@/components/TestimonialCard";
 import Footer from "@/components/Footer";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -44,34 +43,40 @@ export default function Home() {
               alt="Problem Illustration"
               width={450}
               height={350}
-              className="rounded-xl"
+              className="rounded-xl blend-image"
             />
           </div>
         </section>
 
-        {/* ⚙️ How It Works */}
-        <section className="bg-[#1C1C1E] px-4 md:px-8 lg:px-16 py-20 text-center">
-          <h2 className="text-4xl md:text-5xl font-extrabold mb-12">
-            How It Works
-          </h2>
-          <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
-            <ValuePropCard
-              title="Ingest Real Work"
-              icon="/icons/velric_v.png"
-              description="We use actual professional workflows to create relevant challenges."
-            />
-            <ValuePropCard
-              title="Generate AI Challenges"
-              icon="/icons/velric_logo_tv.png"
-              description="AI crafts custom tasks to test your skills on real-world problems."
-            />
-            <ValuePropCard
-              title="Learn Through Execution"
-              icon="/icons/brain.png"
-              description="Hands-on learning with immediate feedback to ensure growth."
-            />
-          </div>
-        </section>
+{/* ⚙️ How It Works */}
+<section className="bg-[#0D0D0D] px-4 md:px-8 lg:px-16 py-20 text-center">
+  <h2 className="text-4xl md:text-5xl font-extrabold mb-12">
+    How It Works
+  </h2>
+  <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+    <ValuePropCard
+      title="Ingest Real Work"
+      icon="/icons/velric_v.png"
+      //description=""
+      description="We use actual professional workflows to create relevant challenges."
+      className="blend-image"
+    />
+    <ValuePropCard
+      title="Generate AI Challenges"
+      icon="/icons/velric_logo_tv.png"
+      //description=""
+      description="AI crafts custom tasks to test your skills on real-world problems."
+      className="blend-image"
+    />
+    <ValuePropCard
+      title="Learn Through Execution"
+      icon="/icons/brain.png"
+      //description=""
+      description="Hands-on learning with immediate feedback to ensure growth."
+      className="blend-image"
+    />
+  </div>
+</section>
 
         {/* 🚀 What Makes Us Different */}
         <section className="px-4 md:px-8 lg:px-16 py-20 max-w-5xl mx-auto text-center">
@@ -97,7 +102,7 @@ export default function Home() {
         </section>
 
         {/* 👥 Meet the Founders */}
-        <section className="bg-[#1C1C1E] px-4 md:px-8 lg:px-16 py-20">
+        <section className="bg-[#0D0D0D] px-4 md:px-8 lg:px-16 py-20">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             Meet the Founders
           </h2>
@@ -119,31 +124,6 @@ export default function Home() {
           </div>
         </section>
 
-
-        {/* 🖤 Testimonials / Logos */}
-       {/* <section className="px-4 md:px-8 lg:px-16 py-20 text-center">
-          <h2 className="text-3xl font-bold mb-8">
-            Trusted by Ambitious Learners & Innovators
-          </h2>
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <TestimonialCard
-              name="Jordan B."
-              quote="Velric gave me real confidence before my internship at a fintech startup."
-              company="UC Berkeley"
-            />
-            <TestimonialCard
-              name="Riya S."
-              quote="It felt like I was doing work that mattered. I loved the feedback loop."
-              company="CMU"
-            />
-          </div>
-        </section> */}
-
-        {/* CTA Button */}
-        <section className="bg-[#1C1C1E] px-4 md:px-8 lg:px-16 py-20 text-center">
-          <CTAButton />
-        </section>
-
         {/* 📝 Waitlist */}
         <section className="px-4 md:px-8 lg:px-16 py-20 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Join Waitlist</h2>
@@ -160,4 +140,3 @@ export default function Home() {
     </>
   );
 }
-

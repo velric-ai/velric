@@ -28,7 +28,8 @@ const About = () => {
           alt="Velric Workflow"
           width={800}
           height={480}
-          className="mx-auto"
+          className="mx-auto sleek transparent-image blended"
+          priority={true}
         />
       </section>
 
@@ -54,7 +55,7 @@ const About = () => {
       </section>
 
       {/* Our Values */}
-      <section className="bg-[#1C1C1E] py-28 px-4 md:px-8 lg:px-16">
+      <section className="bg-[#0D0D0D] py-28 px-4 md:px-8 lg:px-16">
         <h2 className="text-3xl font-semibold text-center mb-12">Our Values</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {[
@@ -63,7 +64,7 @@ const About = () => {
             "Learn and Create at Once",
             "Live the Professional Experience",
             "Work on Real Projects",
-            "Experience Over Textbook Memorization"
+            "Experience Over Textbook Memorization",
           ].map((value) => (
             <div
               key={value}

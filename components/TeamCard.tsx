@@ -11,7 +11,7 @@ type Props = {
 
 export default function TeamCard({ name, role, image, bio, linkedin }: Props) {
   return (
-    <div className="bg-[#1C1C1E] text-white p-6 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.6)] hover:scale-105 transition-transform duration-300 ease-in-out">
+    <div className="bg-[#0D0D0D] text-white p-6 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.6)] hover:scale-105 transition-transform duration-300 ease-in-out">
       <Image
         src={image}
         alt={name}

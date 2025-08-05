@@ -18,7 +18,7 @@ const Join = () => {
       </section>
 
       {/* Waitlist Form */}
-      <section className="bg-[#1C1C1E] py-20 px-4 md:px-8 lg:px-16">
+      <section className="bg-[#0D0D0D] py-20 px-4 md:px-8 lg:px-16">
         <div className="max-w-xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-semibold text-center mb-8">Waitlist Form</h2>
           <WaitlistForm />

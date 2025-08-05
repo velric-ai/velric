@@ -8,7 +8,7 @@ export default function WaitlistForm() {
       action="https://usebasin.com/f/ce65b3daae17" //REPLACE FORM LINK HERE!
       method="POST"
       onSubmit={() => setSubmitted(true)}
-      className="bg-[#1C1C1E] text-white p-6 rounded-2xl max-w-xl mx-auto space-y-4 shadow-lg"
+      className="bg-[#0D0D0D] text-white p-6 rounded-2xl max-w-xl mx-auto space-y-4 shadow-lg"
     >
       {submitted ? (
         <p className="text-center text-lg">You're in. Expect updates soon.</p>
