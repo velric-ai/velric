@@ -48,35 +48,32 @@ export default function Home() {
           </div>
         </section>
 
-{/* ⚙️ How It Works */}
-<section className="bg-[#0D0D0D] px-4 md:px-8 lg:px-16 py-20 text-center">
-  <h2 className="text-4xl md:text-5xl font-extrabold mb-12">
-    How It Works
-  </h2>
-  <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
-    <ValuePropCard
-      title="Ingest Real Work"
-      icon="/icons/velric_v.png"
-      //description=""
-      description="We use actual professional workflows to create relevant challenges."
-      className="blend-image"
-    />
-    <ValuePropCard
-      title="Generate AI Challenges"
-      icon="/icons/velric_logo_tv.png"
-      //description=""
-      description="AI crafts custom tasks to test your skills on real-world problems."
-      className="blend-image"
-    />
-    <ValuePropCard
-      title="Learn Through Execution"
-      icon="/icons/brain.png"
-      //description=""
-      description="Hands-on learning with immediate feedback to ensure growth."
-      className="blend-image"
-    />
-  </div>
-</section>
+        {/* ⚙️ How It Works */}
+        <section className="bg-[#0D0D0D] px-4 md:px-8 lg:px-16 py-20 text-center">
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-12">
+            How It Works
+          </h2>
+          <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+            <ValuePropCard
+              title="1. Take Real-World Missions"
+              icon="/icons/velric_v.png"
+              description="Convert professional deliverables into interactive missions to gain hands-on experience."
+              className="blend-image"
+            />
+            <ValuePropCard
+              title="2. Get Your Velric Score"
+              icon="/icons/velric_logo_tv.png"
+              description="Our AI engine evaluates your work, providing a comprehensive score and feedback."
+              className="blend-image"
+            />
+            <ValuePropCard
+              title="3. Unlock Opportunities"
+              icon="/icons/brain.png"
+              description="Showcase your skills and portfolio to top employers and institutions."
+              className="blend-image"
+            />
+          </div>
+        </section>
 
         {/* 🚀 What Makes Us Different */}
         <section className="px-4 md:px-8 lg:px-16 py-20 max-w-5xl mx-auto text-center">
@@ -121,6 +118,56 @@ export default function Home() {
               bio="I lead AI development at Velric. My focus is building systems that turn professional workflows, like decks, code, and pitch, into interactive missions. I ensure our tools are fast and stable, so learners can rely on Velric to deliver real work."
               linkedin="https://www.linkedin.com/in/srinidhi-murthy-800604261/"
             />
+          </div>
+        </section>
+
+        {/* 🌍 A Platform for Everyone */}
+        <section className="bg-[#0D0D0D] px-4 md:px-8 lg:px-16 py-20 text-center">
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-12">
+            A Platform for Everyone
+          </h2>
+          <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+            <div className="bg-[#1C1C1E] p-6 rounded-2xl shadow-md">
+              <ValuePropCard
+                title="For Learners"
+                icon="/icons/velric_v.png"
+                description="Gain practical experience, build a strong portfolio, and get discovered for your skills—not just your resume."
+                className="blend-image"
+              />
+              <div className="text-left mt-4 text-white/80 text-sm space-y-1">
+                <p>→ Build a portfolio of real work.</p>
+                <p>→ Receive AI-driven feedback.</p>
+                <p>→ Connect with top employers.</p>
+              </div>
+            </div>
+
+            <div className="bg-[#1C1C1E] p-6 rounded-2xl shadow-md">
+              <ValuePropCard
+                title="For Educators"
+                icon="/icons/velric_logo_tv.png"
+                description="Enhance curriculums with real-world challenges that foster execution and critical thinking."
+                className="blend-image"
+              />
+              <div className="text-left mt-4 text-white/80 text-sm space-y-1">
+                <p>→ Embed AI-powered missions into courses.</p>
+                <p>→ Track learner progress and outcomes.</p>
+                <p>→ Prepare students for real-world work.</p>
+              </div>
+            </div>
+
+            <div className="bg-[#1C1C1E] p-6 rounded-2xl shadow-md">
+              <ValuePropCard
+                title="For Companies"
+                icon="/icons/brain.png"
+                description="Engage top talent through challenge-based recruitment and continuous learning."
+                className="blend-image"
+              />
+              <div className="text-left mt-4 text-white/80 text-sm space-y-1">
+                <p>→ Discover talent through real execution.</p>
+                <p>→ Use missions to upskill teams.</p>
+                <p>→ Build a culture of doing, not watching.</p>
+              </div>
+            </div>
           </div>
         </section>
 

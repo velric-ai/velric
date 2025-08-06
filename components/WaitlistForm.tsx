@@ -1,13 +1,53 @@
 import { useState } from "react";
 
+type FormData = {
+  name: string;
+  email: string;
+  interest: string;
+};
+
 export default function WaitlistForm() {
   const [submitted, setSubmitted] = useState(false);
+  const [formData, setFormData] = useState<FormData>({
+    name: "",
+    email: "",
+    interest: "",
+  });
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const scriptURL = "https://script.google.com/macros/s/AKfycbxPwiRH7L88lH0yamdAJm5z05UnrPUoKPZKC7HV8E2VDT7ddzWWImQw5VqTuYulLBps/exec"; // Replace URL
+
+    try {
+      await fetch(scriptURL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams(formData).toString(),
+      });
+
+      setSubmitted(true);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error!", error.message);
+      } else {
+        console.error("Unexpected error!", error);
+      }
+    }
+  };
 
   return (
     <form
-      action="https://usebasin.com/f/ce65b3daae17" //REPLACE FORM LINK HERE!
-      method="POST"
-      onSubmit={() => setSubmitted(true)}
+      onSubmit={handleSubmit}
       className="bg-[#0D0D0D] text-white p-6 rounded-2xl max-w-xl mx-auto space-y-4 shadow-lg"
     >
       {submitted ? (
@@ -16,8 +56,10 @@ export default function WaitlistForm() {
         <>
           <input
             type="text"
-            name="first_name"
+            name="name"
             placeholder="First Name"
+            value={formData.name}
+            onChange={handleChange}
             className="w-full p-3 rounded-md bg-black border border-gray-600"
             required
           />
@@ -25,12 +67,15 @@ export default function WaitlistForm() {
             type="email"
             name="email"
             placeholder="Email Address"
+            value={formData.email}
+            onChange={handleChange}
             className="w-full p-3 rounded-md bg-black border border-gray-600"
             required
           />
-
           <select
-            name="interest_area"
+            name="interest"
+            value={formData.interest}
+            onChange={handleChange}
             className="w-full p-3 rounded-md bg-black border border-gray-600"
             required
           >

@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Instagram, Linkedin, MessageCircle } from "lucide-react";
 
 const Footer = () => (
   <footer className="bg-[#0D0D0D] text-white border-t border-[#E0E0DC]/10 px-6 md:px-12 lg:px-20 pt-12 pb-6">
@@ -42,7 +43,7 @@ const Footer = () => (
         />
       </div>
 
-      {/* Social Icons */}
+      {/* Social Icons using Lucide */}
       <div className="flex justify-center md:justify-end w-full md:w-auto space-x-6">
         {/* WhatsApp */}
         <a
@@ -52,12 +53,7 @@ const Footer = () => (
           aria-label="WhatsApp"
           className="hover:opacity-80 transition"
         >
-          <Image
-            src="/contact_icons/whatsapp.png"
-            alt="WhatsApp"
-            width={24}
-            height={24}
-          />
+          <MessageCircle size={24} className="text-white" />
         </a>
 
         {/* LinkedIn */}
@@ -68,12 +64,7 @@ const Footer = () => (
           aria-label="LinkedIn"
           className="hover:opacity-80 transition"
         >
-          <Image
-            src="/contact_icons/linkedin.png"
-            alt="LinkedIn"
-            width={24}
-            height={24}
-          />
+          <Linkedin size={24} className="text-white" />
         </a>
 
         {/* Instagram */}
@@ -84,12 +75,7 @@ const Footer = () => (
           aria-label="Instagram"
           className="hover:opacity-80 transition"
         >
-          <Image
-            src="/contact_icons/instagram.png"
-            alt="Instagram"
-            width={24}
-            height={24}
-          />
+          <Instagram size={24} className="text-white" />
         </a>
       </div>
     </div>
