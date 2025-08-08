@@ -23,7 +23,7 @@ export default function WaitlistForm() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const scriptURL = "https://script.google.com/macros/s/AKfycbxPwiRH7L88lH0yamdAJm5z05UnrPUoKPZKC7HV8E2VDT7ddzWWImQw5VqTuYulLBps/exec"; // Replace URL
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyrY4MO68paGjqI3UWRgeHt9jLA-xNk4AMlbDutnnUBg8Bwq0V4s-kk_QgJf-_sc9H-qQ/exec"; // Replace URL
 
     try {
       await fetch(scriptURL, {
