@@ -62,7 +62,7 @@ export default function Home() {
             />
             <ValuePropCard
               title="2. Get Your Velric Score"
-              icon="/icons/logo.png"
+              icon="/assets/logo.png"
               description="Our AI engine evaluates your work, providing a comprehensive score and feedback."
               className="blend-image"
             />
