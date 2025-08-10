@@ -131,7 +131,7 @@ export default function Home() {
               <ValuePropCard
                 title="For Learners"
                 icon="/icons/velric_v.png"
-                description="Gain practical experience, build a strong portfolio, and get discovered for your skills—not just your resume."
+                description="Gain practical experience, build a strong portfolio, and get discovered for your skills, not just your resume."
                 className="blend-image"
               />
               <div className="text-left mt-4 text-white/80 text-sm space-y-1">
