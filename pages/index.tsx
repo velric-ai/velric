@@ -56,19 +56,19 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
             <ValuePropCard
               title="1. Take Real-World Missions"
-              icon="/icons/velric_v.png"
+              icon="/icons/professional.png"
               description="Convert professional deliverables into interactive missions to gain hands-on experience."
               className="blend-image"
             />
             <ValuePropCard
               title="2. Get Your Velric Score"
-              icon="/icons/velric_logo_tv.png"
+              icon="/icons/logo.png"
               description="Our AI engine evaluates your work, providing a comprehensive score and feedback."
               className="blend-image"
             />
             <ValuePropCard
               title="3. Unlock Opportunities"
-              icon="/icons/brain.png"
+              icon="/icons/office.png"
               description="Showcase your skills and portfolio to top employers and institutions."
               className="blend-image"
             />
@@ -130,7 +130,7 @@ export default function Home() {
             <div className="bg-[#1C1C1E] p-6 rounded-2xl shadow-md">
               <ValuePropCard
                 title="For Learners"
-                icon="/icons/velric_v.png"
+                icon="/icons/students.png"
                 description="Gain practical experience, build a strong portfolio, and get discovered for your skills, not just your resume."
                 className="blend-image"
               />
@@ -144,7 +144,7 @@ export default function Home() {
             <div className="bg-[#1C1C1E] p-6 rounded-2xl shadow-md">
               <ValuePropCard
                 title="For Educators"
-                icon="/icons/velric_logo_tv.png"
+                icon="/icons/educators.png"
                 description="Enhance curriculums with real-world challenges that foster execution and critical thinking."
                 className="blend-image"
               />
@@ -158,7 +158,7 @@ export default function Home() {
             <div className="bg-[#1C1C1E] p-6 rounded-2xl shadow-md">
               <ValuePropCard
                 title="For Companies"
-                icon="/icons/brain.png"
+                icon="/icons/companies.png"
                 description="Engage top talent through challenge-based recruitment and continuous learning."
                 className="blend-image"
               />
