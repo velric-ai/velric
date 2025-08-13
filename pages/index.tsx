@@ -56,21 +56,18 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
             <ValuePropCard
               title="1. Take Real-World Missions"
-              icon="/icons/professional.png"
+              icon="Briefcase"
               description="Convert professional deliverables into interactive missions to gain hands-on experience."
-              className="blend-image"
             />
             <ValuePropCard
               title="2. Get Your Velric Score"
-              icon="/assets/logo.png"
+              icon="BarChart3"
               description="Our AI engine evaluates your work, providing a comprehensive score and feedback."
-              className="blend-image"
             />
             <ValuePropCard
               title="3. Unlock Opportunities"
-              icon="/icons/office.png"
+              icon="Rocket"
               description="Showcase your skills and portfolio to top employers and institutions."
-              className="blend-image"
             />
           </div>
         </section>
@@ -130,9 +127,8 @@ export default function Home() {
             <div className="bg-[#1C1C1E] p-6 rounded-2xl shadow-md">
               <ValuePropCard
                 title="For Learners"
-                icon="/icons/students.png"
+                icon="GraduationCap"
                 description="Gain practical experience, build a strong portfolio, and get discovered for your skills, not just your resume."
-                className="blend-image"
               />
               <div className="text-left mt-4 text-white/80 text-sm space-y-1">
                 <p>→ Build a portfolio of real work.</p>
@@ -144,9 +140,8 @@ export default function Home() {
             <div className="bg-[#1C1C1E] p-6 rounded-2xl shadow-md">
               <ValuePropCard
                 title="For Educators"
-                icon="/icons/educators.png"
+                icon="BookOpen"
                 description="Enhance curriculums with real-world challenges that foster execution and critical thinking."
-                className="blend-image"
               />
               <div className="text-left mt-4 text-white/80 text-sm space-y-1">
                 <p>→ Embed AI-powered missions into courses.</p>
@@ -158,9 +153,8 @@ export default function Home() {
             <div className="bg-[#1C1C1E] p-6 rounded-2xl shadow-md">
               <ValuePropCard
                 title="For Companies"
-                icon="/icons/companies.png"
+                icon="Building2"
                 description="Engage top talent through challenge-based recruitment and continuous learning."
-                className="blend-image"
               />
               <div className="text-left mt-4 text-white/80 text-sm space-y-1">
                 <p>→ Discover talent through real execution.</p>
@@ -187,3 +181,4 @@ export default function Home() {
     </>
   );
 }
+

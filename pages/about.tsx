@@ -3,7 +3,7 @@ import React from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TeamCard from "@/components/TeamCard";
-import Image from "next/image";
+import { Workflow } from "lucide-react"; // ✅ Replaces the image
 
 const About = () => {
   return (
@@ -20,20 +20,19 @@ const About = () => {
         </p>
       </section>
 
-      {/* //Workflow 
+      {/* // Workflow
       <section className="max-w-6xl mx-auto px-4 md:px-8 lg:px-16 pt-6 pb-16 text-center">
         <h2 className="text-3xl font-semibold mb-10">How Velric Works</h2>
-        <Image
-          src="/icons/velric_layout.png"
-          alt="Velric Workflow"
-          width={800}
-          height={480}
-          className="mx-auto sleek transparent-image blended"
-          priority={true}
+        <Workflow
+          className="mx-auto text-white opacity-80"
+          size={96}
+          strokeWidth={1.5}
         />
-      </section>
-      */}
-      
+        <p className="text-white/70 text-base mt-6 max-w-xl mx-auto">
+          Velric transforms real-world deliverables into interactive AI-powered missions. You don't just learn concepts—you execute them in real scenarios.
+        </p>
+      </section> */}
+
       {/* The Founders */}
       <section className="max-w-6xl mx-auto px-4 md:px-8 lg:px-16 py-16">
         <h2 className="text-3xl font-semibold text-center mb-16">Meet the Founders</h2>
