@@ -20,7 +20,7 @@ const About = () => {
         </p>
       </section>
 
-      {/* Workflow */}
+      {/* //Workflow 
       <section className="max-w-6xl mx-auto px-4 md:px-8 lg:px-16 pt-6 pb-16 text-center">
         <h2 className="text-3xl font-semibold mb-10">How Velric Works</h2>
         <Image
@@ -32,7 +32,8 @@ const About = () => {
           priority={true}
         />
       </section>
-
+      */}
+      
       {/* The Founders */}
       <section className="max-w-6xl mx-auto px-4 md:px-8 lg:px-16 py-16">
         <h2 className="text-3xl font-semibold text-center mb-16">Meet the Founders</h2>
