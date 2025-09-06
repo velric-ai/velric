@@ -18,13 +18,13 @@ const Contact = () => {
         <div className="text-left space-y-8">
           {/* Email */}
           {/* <div>
-            <h3 className="font-semibold text-lg">📧 Email</h3>
+            <h3 className="font-semibold text-lg">Email</h3>
             <p className="text-white/70">contact@velric.com</p>
           </div> */}
 
           {/* LinkedIn */}
           <div>
-            <h3 className="font-semibold text-lg">💼 LinkedIn</h3>
+            <h3 className="font-semibold text-lg">LinkedIn</h3>
             <p className="text-white/70">
               <a
                 href="https://www.linkedin.com/company/velric"
@@ -39,7 +39,7 @@ const Contact = () => {
 
           {/* WhatsApp */}
           <div>
-            <h3 className="font-semibold text-lg">📱 WhatsApp</h3>
+            <h3 className="font-semibold text-lg">WhatsApp</h3>
             <p className="text-white/70">
               <a
                 href="https://wa.me/17787723980"
@@ -54,7 +54,7 @@ const Contact = () => {
 
           {/* Instagram */}
           <div>
-            <h3 className="font-semibold text-lg">📷 Instagram</h3>
+            <h3 className="font-semibold text-lg">Instagram</h3>
             <p className="text-white/70">
               <a
                 href="https://www.instagram.com/velric.ai/"
