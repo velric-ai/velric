@@ -24,6 +24,7 @@ export default function Navbar() {
           <Link href="/about" className="whitespace-nowrap">About</Link>
           <Link href="/join" className="whitespace-nowrap">Join</Link>
           <Link href="/contact" className="whitespace-nowrap">Contact</Link>
+          <Link href="/generate" className="whitespace-nowrap">Missions</Link>
         </div>
 
         {/* Join button */}
