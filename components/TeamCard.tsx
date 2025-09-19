@@ -1,5 +1,6 @@
 // components/TeamCard.tsx
 import Image from "next/image";
+import { Linkedin } from "lucide-react";
 
 type Props = {
   name: string;
@@ -29,7 +30,9 @@ export default function TeamCard({ name, role, image, bio, linkedin }: Props) {
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] text-white px-5 py-2 rounded-full text-sm font-medium hover:scale-105 transition-transform shadow-md"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] text-white px-5 py-2 rounded-full text-sm font-medium hover:scale-105 transition-transform shadow-md"
         >
+          <Linkedin size={16} />
           View LinkedIn
         </a>
       </div>
