@@ -1,2 +1,121 @@
-node_modules
-node_modules
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Directory for instrumented libs
+lib-cov
+
+# Coverage directories
+coverage
+*.lcov
+.nyc_output
+
+# Grunt
+.grunt
+
+# Bower
+bower_components
+
+# Compiled binary addons
+build/Release
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Snowpack
+web_modules/
+
+# TypeScript
+*.tsbuildinfo
+
+# npm / yarn / pnpm
+.npm
+.yarn-integrity
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# ESLint / Stylelint
+.eslintcache
+.stylelintcache
+
+# REPL
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# dotenv
+.env
+.env.*
+!.env.example
+
+# Parcel
+.cache
+.parcel-cache
+
+# Next.js
+.next/
+out/
+
+# Nuxt.js
+.nuxt/
+dist/
+
+# Gatsby
+.cache/
+
+# VuePress
+.vuepress/dist
+.temp
+.cache
+
+# SvelteKit
+.svelte-kit/
+
+# VitePress
+**/.vitepress/dist
+**/.vitepress/cache
+
+# Docusaurus
+.docusaurus
+
+# Serverless
+.serverless/
+
+# FuseBox
+.fusebox/
+
+# DynamoDB
+.dynamodb/
+
+# Firebase
+.firebase/
+
+# TernJS
+.tern-port
+
+# VSCode testing
+.vscode-test
+
+# Vite logs
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
