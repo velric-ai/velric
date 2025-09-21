@@ -1,3 +1,10 @@
+<<<<<<< HEAD
+node_modules
+node_modules
+.env
+# Next.js
+.next/
+=======
 # Logs
 logs
 *.log
@@ -119,3 +126,4 @@ dist/
 # Vite logs
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+>>>>>>> origin/main
