@@ -30,7 +30,7 @@ const SubmissionForm: React.FC = () => {
       <div className="bg-[#1C1C1E] rounded-2xl p-8 md:p-12 shadow-2xl border border-[#6A0DAD]/20 hover:scale-105 transition-all duration-300 hover:shadow-[#6A0DAD]/20 hover:shadow-2xl">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-[64px] font-bold font-sora text-white mb-4 antialiased">
+          <h1 className="text-[50px] font-bold font-sora text-white mb-4 antialiased">
             Mission Submission
           </h1>
           <p className="text-[18px] text-[#F5F5F5] font-inter max-w-2xl mx-auto">
