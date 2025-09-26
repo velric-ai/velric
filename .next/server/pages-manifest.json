@@ -2,6 +2,9 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
+  "/": "pages/index.js",
   "/generate": "pages/generate.js",
-  "/": "pages/index.js"
+  "/api/generate_missions": "pages/api/generate_missions.js",
+  "/missions/[id]": "pages/missions/[id].js",
+  "/api/missions/[id]": "pages/api/missions/[id].js"
 }

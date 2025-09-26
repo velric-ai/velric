@@ -8,45 +8,109 @@ import SubmissionForm from '@/components/SubmissionForm';
 import MissionCard from '@/components/MissionCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Button from '@/components/Button';
-import { Mission, filterMissionsByInterests } from '@/lib/missionHelpers';
-import { RefreshCw, Sparkles } from 'lucide-react';
+
+import { MissionTemplate, GenerateMissionsRequest, GenerateMissionsResponse } from '@/types';
+import { RefreshCw, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function GeneratePage() {
-  const [missions, setMissions] = useState<Mission[]>([]);
+  const [missions, setMissions] = useState<MissionTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
   const [currentInterests, setCurrentInterests] = useState<string[]>([]);
+  const [currentResumeText, setCurrentResumeText] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [successMessage, setSuccessMessage] = useState<string>('');
 
-  const handleGenerateMissions = async (interests: string[]) => {
+  const showToast = (message: string, type: 'success' | 'error') => {
+    if (type === 'success') {
+      setSuccessMessage(message);
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } else {
+      setError(message);
+      setTimeout(() => setError(''), 5000);
+    }
+  };
+
+  const handleGenerateMissions = async (formData: { interests?: string[]; resumeText?: string }) => {
     setIsLoading(true);
-    setCurrentInterests(interests);
-    
-    // Simulate API call with delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const filteredMissions = filterMissionsByInterests(interests);
-    setMissions(filteredMissions);
-    setHasGenerated(true);
-    setIsLoading(false);
+    setError('');
+    setCurrentInterests(formData.interests || []);
+    setCurrentResumeText(formData.resumeText || '');
+
+    try {
+      const requestData: GenerateMissionsRequest = {
+        interests: formData.interests,
+        resumeText: formData.resumeText
+      };
+
+      const response = await fetch('/api/generate_missions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      const data: GenerateMissionsResponse = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to generate missions');
+      }
+
+      setMissions(data.missions);
+      setHasGenerated(true);
+      showToast(`Generated ${data.missions.length} personalized missions!`, 'success');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate missions';
+      setError(errorMessage);
+      showToast(errorMessage, 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleRegenerateMissions = async () => {
     setIsLoading(true);
-    
-    // Simulate API call with delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const filteredMissions = filterMissionsByInterests(currentInterests);
-    // Shuffle the missions for variety
-    const shuffledMissions = [...filteredMissions].sort(() => Math.random() - 0.5);
-    setMissions(shuffledMissions);
-    setIsLoading(false);
+    setError('');
+
+    try {
+      const requestData: GenerateMissionsRequest = {
+        interests: currentInterests,
+        resumeText: currentResumeText
+      };
+
+      const response = await fetch('/api/generate_missions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      const data: GenerateMissionsResponse = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to regenerate missions');
+      }
+
+      setMissions(data.missions);
+      showToast(`Regenerated ${data.missions.length} new missions!`, 'success');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to regenerate missions';
+      setError(errorMessage);
+      showToast(errorMessage, 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleStartOver = () => {
     setMissions([]);
     setHasGenerated(false);
     setCurrentInterests([]);
+    setCurrentResumeText('');
+    setError('');
+    setSuccessMessage('');
     setIsLoading(false);
   };
 
@@ -63,7 +127,7 @@ export default function GeneratePage() {
 
       <main className="bg-[#0D0D0D] text-white min-h-screen">
         <Navbar />
-        
+
         {/* Hero Section */}
         <section className="pt-24 pb-12 px-4 md:px-8 lg:px-16">
           <div className="max-w-4xl mx-auto text-center">
@@ -79,12 +143,38 @@ export default function GeneratePage() {
                 </h1>
               </div>
               <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-                AI-powered challenges built from actual work done by top professionals, 
+                AI-powered challenges built from actual work done by top professionals,
                 tailored to your interests and skill level.
               </p>
             </motion.div>
           </div>
         </section>
+
+        {/* Toast Messages */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50 }}
+              className="fixed top-20 right-4 z-50 bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2"
+            >
+              <AlertCircle className="w-5 h-5" />
+              {error}
+            </motion.div>
+          )}
+          {successMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -50 }}
+              className="fixed top-20 right-4 z-50 bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2"
+            >
+              <CheckCircle className="w-5 h-5" />
+              {successMessage}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Main Content */}
         <section className="px-4 md:px-8 lg:px-16 pb-20">
@@ -99,7 +189,7 @@ export default function GeneratePage() {
                   exit={{ opacity: 0 }}
                   className="max-w-2xl mx-auto"
                 >
-                  <SubmissionForm 
+                  <SubmissionForm
                     onSubmit={handleGenerateMissions}
                     isLoading={isLoading}
                   />
@@ -119,10 +209,12 @@ export default function GeneratePage() {
                         Your Personalized Missions
                       </h2>
                       <p className="text-gray-400">
-                        Based on your interests: {currentInterests.join(', ')}
+                        {currentInterests.length > 0 && `Interests: ${currentInterests.join(', ')}`}
+                        {currentInterests.length > 0 && currentResumeText && ' • '}
+                        {currentResumeText && 'Resume analyzed'}
                       </p>
                     </div>
-                    
+
                     <div className="flex gap-3">
                       <Button
                         variant="outline"
@@ -147,9 +239,9 @@ export default function GeneratePage() {
                   {/* Loading State */}
                   {isLoading ? (
                     <div className="flex justify-center py-20">
-                      <LoadingSpinner 
-                        size="lg" 
-                        text="Generating your personalized missions..." 
+                      <LoadingSpinner
+                        size="lg"
+                        text="Generating your personalized missions..."
                       />
                     </div>
                   ) : (

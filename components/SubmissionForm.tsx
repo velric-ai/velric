@@ -9,28 +9,38 @@ import { interestOptions } from '@/lib/missionHelpers';
 import LoadingSpinner from './LoadingSpinner';
 
 const formSchema = z.object({
-  interests: z.array(z.string()).min(1, 'Please select at least one interest').max(5, 'Please select no more than 5 interests')
-});
+  interests: z.array(z.string()).max(5, 'Please select no more than 5 interests'),
+  resumeText: z.string().optional()
+}).refine(
+  (data) => data.interests.length > 0 || (data.resumeText && data.resumeText.trim().length > 0),
+  {
+    message: 'Please provide either interests or resume text',
+    path: ['interests']
+  }
+);
 
 type FormData = z.infer<typeof formSchema>;
 
 interface SubmissionFormProps {
-  onSubmit: (interests: string[]) => void;
+  onSubmit: (data: { interests?: string[]; resumeText?: string }) => void;
   isLoading: boolean;
 }
 
 export default function SubmissionForm({ onSubmit, isLoading }: SubmissionFormProps) {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [resumeText, setResumeText] = useState<string>('');
   
   const {
     handleSubmit,
     formState: { errors },
     setValue,
-    clearErrors
+    clearErrors,
+    register
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      interests: []
+      interests: [],
+      resumeText: ''
     }
   });
 
@@ -44,13 +54,26 @@ export default function SubmissionForm({ onSubmit, isLoading }: SubmissionFormPr
     setSelectedInterests(newInterests);
     setValue('interests', newInterests);
     
-    if (newInterests.length > 0) {
+    if (newInterests.length > 0 || resumeText.trim().length > 0) {
+      clearErrors('interests');
+    }
+  };
+
+  const handleResumeTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setResumeText(value);
+    setValue('resumeText', value);
+    
+    if (value.trim().length > 0 || selectedInterests.length > 0) {
       clearErrors('interests');
     }
   };
 
   const onFormSubmit = (data: FormData) => {
-    onSubmit(data.interests);
+    onSubmit({
+      interests: data.interests.length > 0 ? data.interests : undefined,
+      resumeText: data.resumeText && data.resumeText.trim().length > 0 ? data.resumeText : undefined
+    });
   };
 
   return (
@@ -60,13 +83,37 @@ export default function SubmissionForm({ onSubmit, isLoading }: SubmissionFormPr
       className="bg-[#1C1C1E] rounded-xl p-6 border border-gray-800"
     >
       <h3 className="text-xl font-bold text-white mb-4">
-        Tell us your interests
+        Tell us about yourself
       </h3>
       <p className="text-gray-400 mb-6">
-        Select up to 5 areas you&apos;re interested in to get personalized mission recommendations.
+        Provide your interests and/or resume text to get personalized mission recommendations.
       </p>
 
       <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+        {/* Resume Text Input */}
+        <div>
+          <label htmlFor="resumeText" className="block text-sm font-medium text-white mb-2">
+            Resume or Background (Optional)
+          </label>
+          <textarea
+            id="resumeText"
+            {...register('resumeText')}
+            value={resumeText}
+            onChange={handleResumeTextChange}
+            disabled={isLoading}
+            placeholder="Paste your resume text or describe your background, skills, and experience..."
+            className="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-velricViolet focus:ring-1 focus:ring-velricViolet transition-colors resize-none"
+            rows={4}
+          />
+        </div>
+
+        {/* Divider */}
+        <div className="flex items-center gap-4">
+          <div className="flex-1 h-px bg-gray-700"></div>
+          <span className="text-gray-400 text-sm">OR</span>
+          <div className="flex-1 h-px bg-gray-700"></div>
+        </div>
+
         {/* Interest Selection */}
         <div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -134,16 +181,16 @@ export default function SubmissionForm({ onSubmit, isLoading }: SubmissionFormPr
         {/* Submit Button */}
         <motion.button
           type="submit"
-          disabled={isLoading || selectedInterests.length === 0}
+          disabled={isLoading || (selectedInterests.length === 0 && resumeText.trim().length === 0)}
           className={`
             w-full py-3 px-6 rounded-lg font-medium transition-all duration-300
-            ${selectedInterests.length > 0 && !isLoading
+            ${(selectedInterests.length > 0 || resumeText.trim().length > 0) && !isLoading
               ? 'bg-gradient-to-r from-velricViolet to-plasmaBlue text-white hover:shadow-lg'
               : 'bg-gray-700 text-gray-400 cursor-not-allowed'
             }
           `}
-          whileHover={selectedInterests.length > 0 && !isLoading ? { scale: 1.02 } : {}}
-          whileTap={selectedInterests.length > 0 && !isLoading ? { scale: 0.98 } : {}}
+          whileHover={(selectedInterests.length > 0 || resumeText.trim().length > 0) && !isLoading ? { scale: 1.02 } : {}}
+          whileTap={(selectedInterests.length > 0 || resumeText.trim().length > 0) && !isLoading ? { scale: 0.98 } : {}}
         >
           {isLoading ? (
             <LoadingSpinner size="sm" />
