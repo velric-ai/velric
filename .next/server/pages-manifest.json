@@ -3,7 +3,7 @@
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
   "/": "pages/index.js",
-  "/join": "pages/join.js",
-  "/about": "pages/about.js",
-  "/contact": "pages/contact.js"
+  "/signup": "pages/signup.js",
+  "/survey": "pages/survey.js",
+  "/login": "pages/login.js"
 }

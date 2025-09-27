@@ -1,4 +1,9 @@
+// pages/index.tsx
 import Head from "next/head";
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
+
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import CTAButton from "@/components/CTAButton";
@@ -6,8 +11,6 @@ import ValuePropCard from "@/components/ValuePropCard";
 import WaitlistForm from "@/components/WaitlistForm";
 import TeamCard from "@/components/TeamCard";
 import Footer from "@/components/Footer";
-import Image from "next/image";
-import { motion } from "framer-motion";
 
 export default function Home() {
   return (
@@ -21,8 +24,22 @@ export default function Home() {
         <link rel="icon" href="/assets/logo.png" />
       </Head>
 
-      <main className="bg-[#0D0D0D] text-white font-sans antialiased overflow-x-hidden">
+      {/* 加了 relative，方便右上角绝对定位登录按钮 */}
+      <main className="relative bg-[#0D0D0D] text-white font-sans antialiased overflow-x-hidden">
         <Navbar />
+
+        {/* 右上角登录按钮（不改 Navbar 也能显示） */}
+        <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50">
+          <Link
+            href="/login"
+            className="px-4 py-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/15 transition text-sm"
+            aria-label="Go to login"
+          >
+            Log in
+          </Link>
+          {/* 如需注册按钮，解注释下面两行 */}
+          {/* <Link href="/signup" className="ml-2 px-4 py-2 rounded-xl bg-white text-black text-sm hover:opacity-90 transition">Sign up</Link> */}
+        </div>
 
         {/* Hero Section */}
         <HeroSection />
@@ -44,6 +61,7 @@ export default function Home() {
               width={450}
               height={350}
               className="rounded-xl blend-image"
+              priority
             />
           </div>
         </section>
@@ -181,4 +199,3 @@ export default function Home() {
     </>
   );
 }
-

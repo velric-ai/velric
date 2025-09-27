@@ -9,7 +9,7 @@ def grade_coding_submission():
 
     """
     # Load environment variables from .env file
-# 从 .env 文件加载环境变量
+
     load_dotenv()
 
     # --- 1. Manually Coded Mock Data ---
@@ -63,7 +63,7 @@ def calculate_average(numbers):
     """
 
     # --- 3. Format the input for the AI ---
-    # --- 3. 为 AI 格式化输入 ---
+
     
     user_content = f"""
     Please grade the following Python code submission based on the provided task description and requirements.
