@@ -13,7 +13,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Velric | Real Work. Real Skills.</title>
+        <title>Velric | Global Benchmark for Hiring </title>
         <meta
           name="description"
           content="AI-powered challenges built from actual work."
