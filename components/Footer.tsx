@@ -8,7 +8,7 @@ const Footer = () => (
     {/* Tagline */}
     <div className="max-w-7xl mx-auto mb-8 text-center">
       <h2 className="text-xl md:text-2xl font-bold text-[#F5F5F5]">
-        Learn through execution. Real challenges from real work, powered by AI.
+        The Global Benchmark for Hiring
       </h2>
     </div>
 
