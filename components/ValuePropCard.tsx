@@ -19,11 +19,11 @@ export default function ValuePropCard({
 
   return (
     <div
-      className={`bg-[#1C1C1E] text-white p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform duration-300 ease-in-out text-center ${className}`}
+      className={`bg-[#1C1C1E] text-white p-6 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform duration-300 ease-in-out text-center h-full flex flex-col ${className}`}
     >
       <LucideIcon className="w-14 h-14 mb-4 mx-auto text-white" strokeWidth={1.5} />
       <h3 className="text-xl font-semibold mb-2">{title}</h3>
-      <p className="text-gray-300 text-sm">{description}</p>
+      <p className="text-gray-300 text-sm flex-grow">{description}</p>
     </div>
   );
 }
