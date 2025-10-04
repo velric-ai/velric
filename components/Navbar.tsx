@@ -1,36 +1,46 @@
 // components/Navbar.tsx
+
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 
 export default function Navbar() {
+  const [learnOpen, setLearnOpen] = useState(false);
   return (
-    <nav className="fixed top-0 left-0 w-full bg-black z-50 shadow-md px-4 sm:px-6 py-4">
-      <div className="max-w-7xl mx-auto flex flex-col items-center md:flex-row md:justify-between gap-4">
-        {/* Logo (hidden on small screens) */}
-        <div className="hidden md:block">
-          <Link href="/">
-            <Image
-              src="/assets/logo.png"
-              alt="Velric Logo"
-              width={120}
-              height={40}
-            />
+    <nav className="w-full bg-black px-6 py-4 border-b border-[#222]">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        {/* Left: Logo and Links */}
+        <div className="flex items-center gap-10">
+          <Link href="/" className="flex items-center group">
+            <Image src="/assets/logo.png" alt="Velric V" width={60} height={60} />
           </Link>
+          <div className="flex items-center gap-8 ml-6">
+            <Link href="/pricing" className="text-white text-base font-medium hover:opacity-80 transition">Pricing</Link>
+            <Link href="/enterprise" className="text-white text-base font-medium hover:opacity-80 transition">Enterprise</Link>
+            <div className="relative">
+              <button
+                className="text-white text-base font-medium flex items-center gap-1 hover:opacity-80 transition focus:outline-none"
+                onClick={() => setLearnOpen((v) => !v)}
+                onBlur={() => setTimeout(() => setLearnOpen(false), 150)}
+                aria-haspopup="true"
+                aria-expanded={learnOpen}
+              >
+                Learn
+                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              {learnOpen && (
+                <div className="absolute left-0 mt-2 w-40 bg-black border border-[#222] rounded shadow-lg z-10">
+                  <Link href="/blog" className="block px-4 py-2 text-white hover:bg-[#181818]">Blog</Link>
+                  <Link href="/resources" className="block px-4 py-2 text-white hover:bg-[#181818]">Resources</Link>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-
-        {/* Menu links */}
-        <div className="flex justify-center gap-6 text-white font-medium text-sm sm:text-base flex-wrap w-full md:w-auto">
-          <Link href="/" className="whitespace-nowrap">Home</Link>
-          <Link href="/about" className="whitespace-nowrap">About</Link>
-          <Link href="/join" className="whitespace-nowrap">Join</Link>
-          <Link href="/contact" className="whitespace-nowrap">Contact</Link>
-          <Link href="/generate" className="whitespace-nowrap">Missions</Link>
-        </div>
-
-        {/* Join button */}
-        <div className="w-full md:w-auto flex justify-center md:justify-end mt-3 md:mt-0">
+        {/* Right: CTA Button */}
+        <div>
           <Link href="/join">
-            <button className="bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] text-white px-4 py-2 text-sm sm:text-base rounded-full hover:scale-105 transition whitespace-nowrap w-full max-w-xs md:w-auto">
+            <button className="border border-white text-white px-6 py-2 rounded-full font-medium text-base hover:bg-white hover:text-black transition-all">
               Join Early Access
             </button>
           </Link>

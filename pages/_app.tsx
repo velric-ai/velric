@@ -1,25 +1,14 @@
-import "@/styles/globals.css";
-import type { AppProps } from "next/app";
-import Head from "next/head";
+import '@/styles/globals.css'
+import type { AppProps } from 'next/app'
+import { AnimatePresence } from 'framer-motion'
+import { useRouter } from 'next/router'
 
 export default function App({ Component, pageProps }: AppProps) {
+  const router = useRouter()
+
   return (
-    <>
-      <Head>
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="32x32"
-          href="/assets/logo.png"
-        />
-        <link
-          rel="icon"
-          type="image/png"
-          sizes="16x16"
-          href="/assets/logo.png"
-        />
-      </Head>
-      <Component {...pageProps} />
-    </>
-  );
+    <AnimatePresence mode="wait" initial={false} onExitComplete={() => window.scrollTo(0, 0)}>
+      <Component {...pageProps} key={router.route} />
+    </AnimatePresence>
+  )
 }

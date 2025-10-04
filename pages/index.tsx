@@ -1,6 +1,7 @@
 import Head from "next/head";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
+// import HeroSection from "@/components/HeroSection";
 import CTAButton from "@/components/CTAButton";
 import ValuePropCard from "@/components/ValuePropCard";
 import WaitlistForm from "@/components/WaitlistForm";
@@ -8,8 +9,13 @@ import TeamCard from "@/components/TeamCard";
 import Footer from "@/components/Footer";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import Typewriter from "@/components/Typewriter";
+import ScreenshotSection from "@/components/ScreenshotSection";
+import { useState } from "react";
 
 export default function Home() {
+  const [showMainText, setShowMainText] = useState(false);
+
   return (
     <>
       <Head>
@@ -24,8 +30,34 @@ export default function Home() {
       <main className="bg-[#0D0D0D] text-white font-sans antialiased overflow-x-hidden">
         <Navbar />
 
-        {/* Hero Section */}
-        <HeroSection />
+        {/* Hero Section (screenshot version) */}
+        <section className="flex flex-col justify-center items-center min-h-[80vh] px-4 text-center max-w-4xl mx-auto">
+          <Typewriter
+            text="The Global Benchmark for Hiring"
+            speed={30}
+            delay={500}
+            className="text-5xl md:text-7xl font-extrabold mb-8 leading-tight"
+            onComplete={() => setShowMainText(true)}
+          />
+          {showMainText && (
+            <div className="mt-16">
+             <Typewriter
+              text={`Velric is killing the resume. We are killing internships. The old system is broken. The Velric Score is the new global hiring standard.\n\nEvery mission is generated for you. Every mission proves what you can really do. Your score updates as you build. Employers hire on proof not promises`}
+              speed={30}
+              delay={300}
+              className="whitespace-pre-wrap text-lg md:text-2xl text-white/80 max-w-3xl mx-auto mb-6"
+            />           
+             
+             
+              <div className="flex flex-col sm:flex-row gap-6 justify-center mt-20">
+                <Link href="/join" className="px-10 py-4 rounded-full border border-white text-white font-semibold hover:bg-white hover:text-black transition">Join Early Access</Link>
+                <a href="#contact" className="px-10 py-4 rounded-full border border-white text-white font-semibold hover:bg-white hover:text-black transition">Talk to Sales</a>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <ScreenshotSection />
 
         {/* 🧠 Problem Statement - Enhanced with Animations */}
         <section className="px-4 md:px-8 lg:px-16 py-20 max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
