@@ -1,0 +1,53 @@
+// Prisma 数据模型定义文件
+// 用来描述数据库中有哪些表（模型）、字段、以及它们之间的关系
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL") // 使用我们在 .env 里写的 DATABASE_URL
+}
+
+//
+// --- 用户表 ---
+//
+model User {
+  id        Int       @id @default(autoincrement())  // 主键自增
+  email     String    @unique                       // 唯一邮箱
+  name      String
+  password  String                                  // 存加密后的密码
+  createdAt DateTime  @default(now())               // 创建时间
+  updatedAt DateTime  @updatedAt                    // 自动更新时间
+
+  survey    Survey?                                 // 一个用户一个调查
+  cvFiles   CVFile[]                                // 一个用户多个简历文件
+}
+
+//
+// --- 调查表 ---
+//
+model Survey {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int      @unique
+  industry    String
+  experience  Int
+  goals       String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+//
+// --- 简历文件表 ---
+//
+model CVFile {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  filename  String
+  mimeType  String
+  data      Bytes
+  createdAt DateTime  @default(now())
+}

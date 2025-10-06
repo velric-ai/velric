@@ -24,7 +24,7 @@ export default function Home() {
         <link rel="icon" href="/assets/logo.png" />
       </Head>
 
-      {/* 加了 relative，方便右上角绝对定位登录按钮 */}
+      {/* add relative positioning for the main content */}
       <main className="relative bg-[#0D0D0D] text-white font-sans antialiased overflow-x-hidden">
         <Navbar />
 
@@ -37,8 +37,8 @@ export default function Home() {
           >
             Log in
           </Link>
-          {/* 如需注册按钮，解注释下面两行 */}
-          {/* <Link href="/signup" className="ml-2 px-4 py-2 rounded-xl bg-white text-black text-sm hover:opacity-90 transition">Sign up</Link> */}
+          <Link href="/signup" className="ml-2 px-4 py-2 rounded-xl bg-white text-black text-sm hover:opacity-90 transition">Sign up</Link>
+         
         </div>
 
         {/* Hero Section */}
