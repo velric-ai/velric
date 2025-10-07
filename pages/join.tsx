@@ -3,11 +3,13 @@ import React from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import WaitlistForm from "@/components/WaitlistForm";
+import Loader from "@/components/loader";
 
 const Join = () => {
   return (
     <div className="bg-[#0D0D0D] text-white antialiased">
       <Navbar />
+      <Loader/>
 
       {/* Page Header */}
       <section className="text-center pt-48 pb-12 px-4 md:px-8 lg:px-16 max-w-3xl mx-auto">

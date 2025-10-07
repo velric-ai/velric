@@ -4,12 +4,13 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TeamCard from "@/components/TeamCard";
 import { Workflow } from "lucide-react"; // ✅ Replaces the image
+import Loader from "@/components/loader";
 
 const About = () => {
   return (
     <div className="bg-[#0D0D0D] text-white">
       <Navbar />
-
+      <Loader/>
       {/* Page Header */}
       <section className="max-w-6xl mx-auto px-4 md:px-8 lg:px-16 pt-52 pb-12 text-center">
         <h1 className="text-5xl md:text-6xl font-extrabold mb-6 text-white">
