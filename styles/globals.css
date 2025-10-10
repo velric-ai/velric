@@ -1,8 +1,18 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Purple color palette - Cluely inspired */
+  --purple-dark: #6B21A8;
+  --purple-primary: #9333EA;
+  --purple-medium: #A855F7;
+  --purple-light: #C084FC;
+  --purple-lightest: #E9D5FF;
   /* You can define font variables here if needed */
   /* --font-sans: 'Geist Sans', Arial, Helvetica, sans-serif; */
   /* --font-mono: 'Geist Mono', monospace; */
@@ -58,4 +68,725 @@ img {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Cluely-inspired animations and effects */
+@keyframes colorShift {
+  0% { color: var(--purple-primary); }
+  33% { color: var(--purple-medium); }
+  66% { color: var(--purple-light); }
+  100% { color: var(--purple-primary); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes gradientShift {
+  0% { 
+    background: linear-gradient(135deg, var(--purple-primary), var(--purple-light));
+  }
+  33% { 
+    background: linear-gradient(135deg, var(--purple-medium), var(--purple-primary));
+  }
+  66% { 
+    background: linear-gradient(135deg, var(--purple-light), var(--purple-medium));
+  }
+  100% { 
+    background: linear-gradient(135deg, var(--purple-primary), var(--purple-light));
+  }
+}
+
+@keyframes gridMove {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(30px, 30px); }
+}
+
+/* Animated headline text */
+.headline-animated {
+  animation: colorShift 8s ease-in-out infinite;
+}
+
+.headline-gradient-animated {
+  background: linear-gradient(135deg, var(--purple-primary), var(--purple-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 8s ease-in-out infinite;
+}
+
+/* Custom cursor glow effect */
+.cursor-glow {
+  position: fixed;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(147,51,234,0.3) 0%, transparent 70%);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: transform 0.15s ease;
+  z-index: 9999;
+  mix-blend-mode: screen;
+}
+
+/* Hide cursor glow on touch devices */
+@media (hover: none) {
+  .cursor-glow {
+    display: none;
+  }
+}
+
+/* Value item hover effects */
+.value-item {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.value-item:hover {
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.15), rgba(192, 132, 252, 0.15));
+  transform: translateY(-8px);
+  box-shadow: 0 10px 40px rgba(147, 51, 234, 0.2);
+}
+
+.value-item:hover h3 {
+  color: var(--purple-medium);
+  font-weight: 700;
+}
+
+/* Floating decorative elements */
+.floating-element {
+  animation: float 6s ease-in-out infinite;
+}
+
+.floating-element:nth-child(2n) {
+  animation-delay: -2s;
+  animation-duration: 8s;
+}
+
+.floating-element:nth-child(3n) {
+  animation-delay: -4s;
+  animation-duration: 10s;
+}
+
+/* Responsive section spacing - Cluely style */
+.section-spacing {
+  margin-bottom: clamp(40px, 8vw, 120px);
+}
+
+/* Hero Section Styles - Cluely Inspired */
+.hero-section {
+  padding-top: 120px;
+  padding-bottom: 60px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* Hero Description - Force Center Alignment */
+.hero-description {
+  text-align: center !important;
+  margin: 24px auto 40px auto !important;
+  max-width: 800px !important;
+  padding: 0 20px;
+  line-height: 1.6;
+}
+
+/* Ensure all hero text is centered */
+.hero-section p, 
+.hero-section .hero-subtitle, 
+.hero-section .hero-tagline {
+  text-align: center !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Remove any left alignment */
+.hero-section [style*="text-align: left"] {
+  text-align: center !important;
+}
+
+.hero-title {
+  font-size: clamp(56px, 10vw, 110px);
+  font-weight: 900;
+  line-height: 1.2;
+  text-align: center;
+  color: #FFFFFF;
+  letter-spacing: -0.02em;
+}
+
+.hero-title .word {
+  display: inline-block;
+  position: relative;
+  padding: 0 8px;
+  transition: all 0.4s ease;
+}
+
+/* Create the highlight bar effect behind text */
+.hero-title .word::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 60%;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, var(--purple-primary), var(--purple-light));
+  opacity: 0;
+  z-index: -1;
+  border-radius: 8px;
+  transition: opacity 0.4s ease;
+}
+
+/* Active state when highlighted */
+.hero-title .word.active::before {
+  opacity: 1;
+}
+
+/* Make "Hiring" default highlighted in purple */
+.highlight-results {
+  color: var(--purple-light);
+}
+
+/* University Ticker - Continuous Names Scroll */
+.university-ticker-container {
+  width: 100%;
+  margin-top: 80px;
+  padding: 20px 0;
+  overflow: hidden;
+  position: relative;
+  background: rgba(147, 51, 234, 0.05);
+  border-top: 1px solid rgba(147, 51, 234, 0.1);
+  border-bottom: 1px solid rgba(147, 51, 234, 0.1);
+}
+
+.university-ticker {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.ticker-track-names {
+  display: flex;
+  gap: 80px;
+  animation: scrollNames 25s linear infinite;
+  width: max-content;
+  align-items: center;
+}
+
+@keyframes scrollNames {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.university-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.3s ease;
+}
+
+.university-name:hover {
+  color: rgba(147, 51, 234, 0.9);
+}
+
+/* Remove old floating logos */
+.floating-logos {
+  display: none !important;
+}
+
+.float-logo {
+  display: none !important;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .ticker-track-names {
+    gap: 50px;
+  }
+  
+  .university-name {
+    font-size: 16px;
+  }
+  
+  .hero-section {
+    padding-top: 100px;
+    padding-bottom: 40px;
+  }
+  
+  .university-ticker-container {
+    margin-top: 60px;
+    padding: 15px 0;
+  }
+  
+  .hero-description {
+    font-size: 16px !important;
+    max-width: 90% !important;
+    padding: 0 15px !important;
+    margin: 20px auto 30px auto !important;
+  }
+}
+
+/* Features Section - Cluely Style */
+.features-section {
+  padding: 120px 20px;
+  background: linear-gradient(180deg, #0A0A0A 0%, #1A0A2E 100%);
+}
+
+.section-title {
+  font-size: clamp(40px, 6vw, 64px);
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 80px;
+  color: #FFFFFF;
+}
+
+.section-title .highlight {
+  color: var(--purple-light);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 24px;
+  padding: 40px 30px;
+  border: 1px solid rgba(147, 51, 234, 0.2);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.feature-card:hover {
+  transform: translateY(-12px);
+  background: rgba(147, 51, 234, 0.08);
+  border-color: rgba(147, 51, 234, 0.5);
+  box-shadow: 0 20px 60px rgba(147, 51, 234, 0.3);
+}
+
+.feature-visual {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  margin-bottom: 30px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1E1E1E, #2A2A2A);
+}
+
+.feature-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.feature-card:hover .feature-visual img {
+  transform: scale(1.05);
+}
+
+.feature-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: linear-gradient(135deg, var(--purple-primary), var(--purple-light));
+  color: #FFFFFF;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.feature-card h3 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #FFFFFF;
+}
+
+.feature-card p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Differentiators Section - Cluely Style */
+.differentiators-section {
+  padding: 120px 20px;
+  background: #0A0A0A;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Add animated background elements */
+.differentiators-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(147,51,234,0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: pulse 10s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.15; }
+  50% { transform: scale(1.2); opacity: 0.25; }
+}
+
+.section-heading {
+  font-size: clamp(48px, 7vw, 72px);
+  font-weight: 900;
+  text-align: center;
+  margin-bottom: 80px;
+  color: #FFFFFF;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--purple-primary), var(--purple-lightest));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.diff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.diff-card {
+  background: linear-gradient(135deg, rgba(20, 20, 20, 0.8), rgba(30, 10, 46, 0.6));
+  border: 1px solid rgba(147, 51, 234, 0.3);
+  border-radius: 24px;
+  padding: 40px 30px;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.diff-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(147,51,234,0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.diff-card:hover {
+  transform: translateY(-16px) scale(1.02);
+  border-color: rgba(147, 51, 234, 0.8);
+  box-shadow: 0 30px 80px rgba(147, 51, 234, 0.4);
+  background: linear-gradient(135deg, rgba(30, 10, 46, 0.8), rgba(40, 15, 60, 0.7));
+}
+
+.diff-card:hover::before {
+  opacity: 1;
+}
+
+/* All cards should have the same dark background - no featured styling */
+.diff-card.featured {
+  background: linear-gradient(135deg, rgba(20, 20, 20, 0.8), rgba(30, 10, 46, 0.6));
+  border: 1px solid rgba(147, 51, 234, 0.3);
+}
+
+.diff-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 24px;
+  color: var(--purple-light);
+}
+
+.diff-card h3 {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 16px;
+  color: #FFFFFF;
+}
+
+.diff-card p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 24px;
+}
+
+.diff-visual {
+  width: 100%;
+  height: 180px;
+  border-radius: 12px;
+  overflow: hidden;
+  opacity: 0.8;
+  transition: opacity 0.4s ease;
+}
+
+.diff-card:hover .diff-visual {
+  opacity: 1;
+}
+
+.diff-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .diff-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Next section spacing adjustment */
+.next-section {
+  margin-top: 0;
+  padding-top: 80px;
+}
+
+@media (max-width: 768px) {
+  .next-section {
+    padding-top: 50px;
+  }
+}
+
+/* ===== NUCLEAR REMOVAL OF ALL PURPLE BARS ===== */
+
+/* METHOD 1: Target by common patterns */
+.purple-bar, 
+.section-bar, 
+.divider-bar, 
+.accent-bar, 
+.separator, 
+.horizontal-line, 
+.section-divider, 
+.page-divider,
+.purple-divider, 
+.horizontal-bar,
+.gradient-bar, 
+.header-bar, 
+.footer-bar, 
+.top-bar, 
+.bottom-bar, 
+.decoration-bar {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+}
+
+/* METHOD 2: Target by dimensions - Remove thin horizontal elements */
+div[style*="height: 2px"], 
+div[style*="height: 3px"], 
+div[style*="height: 4px"], 
+div[style*="height: 5px"], 
+div[style*="height: 6px"], 
+div[style*="height: 8px"], 
+div[style*="height: 10px"] {
+  display: none !important;
+}
+
+/* METHOD 3: Target by color - Remove elements with purple background */
+div[style*="background: rgb(147, 51, 234)"], 
+div[style*="background-color: rgb(147, 51, 234)"], 
+div[style*="background: #9333EA"], 
+div[style*="background-color: #9333EA"], 
+div[style*="background: #A855F7"], 
+div[style*="background-color: #A855F7"], 
+div[style*="background: #C084FC"], 
+div[style*="background-color: #C084FC"] {
+  display: none !important;
+}
+
+/* METHOD 4: Target pseudo-elements */
+section::before, 
+section::after, 
+.section::before, 
+.section::after, 
+.hero-section::before, 
+.hero-section::after, 
+.about-section::before, 
+.about-section::after, 
+.founders-section::before, 
+.founders-section::after, 
+.mission-section::before, 
+.mission-section::after,
+.features-section::before, 
+.features-section::after, 
+.differentiators-section::before, 
+.differentiators-section::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* METHOD 5: Remove HR elements */
+hr {
+  display: none !important;
+}
+
+/* METHOD 6: Target by width - Elements that span full width and are thin */
+div[style*="width: 100%"][style*="height"] {
+  display: none !important;
+}
+
+/* METHOD 7: Target by position - Remove absolutely positioned bars */
+[style*="position: absolute"][style*="width: 100%"][style*="left: 0"][style*="right: 0"] {
+  display: none !important;
+}
+
+/* METHOD 8: Specific page targeting */
+.home-page .purple-bar, 
+.home-page section::before, 
+.home-page section::after,
+.about-page .purple-bar, 
+.about-page section::before, 
+.about-page section::after {
+  display: none !important;
+}
+
+/* METHOD 9: Specific removal for common locations */
+.about-section::before, 
+.mission-section::before, 
+.about-hero::after,
+.for-learners-section::before, 
+.audience-section::before, 
+.cards-section::before,
+.about-page > div:first-child, 
+.home-page > .purple-divider {
+  display: none !important;
+}
+
+/* METHOD 10: Specific targeting for about page purple bar - SAFE VERSION */
+/* Only target the specific purple bar, not navbar or other elements */
+
+/* Target purple bars that are NOT navigation elements */
+div[style*="background-color: rgb(147, 51, 234)"]:not(nav):not([class*="nav"]):not([class*="navbar"]),
+div[style*="background: rgb(147, 51, 234)"]:not(nav):not([class*="nav"]):not([class*="navbar"]),
+div[class*="purple-bar"]:not(nav):not([class*="nav"]):not([class*="navbar"]) {
+  display: none !important;
+}
+
+/* Specifically target horizontal purple bars in content areas */
+section div[style*="height"][style*="background"],
+.content div[style*="height"][style*="background"] {
+  background: transparent !important;
+}
+
+/* Safe removal - only affect decorative bars, not functional elements */
+.decorative-bar,
+.section-bar:not(.navbar):not(.nav),
+.purple-divider:not(.navbar):not(.nav) {
+  display: none !important;
+}
+
+/* Accessibility - reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .cursor-glow {
+    display: none;
+  }
+}
+
+/* ===== TRANSPARENT NAVBAR STYLES (CLUELY INSPIRED) ===== */
+
+/* Ensure navbar text is always visible with text shadow for readability */
+nav a, nav button {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+/* Enhanced hover effects for navbar links */
+nav a:hover {
+  text-shadow: 0 2px 12px rgba(196, 132, 252, 0.6);
+}
+
+/* Ensure navbar logo is bright and visible */
+nav img {
+  filter: brightness(1.2) contrast(1.1);
+  transition: filter 0.3s ease;
+}
+
+nav img:hover {
+  filter: brightness(1.3) contrast(1.2);
+}
+
+/* Enhanced CTA button styling */
+nav button {
+  box-shadow: 0 4px 15px rgba(147, 51, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+nav button:hover {
+  box-shadow: 0 8px 25px rgba(147, 51, 234, 0.5);
+  transform: translateY(-2px) scale(1.05);
+}
+
+/* Smooth backdrop blur transition */
+nav {
+  transition: background-color 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Mobile responsiveness for transparent navbar */
+@media (max-width: 768px) {
+  nav {
+    padding: 15px 20px;
+  }
+  
+  /* Ensure mobile menu has proper background when open */
+  nav .mobile-menu {
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(20px);
+  }
+}
+
+/* Optional: Add subtle gradient overlay for better text readability */
+nav::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Remove the gradient overlay when scrolled (since we have solid background) */
+nav.scrolled::before {
+  display: none;
 }
