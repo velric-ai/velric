@@ -60,7 +60,7 @@ const About = () => {
           About
         </h1>
         <p className="text-lg text-white/80 max-w-3xl mx-auto leading-relaxed">
-          At <strong className="text-purple-400">Velric</strong>, we believe students don't learn by watching. They learn by <strong className="text-purple-300">doing</strong>. Our mission is to provide immersive <strong className="text-purple-500">AI-powered challenges</strong> that simulate real work, not classroom theory.
+          Resumes have been around since the 1930s. It's time for something better. <strong className="text-purple-400">Velric</strong> is redefining how the world measures talent - through real execution, not credentials. Our AI creates proof of work missions that quantify skill, consistency, and problem solving personalized for each user. The result is the <strong className="text-purple-500">Velric Score</strong>, the new global language of ability.
         </p>
       </section>
 
@@ -92,20 +92,39 @@ const About = () => {
         <h2 className="text-3xl font-semibold text-center mb-12">
           Our <span className="text-purple-400 font-bold">Values</span>
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {[
-            "Learn through Execution",
-            "Build for the Ambitious", 
-            "Learn and Create at Once",
-            "Live the Professional Experience",
-            "Work on Real Projects",
-            "Experience Over Textbook Memorization",
+            {
+              title: "1. Proof Over Promises",
+              subtitle: "Show it. Don't say it."
+            },
+            {
+              title: "2. Merit Over Background", 
+              subtitle: "Earn it. Don't inherit it."
+            },
+            {
+              title: "3. Data Over Opinion",
+              subtitle: "Evidence speaks louder."
+            },
+            {
+              title: "4. Execution Defines Talent",
+              subtitle: "Doers win. Talkers fade."
+            },
+            {
+              title: "5. One Global Standard",
+              subtitle: "Talent measured equally."
+            },
+            {
+              title: "6. Built for Builders",
+              subtitle: "Ambition is our language."
+            }
           ].map((value) => (
             <div
-              key={value}
-              className="value-item bg-[#0D0D0D] rounded-2xl p-6 text-center shadow-md border border-[#E0E0DC]/10 min-h-[160px] flex items-center justify-center"
+              key={value.title}
+              className="value-item bg-[#0D0D0D] rounded-2xl p-6 text-center shadow-md border border-[#E0E0DC]/10 min-h-[180px] flex flex-col items-center justify-center"
             >
-              <h3 className="text-xl font-bold">{value}</h3>
+              <h3 className="text-xl font-bold mb-2 text-purple-400">{value.title}</h3>
+              <p className="text-white/80 text-sm">{value.subtitle}</p>
             </div>
           ))}
         </div>

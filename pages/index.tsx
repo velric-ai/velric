@@ -43,34 +43,34 @@ export default function Home() {
     const removePurpleBars = () => {
       // Find all elements that could be bars
       const allElements = document.querySelectorAll('div, section, hr');
-      
+
       allElements.forEach(element => {
         const styles = window.getComputedStyle(element);
         const height = element.offsetHeight;
         const width = element.offsetWidth;
         const bgColor = styles.backgroundColor;
-        
+
         // Check if element is a thin horizontal bar with purple color
         const isBar = (
-          height <= 15 && 
-          width > 100 && 
+          height <= 15 &&
+          width > 100 &&
           (
-            bgColor.includes('147, 51, 234') || 
-            bgColor.includes('168, 85, 247') || 
-            bgColor.includes('192, 132, 252') || 
+            bgColor.includes('147, 51, 234') ||
+            bgColor.includes('168, 85, 247') ||
+            bgColor.includes('192, 132, 252') ||
             bgColor.includes('147, 51, 234')
           )
         );
-        
+
         if (isBar) {
           element.style.display = 'none';
           element.remove(); // Completely remove from DOM
         }
       });
-      
+
       // Remove all HR elements
       document.querySelectorAll('hr').forEach(hr => hr.remove());
-      
+
       // Remove pseudo-elements by hiding parent
       const elementsWithBars = document.querySelectorAll('section, .section, .hero-section, .about-section');
       elementsWithBars.forEach(el => {
@@ -80,11 +80,11 @@ export default function Home() {
 
     // Execute immediately
     removePurpleBars();
-    
+
     // Execute after DOM is fully loaded
     const timeout1 = setTimeout(removePurpleBars, 500);
     const timeout2 = setTimeout(removePurpleBars, 1500);
-    
+
     // Create a mutation observer to catch dynamically added bars
     const observer = new MutationObserver(removePurpleBars);
     observer.observe(document.body, {
@@ -113,18 +113,18 @@ export default function Home() {
       <main className="bg-[#0D0D0D] text-white font-sans antialiased overflow-x-hidden relative">
         {/* Floating decorative elements */}
         <div className="fixed inset-0 pointer-events-none z-0">
-          <Circle 
-            className="absolute top-32 left-16 text-purple-500/15 floating-element" 
-            size={80} 
+          <Circle
+            className="absolute top-32 left-16 text-purple-500/15 floating-element"
+            size={80}
             fill="currentColor"
           />
-          <Triangle 
-            className="absolute top-1/2 right-24 text-purple-400/10 floating-element" 
+          <Triangle
+            className="absolute top-1/2 right-24 text-purple-400/10 floating-element"
             size={60}
             fill="currentColor"
           />
-          <Hexagon 
-            className="absolute bottom-1/3 left-1/3 text-purple-600/8 floating-element" 
+          <Hexagon
+            className="absolute bottom-1/3 left-1/3 text-purple-600/8 floating-element"
             size={100}
             fill="currentColor"
           />
@@ -145,26 +145,26 @@ export default function Home() {
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <motion.h2 
+            <motion.h2
               className="text-3xl md:text-4xl font-bold mb-6"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              Students don't learn by <strong className="text-purple-400">watching</strong>. They learn by <strong className="text-purple-300">doing</strong>.
+              Companies recruit through <strong className="text-purple-400">AI missions</strong>, and every candidate earns a <strong className="text-purple-300">Velric Score</strong> that proves real ability.
             </motion.h2>
-            <motion.p 
+            <motion.p
               className="text-white/80 text-lg"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <strong className="text-purple-500">Passive learning</strong> doesn't prepare you for real work. <strong className="text-purple-400">Velric</strong> transforms actual projects into interactive <strong className="text-purple-300">AI-driven missions</strong> to help you build real skills with real feedback.
+              The resume is a <strong className="text-purple-400">1930s invention</strong>. We're building its <strong className="text-purple-300">replacement</strong>. <strong className="text-purple-400">Velric</strong> turns real work into measurable proof. <strong className="text-purple-300">AI built missions</strong> test ability, and your <strong className="text-purple-500">Velric Score</strong> becomes the new standard companies hire through.
             </motion.p>
           </motion.div>
-          <motion.div 
+          <motion.div
             className="flex justify-center"
             initial={{ opacity: 0, x: 60 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -179,7 +179,7 @@ export default function Home() {
 
         {/* ⚙️ How Velric Works - Cluely-style Feature Cards */}
         <section className="features-section section-spacing relative z-10">
-          <motion.h2 
+          <motion.h2
             className="section-title"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -188,10 +188,10 @@ export default function Home() {
           >
             How <span className="highlight">Velric</span> Works
           </motion.h2>
-          
+
           <div className="features-grid">
             {/* Card 1 */}
-            <motion.div 
+            <motion.div
               className="feature-card"
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -212,7 +212,7 @@ export default function Home() {
             </motion.div>
 
             {/* Card 2 */}
-            <motion.div 
+            <motion.div
               className="feature-card"
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -233,7 +233,7 @@ export default function Home() {
             </motion.div>
 
             {/* Card 3 */}
-            <motion.div 
+            <motion.div
               className="feature-card"
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -257,7 +257,7 @@ export default function Home() {
 
         {/* 🚀 What Makes Us Different - Cluely Style */}
         <section className="differentiators-section section-spacing relative z-10">
-          <motion.h2 
+          <motion.h2
             className="section-heading"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -266,10 +266,10 @@ export default function Home() {
           >
             What Makes Us <span className="gradient-text">Different</span>
           </motion.h2>
-          
+
           <div className="diff-grid">
-            {/* Card 1 - No Lectures */}
-            <motion.div 
+            {/* Card 1 - No Resumes */}
+            <motion.div
               className="diff-card"
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -281,20 +281,20 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3>No Lectures</h3>
-              <p>Skip the boring theory. Jump straight into real professional work and learn by doing.</p>
+              <h3>1. No Resumes</h3>
+              <p>Resumes were invented in the 1930s and haven't evolved since. Velric replaces them with personalized proof of work missions that reveal how candidates actually think, build, and perform.</p>
               <div className="diff-visual">
                 <MissionFlow
                   width={320}
                   height={180}
-                  text="No Lectures"
+                  text="No Resumes"
                   className="w-full h-full rounded-xl"
                 />
               </div>
             </motion.div>
 
-            {/* Card 2 - No Simulations */}
-            <motion.div 
+            {/* Card 2 - No Guesswork */}
+            <motion.div
               className="diff-card"
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -306,20 +306,20 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
               </div>
-              <h3>No Simulations</h3>
-              <p>Work on actual deliverables used by real companies. Your practice IS the real thing.</p>
+              <h3>2. No Guesswork</h3>
+              <p>Recruiters waste hours screening candidates based on buzzwords. Velric's AI evaluates real work, generating a Velric Score that quantifies skill, consistency, and problem solving ability.</p>
               <div className="diff-visual">
                 <HumanAIConnection
                   width={320}
                   height={180}
-                  text="Real Work"
+                  text="No Guesswork"
                   className="w-full h-full rounded-xl"
                 />
               </div>
             </motion.div>
 
-            {/* Card 3 - Real Work. Real Feedback. (Featured) */}
-            <motion.div 
+            {/* Card 3 - No Bias (Featured) */}
+            <motion.div
               className="diff-card featured"
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -331,13 +331,13 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3>Real Work. Real Feedback.</h3>
-              <p>Get instant AI-powered feedback on actual professional tasks. Build a portfolio that proves your skills.</p>
+              <h3>3. No Bias</h3>
+              <p>Every candidate is measured by the same standard. The Velric Score levels the playing field, removing subjective judgment and giving companies data backed confidence in every hire.</p>
               <div className="diff-visual">
                 <InteractiveDashboard
                   width={320}
                   height={180}
-                  text="Real Feedback"
+                  text="No Bias"
                   className="w-full h-full rounded-xl"
                 />
               </div>
@@ -347,7 +347,7 @@ export default function Home() {
 
         {/* 👥 Meet the Founders - Enhanced with Animations */}
         <section className="bg-[#0D0D0D] px-4 md:px-8 lg:px-16 py-20 section-spacing relative z-10">
-          <motion.h2 
+          <motion.h2
             className="text-3xl md:text-4xl font-bold text-center mb-12"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -390,7 +390,7 @@ export default function Home() {
 
         {/* 🌍 A Platform for Everyone - Enhanced with Animations */}
         <section className="bg-[#0D0D0D] px-4 md:px-8 lg:px-16 py-20 text-center section-spacing relative z-10">
-          <motion.h2 
+          <motion.h2
             className="text-4xl md:text-5xl font-extrabold mb-12 text-white"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -402,37 +402,37 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
             {[
               {
-                title: "For Learners",
+                title: "For Talent",
                 icon: "GraduationCap" as keyof typeof import('lucide-react'),
-                description: "Gain practical experience, build a strong portfolio, and get discovered for your skills, not just your resume.",
+                description: "Prove your skills through personalized AI built proof of work missions.",
                 features: [
-                  "→ Build a portfolio of real work.",
-                  "→ Receive AI-driven feedback.",
-                  "→ Connect with top employers."
+                  "→ Earn your Velric Score, a measurable signal of ability.",
+                  "→ Get hired by companies looking for proven execution.",
+                  "→ Build a portfolio backed by data."
                 ]
               },
               {
-                title: "For Educators",
-                icon: "BookOpen" as keyof typeof import('lucide-react'),
-                description: "Enhance curriculums with real-world challenges that foster execution and critical thinking.",
-                features: [
-                  "→ Embed AI-powered missions into courses.",
-                  "→ Track learner progress and outcomes.",
-                  "→ Prepare students for real-world work."
-                ]
-              },
-              {
-                title: "For Companies",
+                title: "For Employers",
                 icon: "Building2" as keyof typeof import('lucide-react'),
-                description: "Engage top talent through challenge-based recruitment and continuous learning.",
+                description: "Hire through proof, NOT resumes.",
                 features: [
-                  "→ Discover talent through real execution.",
-                  "→ Use missions to upskill teams.",
-                  "→ Build a culture of doing, not watching."
+                  "→ Access a global pool of pre validated talent.",
+                  "→ Filter candidates by Velric Score and real performance data.",
+                  "→ Replace guesswork with AI driven evaluation."
+                ]
+              },
+              {
+                title: "For Partners",
+                icon: "BookOpen" as keyof typeof import('lucide-react'),
+                description: "Join the movement redefining how the world hires.",
+                features: [
+                  "→ Integrate Velric missions into training or hiring workflows.",
+                  "→ Gain insights into skill benchmarks across industries.",
+                  "→ Build your brand around proof based opportunity."
                 ]
               }
             ].map((item, idx) => (
-              <motion.div 
+              <motion.div
                 key={idx}
                 className="bg-[#1C1C1E] p-6 rounded-2xl shadow-md h-full flex flex-col"
                 initial={{ opacity: 0, y: 60 }}
@@ -448,7 +448,7 @@ export default function Home() {
                   <h3 className="text-xl font-semibold mb-2 text-white">{item.title}</h3>
                   <p className="text-gray-300 text-sm mb-4">{item.description}</p>
                 </div>
-                <motion.div 
+                <motion.div
                   className="text-left text-white/80 text-sm space-y-1 flex-grow"
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
@@ -456,7 +456,7 @@ export default function Home() {
                   transition={{ duration: 0.5, delay: idx * 0.2 + 0.3 }}
                 >
                   {item.features.map((feature, featureIdx) => (
-                    <motion.p 
+                    <motion.p
                       key={featureIdx}
                       initial={{ opacity: 0, x: -20 }}
                       whileInView={{ opacity: 1, x: 0 }}
@@ -474,7 +474,7 @@ export default function Home() {
 
         {/* 📝 Waitlist - Enhanced with Animations */}
         <section className="px-4 md:px-8 lg:px-16 py-20 text-center section-spacing relative z-10">
-          <motion.h2 
+          <motion.h2
             className="text-3xl md:text-4xl font-bold mb-4"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -483,7 +483,7 @@ export default function Home() {
           >
             Join <span className="text-purple-400 font-bold">Waitlist</span>
           </motion.h2>
-          <motion.p 
+          <motion.p
             className="mb-8 text-lg text-white/80"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -492,7 +492,7 @@ export default function Home() {
           >
             Be first to access the future of <strong className="text-purple-300">execution-based learning</strong>.
           </motion.p>
-          <motion.div 
+          <motion.div
             className="max-w-lg mx-auto"
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}

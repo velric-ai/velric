@@ -127,7 +127,7 @@ export default function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
         >
-          Real World AI Built Missions Made Personally For You.
+          Companies recruit through AI missions, and every candidate earns a Velric Score that proves real ability.
         </motion.p>
 
         <motion.div 
