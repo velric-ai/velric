@@ -20,7 +20,7 @@ html {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #0d0d0d;
     --foreground: #ededed;
   }
 }
@@ -254,7 +254,7 @@ img {
 .university-ticker-container {
   width: 100%;
   margin-top: 80px;
-  padding: 20px 0;
+  padding: 30px 0;
   overflow: hidden;
   position: relative;
   background: rgba(147, 51, 234, 0.05);
@@ -276,7 +276,24 @@ img {
   align-items: center;
 }
 
+.ticker-track-logos {
+  display: flex;
+  gap: 100px;
+  animation: scrollLogos 30s linear infinite;
+  width: max-content;
+  align-items: center;
+}
+
 @keyframes scrollNames {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes scrollLogos {
   0% {
     transform: translateX(0);
   }
@@ -300,6 +317,24 @@ img {
   color: rgba(147, 51, 234, 0.9);
 }
 
+.company-logo {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+  width: 160px;
+  opacity: 0.7;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  filter: brightness(0.8) contrast(1.2);
+}
+
+.company-logo:hover {
+  opacity: 1;
+  transform: scale(1.05);
+  filter: brightness(1) contrast(1);
+}
+
 /* Remove old floating logos */
 .floating-logos {
   display: none !important;
@@ -315,8 +350,17 @@ img {
     gap: 50px;
   }
   
+  .ticker-track-logos {
+    gap: 60px;
+  }
+  
   .university-name {
     font-size: 16px;
+  }
+  
+  .company-logo {
+    height: 60px;
+    width: 120px;
   }
   
   .hero-section {
@@ -326,7 +370,7 @@ img {
   
   .university-ticker-container {
     margin-top: 60px;
-    padding: 15px 0;
+    padding: 25px 0;
   }
   
   .hero-description {
@@ -340,7 +384,7 @@ img {
 /* Features Section - Cluely Style */
 .features-section {
   padding: 120px 20px;
-  background: linear-gradient(180deg, #0A0A0A 0%, #1A0A2E 100%);
+  background: linear-gradient(180deg, #0D0D0D 0%, #1A0A2E 100%);
 }
 
 .section-title {
@@ -430,7 +474,7 @@ img {
 /* Differentiators Section - Cluely Style */
 .differentiators-section {
   padding: 120px 20px;
-  background: #0A0A0A;
+  background: #0D0D0D;
   position: relative;
   overflow: hidden;
 }
