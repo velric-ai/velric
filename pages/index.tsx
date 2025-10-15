@@ -4,7 +4,7 @@ import HeroSection from "@/components/HeroSection";
 import CTAButton from "@/components/CTAButton";
 import ValuePropCard from "@/components/ValuePropCard";
 import WaitlistForm from "@/components/WaitlistForm";
-import TeamCard from "@/components/TeamCard";
+
 import Footer from "@/components/Footer";
 
 import InteractiveAIVisual from "@/components/InteractiveAIVisual";
@@ -226,7 +226,6 @@ export default function Home() {
                   text="Score Dashboard"
                   className="w-full h-full rounded-2xl"
                 />
-                <div className="feature-badge">AI-Powered</div>
               </div>
               <h3>Get Your Velric Score</h3>
               <p>Our AI engine evaluates your work in real-time, providing comprehensive feedback and a detailed performance score.</p>
@@ -288,7 +287,7 @@ export default function Home() {
                   width={320}
                   height={180}
                   text="No Resumes"
-                  className="w-full h-full rounded-xl"
+                  className="w-full h-full rounded-xl diff-size"
                 />
               </div>
             </motion.div>
@@ -313,7 +312,7 @@ export default function Home() {
                   width={320}
                   height={180}
                   text="No Guesswork"
-                  className="w-full h-full rounded-xl"
+                  className="w-full h-full rounded-xl diff-size"
                 />
               </div>
             </motion.div>
@@ -338,55 +337,14 @@ export default function Home() {
                   width={320}
                   height={180}
                   text="No Bias"
-                  className="w-full h-full rounded-xl"
+                  className="w-full h-full rounded-xl diff-size"
                 />
               </div>
             </motion.div>
           </div>
         </section>
 
-        {/* 👥 Meet the Founders - Enhanced with Animations */}
-        <section className="bg-[#0D0D0D] px-4 md:px-8 lg:px-16 py-20 section-spacing relative z-10">
-          <motion.h2
-            className="text-3xl md:text-4xl font-bold text-center mb-12"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            Meet the <span className="text-purple-400 font-bold">Founders</span>
-          </motion.h2>
-          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            >
-              <TeamCard
-                name="Mahir Laul (CEO)"
-                role="Vision, Product, External Strategy"
-                image="/assets/mahir.png"
-                bio="I lead the vision, product direction, and external strategy at Velric. From investor conversations to brand positioning, I make sure we're building something people remember and scaling it like a company that belongs at the top."
-                linkedin="https://www.linkedin.com/in/mahir-laul-a77b11224/"
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-            >
-              <TeamCard
-                name="Sara (CTO)"
-                role="AI Development, Infrastructure"
-                image="/assets/CTO.png"
-                bio="I lead AI development at Velric. My focus is building systems that turn professional workflows, like decks, code, and pitch, into interactive missions. I ensure our tools are fast and stable, so learners can rely on Velric to deliver real work."
-                linkedin=""
-              />
-            </motion.div>
-          </div>
-        </section>
+
 
         {/* 🌍 A Platform for Everyone - Enhanced with Animations */}
         <section className="bg-[#0D0D0D] px-4 md:px-8 lg:px-16 py-20 text-center section-spacing relative z-10">
@@ -434,37 +392,94 @@ export default function Home() {
             ].map((item, idx) => (
               <motion.div
                 key={idx}
-                className="bg-[#1C1C1E] p-6 rounded-2xl shadow-md h-full flex flex-col"
+                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl shadow-lg border border-purple-500/20 h-full flex flex-col relative overflow-hidden group cursor-pointer"
                 initial={{ opacity: 0, y: 60 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.7, delay: idx * 0.2 }}
+                whileHover={{ 
+                  y: -8, 
+                  scale: 1.02,
+                  boxShadow: "0 20px 40px rgba(147, 51, 234, 0.3)"
+                }}
               >
-                <div className="text-center">
-                  {(() => {
-                    const LucideIcon = require('lucide-react')[item.icon];
-                    return <LucideIcon className="w-14 h-14 mb-4 mx-auto text-white" strokeWidth={1.5} />;
-                  })()}
-                  <h3 className="text-xl font-semibold mb-2 text-white">{item.title}</h3>
-                  <p className="text-gray-300 text-sm mb-4">{item.description}</p>
+                {/* Background Glow Effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl" />
+                
+                {/* Animated Border Glow */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
+                
+                {/* Floating Particles */}
+                <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+                  {[...Array(3)].map((_, particleIdx) => (
+                    <motion.div
+                      key={particleIdx}
+                      className="absolute w-1 h-1 bg-purple-400 rounded-full"
+                      style={{
+                        left: `${20 + particleIdx * 30}%`,
+                        top: `${30 + (particleIdx % 2) * 40}%`,
+                      }}
+                      animate={{
+                        y: [0, -15, 0],
+                        opacity: [0.3, 1, 0.3],
+                        scale: [1, 1.5, 1]
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        delay: particleIdx * 0.3
+                      }}
+                    />
+                  ))}
+                </div>
+                
+                <div className="text-center relative z-10">
+                  <motion.div
+                    className="relative inline-block"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {(() => {
+                      const LucideIcon = require('lucide-react')[item.icon];
+                      return (
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                          <LucideIcon className="w-14 h-14 mb-4 mx-auto text-white group-hover:text-purple-300 transition-colors duration-300 relative z-10" strokeWidth={1.5} />
+                        </div>
+                      );
+                    })()}
+                  </motion.div>
+                  <motion.h3 
+                    className="text-xl font-semibold mb-2 text-white group-hover:text-purple-200 transition-colors duration-300"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    {item.title}
+                  </motion.h3>
+                  <p className="text-gray-300 group-hover:text-gray-200 text-sm mb-4 transition-colors duration-300">{item.description}</p>
                 </div>
                 <motion.div
-                  className="text-left text-white/80 text-sm space-y-1 flex-grow"
+                  className="text-left text-white/80 text-sm space-y-2 flex-grow relative z-10"
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: idx * 0.2 + 0.3 }}
                 >
                   {item.features.map((feature, featureIdx) => (
-                    <motion.p
+                    <motion.div
                       key={featureIdx}
+                      className="relative group/feature"
                       initial={{ opacity: 0, x: -20 }}
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.4, delay: idx * 0.2 + 0.4 + featureIdx * 0.1 }}
+                      whileHover={{ x: 5 }}
                     >
-                      {feature}
-                    </motion.p>
+                      <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-purple-500 to-blue-500 opacity-0 group-hover/feature:opacity-100 transition-opacity duration-300 rounded-full" />
+                      <p className="pl-4 group-hover/feature:text-purple-200 transition-colors duration-300 relative">
+                        <span className="text-purple-400 group-hover/feature:text-purple-300 transition-colors duration-300">→</span>
+                        <span className="ml-2">{feature.substring(2)}</span>
+                      </p>
+                    </motion.div>
                   ))}
                 </motion.div>
               </motion.div>
