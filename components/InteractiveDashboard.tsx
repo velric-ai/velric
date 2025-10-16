@@ -57,19 +57,17 @@ export default function InteractiveDashboard({ width, height, text, className = 
       </div>
 
       {/* Header */}
-      <div className="absolute top-4 left-4 right-4">
+      <div className="absolute top-2 left-3 right-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-white">AI Dashboard</h3>
-          <div className="flex space-x-1">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
-            <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+          <h3 className="text-xs font-semibold text-white">AI Dashboard</h3>
+          <div className="bg-purple-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+            AI-POWERED
           </div>
         </div>
       </div>
 
       {/* Metrics Grid */}
-      <div className="absolute top-12 left-4 right-4 grid grid-cols-2 gap-3">
+      <div className="absolute top-10 left-2 right-2 grid grid-cols-2 gap-1.5">
         {metrics.map((metric, index) => {
           const IconComponent = metric.icon;
           const isActive = activeMetric === index;
@@ -77,24 +75,24 @@ export default function InteractiveDashboard({ width, height, text, className = 
           return (
             <motion.div
               key={index}
-              className={`p-3 rounded-lg border transition-all duration-300 cursor-pointer ${
+              className={`p-1.5 rounded-md border transition-all duration-300 cursor-pointer ${
                 isActive 
                   ? 'bg-purple-500/20 border-purple-400/50' 
                   : 'bg-gray-800/30 border-gray-600/30'
               }`}
               animate={{
-                scale: isActive ? 1.05 : 1,
-                boxShadow: isActive ? '0 0 20px rgba(147, 51, 234, 0.3)' : '0 0 0px rgba(0,0,0,0)'
+                scale: isActive ? 1.01 : 1,
+                boxShadow: isActive ? '0 0 10px rgba(147, 51, 234, 0.3)' : '0 0 0px rgba(0,0,0,0)'
               }}
               onHoverStart={() => setActiveMetric(index)}
             >
-              <div className="flex items-center space-x-2">
-                <IconComponent className={`w-4 h-4 ${metric.color}`} />
-                <span className="text-xs text-gray-300">{metric.label}</span>
+              <div className="flex items-center space-x-1">
+                <IconComponent className={`w-2.5 h-2.5 ${metric.color}`} />
+                <span className="text-xs text-gray-300 truncate flex-1">{metric.label}</span>
               </div>
               <motion.div 
-                className="text-lg font-bold text-white mt-1"
-                animate={{ scale: isActive ? 1.1 : 1 }}
+                className="text-xs font-bold text-white mt-0.5"
+                animate={{ scale: isActive ? 1.02 : 1 }}
               >
                 {metric.value}
               </motion.div>
@@ -104,7 +102,7 @@ export default function InteractiveDashboard({ width, height, text, className = 
       </div>
 
       {/* Chart Area */}
-      <div className="absolute bottom-16 left-4 right-4 h-20">
+      <div className="absolute bottom-8 left-2 right-2 h-12">
         <svg className="w-full h-full">
           {/* Chart Grid */}
           <defs>
@@ -168,12 +166,13 @@ export default function InteractiveDashboard({ width, height, text, className = 
       </div>
 
       {/* Status Bar */}
-      <div className="absolute bottom-4 left-4 right-4">
+      <div className="absolute bottom-1 left-2 right-2">
         <div className="flex items-center justify-between text-xs text-gray-400">
-          <span>Real-time Analytics</span>
+          <span className="truncate text-xs">Real-time Analytics</span>
           <motion.span
             animate={{ opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 2, repeat: Infinity }}
+            className="ml-2 text-xs"
           >
             Live Data
           </motion.span>

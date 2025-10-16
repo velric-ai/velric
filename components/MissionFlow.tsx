@@ -26,7 +26,7 @@ export default function MissionFlow({ width, height, text, className = "" }: Mis
         if (next === 0) {
           setCompletedSteps([]);
         } else {
-          setCompletedSteps(prev => [...prev, prev]);
+          setCompletedSteps(cs => [...cs, next]);
         }
         return next;
       });
@@ -149,7 +149,7 @@ export default function MissionFlow({ width, height, text, className = "" }: Mis
       </div>
 
       {/* Progress Bar */}
-      <div className="absolute bottom-8 left-4 right-4">
+      <div className="absolute bottom-6 left-3 right-3">
         <div className="w-full h-2 bg-gray-800/50 rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"
@@ -158,7 +158,7 @@ export default function MissionFlow({ width, height, text, className = "" }: Mis
             transition={{ duration: 0.5 }}
           />
         </div>
-        <div className="flex justify-between mt-2 text-xs text-gray-400">
+        <div className="flex justify-between mt-1 text-xs text-gray-400 px-1">
           <span>Mission Progress</span>
           <span>{Math.round(((currentStep + 1) / steps.length) * 100)}%</span>
         </div>

@@ -219,7 +219,7 @@ export default function HumanAIConnection({ width, height, text, className = "" 
 
       {/* Text Label */}
       <motion.div
-        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center"
+        className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-center"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1 }}
