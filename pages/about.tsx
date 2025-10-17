@@ -82,7 +82,7 @@ const About = () => {
             role="AI Development, Infrastructure"
             image="/assets/CTO.png"
             bio="I lead AI development at Velric. My focus is building systems that turn professional workflows, like decks, code, and pitch, into interactive missions. I ensure our tools are fast and stable, so learners can rely on Velric to deliver real work."
-            linkedin=""
+            linkedin="https://www.linkedin.com/in/sara-pedron-9929271b6/"
           />
         </div>
       </section>

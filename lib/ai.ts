@@ -103,7 +103,7 @@ export function generateMissionsFromResume(
     .slice(0, 3 + Math.floor(rng() * 3)) // 3-5 missions
     .map((mission, index) => {
       const customizedSkills = customizeSkills(mission.baseSkills, resumeText, interests, rng);
-      const customizedIndustries = customizeIndustries(mission.baseIndustries, industry, interests, rng);
+      const customizedIndustries = customizeIndustries(mission.baseIndustries, rng, industry, interests);
       
       const missionId = `generated-${Date.now()}-${index}`;
       return {
@@ -172,7 +172,7 @@ function customizeSkills(baseSkills: string[], resumeText: string, interests: st
   return [...customizedSkills, ...relevantSkills].slice(0, 6);
 }
 
-function customizeIndustries(baseIndustries: string[], industry?: string, interests: string[] = [], rng: () => number): string[] {
+function customizeIndustries(baseIndustries: string[], rng: () => number, industry?: string, interests: string[] = []): string[] {
   const allIndustries = ['Technology', 'Finance', 'Healthcare', 'E-commerce', 'Media', 'Education', 'Gaming', 'Automotive'];
   
   let customizedIndustries = [...baseIndustries];
