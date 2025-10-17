@@ -29,7 +29,7 @@ export default function MissionFlow({ width, height, text, className = "" }: Mis
         if (next === 0) {
           setCompletedSteps([]);
         } else {
-          setCompletedSteps(prev => [...prev, prev]);
+          setCompletedSteps(prevCompleted => [...prevCompleted, prev]);
         }
         return next;
       });
