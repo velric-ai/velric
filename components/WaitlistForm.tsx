@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AfterSubmit from "./AfterSubmit";
 
 type FormData = {
   name: string;
@@ -51,7 +52,7 @@ export default function WaitlistForm() {
       className="bg-[#0D0D0D] text-white p-6 rounded-2xl max-w-xl mx-auto space-y-4 shadow-lg"
     >
       {submitted ? (
-        <p className="text-center text-lg">You're in. Expect updates soon.</p>
+        <AfterSubmit></AfterSubmit>
       ) : (
         <>
           <input
