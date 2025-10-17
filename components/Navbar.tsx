@@ -50,7 +50,7 @@ export default function Navbar() {
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 transition-all duration-300 group-hover:w-full"></span>
           </Link>
           <Link href="/contact" className="whitespace-nowrap hover:text-purple-400 transition-colors duration-300 relative group">
-            Contact
+            Request Demo
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 transition-all duration-300 group-hover:w-full"></span>
           </Link>
           <Link href="/generate" className="whitespace-nowrap hover:text-purple-400 transition-colors duration-300 relative group">
