@@ -42,9 +42,10 @@ export default function Home() {
       const allElements = document.querySelectorAll('div, section, hr');
 
       allElements.forEach(element => {
+        const htmlElement = element as HTMLElement;
         const styles = window.getComputedStyle(element);
-        const height = element.offsetHeight;
-        const width = element.offsetWidth;
+        const height = htmlElement.offsetHeight;
+        const width = htmlElement.offsetWidth;
         const bgColor = styles.backgroundColor;
 
         // Check if element is a thin horizontal bar with purple color
@@ -60,7 +61,7 @@ export default function Home() {
         );
 
         if (isBar) {
-          element.style.display = 'none';
+          htmlElement.style.display = 'none';
           element.remove(); // Completely remove from DOM
         }
       });
@@ -71,7 +72,7 @@ export default function Home() {
       // Remove pseudo-elements by hiding parent
       const elementsWithBars = document.querySelectorAll('section, .section, .hero-section, .about-section');
       elementsWithBars.forEach(el => {
-        el.style.setProperty('--remove-bars', 'none', 'important');
+        (el as HTMLElement).style.setProperty('--remove-bars', 'none', 'important');
       });
     };
 
