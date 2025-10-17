@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Image from "next/image";
@@ -27,7 +27,7 @@ const Merch = () => {
     };
   }, []);
 
-  const merchItems = [
+  const merchItems = useMemo(() => [
     {
       name: "PRICE TAG Proof Tee",
       price: "$100",
@@ -52,7 +52,7 @@ const Merch = () => {
       image: "/assets/Core-Crowneck.png",
       description: "Essential wear for the execution-focused"
     }
-  ];
+  ], []);
 
   // Debug: Log the image paths
   useEffect(() => {
