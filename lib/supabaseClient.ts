@@ -10,7 +10,15 @@ export const USE_DUMMY = true;
 // NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 // or SUPABASE_SERVICE_ROLE_KEY=your_service_role_key for server-side operations
 
-let supabase: any = null;
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+
+// let supabase: any = null;
 
 if (!USE_DUMMY) {
   // Uncomment and configure when ready to use real Supabase:
