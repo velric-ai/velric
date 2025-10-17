@@ -8,23 +8,98 @@ const MissionSubmissionPage: React.FC = () => {
   const { missionId } = router.query;
   const [missionData, setMissionData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   useEffect(() => {
-    // Simulate fetching mission data
-    if (missionId) {
-      setTimeout(() => {
+    const fetchMissionData = async () => {
+      if (!missionId || typeof missionId !== 'string') return;
+      
+      try {
+        setLoading(true);
+        
+        const response = await fetch(`/api/missions/${missionId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          setMissionData({
+            id: data.mission.id,
+            title: data.mission.title,
+            description: data.mission.description,
+            deadline: data.mission.timeLimit || "7 days",
+            status: "active",
+            mission: data.mission // Store full mission data
+          });
+        } else {
+          console.error('Failed to fetch mission:', data.error);
+          // Fallback to mock data
+          setMissionData({
+            id: missionId,
+            title: `Mission ${missionId}`,
+            description: "Join our innovative community and submit your groundbreaking mission.",
+            deadline: "7 days",
+            status: "active",
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching mission data:', error);
+        // Fallback to mock data
         setMissionData({
           id: missionId,
           title: `Mission ${missionId}`,
-          description:
-            "Join our innovative community and submit your groundbreaking mission.",
-          deadline: "2026-03-25",
+          description: "Join our innovative community and submit your groundbreaking mission.",
+          deadline: "7 days",
           status: "active",
         });
+      } finally {
         setLoading(false);
-      }, 1200); // slight delay for UX demo
-    }
+      }
+    };
+
+    fetchMissionData();
   }, [missionId]);
+
+  const handleSubmission = async (formData: { interests?: string[]; resumeText?: string }) => {
+    if (!missionId) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Mock user ID - in real app, this would come from auth context
+      const userId = "demo-user-123";
+      
+      // Update user mission status to submitted
+      const response = await fetch('/api/user_missions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          missionId,
+          action: 'submit'
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setSubmitSuccess(true);
+        // Redirect to dashboard after a short delay
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 2000);
+      } else {
+        console.error('Submission failed:', data.error);
+        alert('Submission failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting mission:', error);
+      alert('Submission failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -77,7 +152,18 @@ const MissionSubmissionPage: React.FC = () => {
             <div className="absolute -top-8 -left-8 w-32 h-32 bg-gradient-to-br from-[#6A0DAD]/20 to-transparent rounded-full blur-3xl"></div>
             <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-gradient-to-br from-[#00D9FF]/20 to-transparent rounded-full blur-3xl"></div>
 
-            <SubmissionForm />
+            <SubmissionForm 
+              onSubmit={handleSubmission}
+              isLoading={isSubmitting}
+            />
+            
+            {/* Success Message */}
+            {submitSuccess && (
+              <div className="mt-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-center">
+                <p className="text-green-400 font-semibold">Mission submitted successfully!</p>
+                <p className="text-green-300 text-sm mt-2">Redirecting to dashboard...</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

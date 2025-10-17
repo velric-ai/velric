@@ -1,5 +1,23 @@
 // lib/ai.ts
 import { MissionTemplate } from '@/types';
+import OpenAI from 'openai';
+
+// Initialize OpenAI client
+let openai: OpenAI | null = null;
+
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+} else {
+  console.warn('OpenAI API key not configured. Mission generation will use fallback method.');
+}
+
+if (typeof window === 'undefined' && process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 // Production-ready prompt template for AI mission generation
 export const MISSION_GENERATION_PROMPT = `
@@ -44,6 +62,151 @@ GUIDELINES:
 
 Generate missions that feel like real projects from companies like Google, Netflix, Stripe, or Airbnb.
 `;
+
+// Generate personalized missions using ChatGPT
+export async function generatePersonalizedMissions(
+  userSurveyData: any,
+  companyProjects: any[] = [],
+  count: number = 3
+): Promise<MissionTemplate[]> {
+  if (!openai) {
+    console.warn('OpenAI not configured. Using fallback generation.');
+    return generateMissionsFromResume(
+      userSurveyData?.resume_text || '',
+      userSurveyData?.interests || [],
+      userSurveyData?.industry_preferences?.[0],
+      userSurveyData?.experience_level || 'Intermediate'
+    );
+  }
+
+  try {
+    const prompt = createPersonalizedPrompt(userSurveyData, companyProjects, count);
+    
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert technical career coach and mission designer. Generate personalized coding missions based on real company projects and user preferences. Return valid JSON only."
+        },
+        {
+          role: "user", 
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 4000
+    });
+
+    const response = completion.choices[0]?.message?.content;
+    if (!response) {
+      throw new Error('No response from OpenAI');
+    }
+
+    const parsedResponse = JSON.parse(response);
+    const missions = parsedResponse.missions || [];
+
+    // Ensure missions have proper IDs and timestamps
+    return missions.map((mission: any, index: number) => ({
+      ...mission,
+      id: mission.id || `generated-${Date.now()}-${index}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      category: inferCategory(mission.skills || []),
+      tags: (mission.skills || []).slice(0, 3),
+      timeLimit: mission.timeLimit || `${3 + Math.floor(Math.random() * 5)} days`,
+      submissions: Math.floor(Math.random() * 200) + 50,
+      details: mission.details || {
+        overview: mission.description,
+        requirements: generateRequirements(mission.title, mission.skills || [], () => Math.random()),
+        technologies: mission.skills || [],
+        learningOutcomes: generateLearningOutcomes(mission.skills || [], () => Math.random())
+      }
+    }));
+  } catch (error) {
+    console.error('Error generating missions with ChatGPT:', error);
+    // Fallback to deterministic generation
+    return generateMissionsFromResume(
+      userSurveyData?.resume_text || '',
+      userSurveyData?.interests || [],
+      userSurveyData?.industry_preferences?.[0],
+      userSurveyData?.experience_level || 'Intermediate'
+    );
+  }
+}
+
+function createPersonalizedPrompt(userSurveyData: any, companyProjects: any[], count: number): string {
+  const {
+    experience_level = 'Intermediate',
+    programming_languages = [],
+    interests = [],
+    career_goals = [],
+    industry_preferences = [],
+    preferred_project_types = [],
+    resume_text = '',
+    availability_hours_per_week = 5
+  } = userSurveyData || {};
+
+  // Calculate time estimate based on availability
+  const timeEstimate = availability_hours_per_week >= 10 ? '4-6 hours' : 
+                      availability_hours_per_week >= 5 ? '2-4 hours' : '1-2 hours';
+
+  // Select relevant company projects
+  const relevantProjects = companyProjects.slice(0, 3);
+
+  return `
+Generate ${count} personalized coding missions based on the following user profile and real company projects:
+
+USER PROFILE:
+- Experience Level: ${experience_level}
+- Programming Languages: ${programming_languages.join(', ')}
+- Interests: ${interests.join(', ')}
+- Career Goals: ${career_goals.join(', ')}
+- Industry Preferences: ${industry_preferences.join(', ')}
+- Preferred Project Types: ${preferred_project_types.join(', ')}
+- Time Availability: ${timeEstimate} per mission
+- Resume/Background: ${resume_text.substring(0, 500)}...
+
+REAL COMPANY PROJECTS TO INSPIRE FROM:
+${relevantProjects.map(project => `
+- Company: ${project.company_name}
+- Project: ${project.project_title}
+- Description: ${project.project_description}
+- Technologies: ${project.technologies_used?.join(', ')}
+- Business Context: ${project.business_context}
+`).join('\n')}
+
+REQUIREMENTS:
+1. Generate exactly ${count} unique missions
+2. Each mission should be inspired by the company projects above but personalized to the user's profile
+3. Difficulty should match: ${experience_level}
+4. Include technologies from user's known languages: ${programming_languages.join(', ')}
+5. Time estimate should be: ${timeEstimate}
+6. Focus on industries: ${industry_preferences.join(', ') || 'Technology'}
+
+RESPONSE FORMAT (JSON only, no markdown):
+{
+  "missions": [
+    {
+      "title": "Clear, specific mission title",
+      "description": "2-3 sentences describing what to build and why it matters",
+      "skills": ["skill1", "skill2", "skill3", "skill4", "skill5", "skill6"],
+      "industries": ["industry1", "industry2", "industry3"],
+      "difficulty": "${experience_level}",
+      "time_estimate": "${timeEstimate}",
+      "details": {
+        "overview": "Detailed explanation of the mission and learning goals",
+        "requirements": ["requirement1", "requirement2", "requirement3", "requirement4"],
+        "technologies": ["tech1", "tech2", "tech3", "tech4"],
+        "learningOutcomes": ["outcome1", "outcome2", "outcome3", "outcome4"]
+      }
+    }
+  ]
+}
+
+Make each mission feel like a real project from a top tech company. Be specific about technologies and business value.
+`;
+}
 
 // Deterministic simulation function for generating missions
 export function generateMissionsFromResume(
@@ -103,7 +266,7 @@ export function generateMissionsFromResume(
     .slice(0, 3 + Math.floor(rng() * 3)) // 3-5 missions
     .map((mission, index) => {
       const customizedSkills = customizeSkills(mission.baseSkills, resumeText, interests, rng);
-      const customizedIndustries = customizeIndustries(mission.baseIndustries, industry, interests, rng);
+      const customizedIndustries = customizeIndustries(mission.baseIndustries, rng, industry, interests);
       
       const missionId = `generated-${Date.now()}-${index}`;
       return {
@@ -172,7 +335,7 @@ function customizeSkills(baseSkills: string[], resumeText: string, interests: st
   return [...customizedSkills, ...relevantSkills].slice(0, 6);
 }
 
-function customizeIndustries(baseIndustries: string[], industry?: string, interests: string[] = [], rng: () => number): string[] {
+function customizeIndustries(baseIndustries: string[], rng: () => number, industry?: string, interests: string[] = []): string[] {
   const allIndustries = ['Technology', 'Finance', 'Healthcare', 'E-commerce', 'Media', 'Education', 'Gaming', 'Automotive'];
   
   let customizedIndustries = [...baseIndustries];

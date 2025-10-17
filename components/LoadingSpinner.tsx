@@ -3,9 +3,10 @@ import { motion } from "framer-motion";
 interface LoadingSpinnerProps {
   size?: "sm" | "md" | "lg";
   className?: string;
+  text?: string;
 }
 
-export default function LoadingSpinner({ size = "md", className = "" }: LoadingSpinnerProps) {
+export default function LoadingSpinner({ size = "md", className = "", text }: LoadingSpinnerProps) {
   const sizeClasses = {
     sm: "w-4 h-4",
     md: "w-8 h-8", 
@@ -13,38 +14,9 @@ export default function LoadingSpinner({ size = "md", className = "" }: LoadingS
   };
 
   return (
-    <div className={`flex items-center justify-center ${className}`}>
+    <div className={`flex flex-col items-center justify-center gap-4 ${className}`}>
       <motion.div
-        className={`${sizeClasses[size]} border-2 border-[#1C1C1E] border-t-[#6A0DAD] rounded-full`}
-        animate={{ rotate: 360 }}
-        transition={{
-          duration: 1,
-          repeat: Infinity,
-          ease: "linear"
-        }}
-      />
-    </div>
-  );
-}
-// components/LoadingSpinner.tsx
-import { motion } from 'framer-motion';
-
-interface LoadingSpinnerProps {
-  size?: 'sm' | 'md' | 'lg';
-  text?: string;
-}
-
-export default function LoadingSpinner({ size = 'md', text }: LoadingSpinnerProps) {
-  const sizeClasses = {
-    sm: 'w-4 h-4',
-    md: 'w-8 h-8',
-    lg: 'w-12 h-12'
-  };
-
-  return (
-    <div className="flex flex-col items-center justify-center gap-4">
-      <motion.div
-        className={`${sizeClasses[size]} border-2 border-transparent border-t-velricViolet border-r-plasmaBlue rounded-full`}
+        className={`${sizeClasses[size]} border-2 border-transparent border-t-purple-500 border-r-purple-400 rounded-full`}
         animate={{ rotate: 360 }}
         transition={{
           duration: 1,
