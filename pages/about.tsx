@@ -129,8 +129,56 @@ const About = () => {
           ))}
         </div>
       </section>
+      {/* Contact section at bottom */}
+      <section className="max-w-3xl mx-auto px-4 md:px-8 lg:px-16 py-20 relative z-10 text-center">
+        <h2 className="text-3xl font-semibold mb-4">
+          Get in <span className="text-purple-400 font-bold">Touch</span>
+        </h2>
+        <p className="text-white/80 mb-10">
+          For press, partnerships, or general questions — we’d love to hear from you.
+        </p>
 
+        <div className="grid gap-6 sm:grid-cols-2">
+          <a
+            href="mailto:contact@velric.com"
+            className="border border-white/10 rounded-xl p-5 hover:border-purple-400/40 transition"
+          >
+            <h3 className="text-sm text-white/60 mb-1">Email</h3>
+            <p className="font-medium">contact@velric.com</p>
+          </a>
+
+          <a
+            href="https://www.linkedin.com/company/velric"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border border-white/10 rounded-xl p-5 hover:border-purple-400/40 transition"
+          >
+            <h3 className="text-sm text-white/60 mb-1">LinkedIn</h3>
+            <p className="font-medium">Connect with us</p>
+          </a>
+
+          <a
+            href="https://wa.me/17787723980"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border border-white/10 rounded-xl p-5 hover:border-purple-400/40 transition"
+          >
+            <h3 className="text-sm text-white/60 mb-1">WhatsApp</h3>
+            <p className="font-medium">Chat with us</p>
+          </a>
+
+          <a
+            href="https://www.instagram.com/velric.ai/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border border-white/10 rounded-xl p-5 hover:border-purple-400/40 transition"
+          >
+            <h3 className="text-sm text-white/60 mb-1">Instagram</h3>
+            <p className="font-medium">@velric.ai</p>
+          </a>
+        </div>
       <Footer />
+      </section>
     </div>
   );
 };

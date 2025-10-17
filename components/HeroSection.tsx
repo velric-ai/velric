@@ -128,7 +128,7 @@ export default function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
         >
-          Companies recruit through AI missions, and every candidate earns a Velric Score that proves real ability.
+          Proof driven hiring starts with us.
         </motion.p>
 
         <motion.div
