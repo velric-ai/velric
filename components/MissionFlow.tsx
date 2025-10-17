@@ -36,7 +36,7 @@ export default function MissionFlow({ width, height, text, className = "" }: Mis
     }, 2000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [steps.length]);
 
   return (
     <div 

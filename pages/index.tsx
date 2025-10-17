@@ -1,8 +1,6 @@
 import Head from "next/head";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import CTAButton from "@/components/CTAButton";
-import ValuePropCard from "@/components/ValuePropCard";
 import WaitlistForm from "@/components/WaitlistForm";
 
 import Footer from "@/components/Footer";
@@ -11,7 +9,6 @@ import InteractiveAIVisual from "@/components/InteractiveAIVisual";
 import HumanAIConnection from "@/components/HumanAIConnection";
 import InteractiveDashboard from "@/components/InteractiveDashboard";
 import MissionFlow from "@/components/MissionFlow";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { Circle, Triangle, Hexagon } from "lucide-react";
@@ -161,7 +158,7 @@ export default function Home() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              The resume is a <strong className="text-purple-400">1930s invention</strong>. We're building its <strong className="text-purple-300">replacement</strong>. <strong className="text-purple-400">Velric</strong> turns real work into measurable proof. <strong className="text-purple-300">AI built missions</strong> test ability, and your <strong className="text-purple-500">Velric Score</strong> becomes the new standard companies hire through.
+              The resume is a <strong className="text-purple-400">1930s invention</strong>. We&apos;re building its <strong className="text-purple-300">replacement</strong>. <strong className="text-purple-400">Velric</strong> turns real work into measurable proof. <strong className="text-purple-300">AI built missions</strong> test ability, and your <strong className="text-purple-500">Velric Score</strong> becomes the new standard companies hire through.
             </motion.p>
           </motion.div>
           <motion.div
@@ -281,7 +278,7 @@ export default function Home() {
                 </svg>
               </div>
               <h3>1. No Resumes</h3>
-              <p>Resumes were invented in the 1930s and haven't evolved since. Velric replaces them with personalized proof of work missions that reveal how candidates actually think, build, and perform.</p>
+              <p>Resumes were invented in the 1930s and haven&apos;t evolved since. Velric replaces them with personalized proof of work missions that reveal how candidates actually think, build, and perform.</p>
               <div className="diff-visual">
                 <MissionFlow
                   width={320}
@@ -306,7 +303,7 @@ export default function Home() {
                 </svg>
               </div>
               <h3>2. No Guesswork</h3>
-              <p>Recruiters waste hours screening candidates based on buzzwords. Velric's AI evaluates real work, generating a Velric Score that quantifies skill, consistency, and problem solving ability.</p>
+              <p>Recruiters waste hours screening candidates based on buzzwords. Velric&apos;s AI evaluates real work, generating a Velric Score that quantifies skill, consistency, and problem solving ability.</p>
               <div className="diff-visual">
                 <HumanAIConnection
                   width={320}
@@ -440,6 +437,7 @@ export default function Home() {
                     transition={{ duration: 0.3 }}
                   >
                     {(() => {
+                      // eslint-disable-next-line @typescript-eslint/no-require-imports
                       const LucideIcon = require('lucide-react')[item.icon];
                       return (
                         <div className="relative">

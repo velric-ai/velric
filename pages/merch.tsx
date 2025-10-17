@@ -57,7 +57,7 @@ const Merch = () => {
   // Debug: Log the image paths
   useEffect(() => {
     console.log("Merch items with image paths:", merchItems.map(item => ({ name: item.name, image: item.image })));
-  }, []);
+  }, [merchItems]);
 
   return (
     <div className="bg-[#0D0D0D] text-white relative overflow-hidden">
