@@ -251,11 +251,10 @@ export default function GeneratePage() {
                       animate={{ opacity: 1 }}
                       className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                     >
-                      {missions.map((mission, index) => (
+                      {missions.map((mission) => (
                         <MissionCard
                           key={mission.id}
                           mission={mission}
-                          index={index}
                         />
                       ))}
                     </motion.div>
