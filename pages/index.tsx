@@ -438,7 +438,6 @@ export default function Home() {
                     transition={{ duration: 0.3 }}
                   >
                     {(() => {
-                      // eslint-disable-next-line @typescript-eslint/no-require-imports
                       const LucideIcon = require('lucide-react')[item.icon];
                       return (
                         <div className="relative">
