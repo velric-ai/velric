@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Circle, Triangle, Hexagon } from "lucide-react";
-import { TypeAnimation } from "react-type-animation"; 
+import { TypeAnimation } from "react-type-animation";
 
 const RequestDemo = () => {
   useEffect(() => {
@@ -38,14 +38,24 @@ const RequestDemo = () => {
         <motion.div
           className="absolute top-1/3 right-20 text-purple-400/15"
           animate={{ y: [0, 25, 0] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          transition={{
+            duration: 5,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1,
+          }}
         >
           <Triangle size={40} fill="currentColor" />
         </motion.div>
         <motion.div
           className="absolute bottom-1/4 left-1/4 text-purple-600/10"
           animate={{ y: [0, -30, 0] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          transition={{
+            duration: 7,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.5,
+          }}
         >
           <Hexagon size={80} fill="currentColor" />
         </motion.div>
@@ -74,9 +84,9 @@ const RequestDemo = () => {
           Request a Demo
         </h1>
 
-        {/* 👇 Added Typing Animation Here */}
+        {/* 👇 Smoothed Typing Animation */}
         <motion.div
-          className="text-white/80 text-base md:text-lg"
+          className="text-white/80 text-base md:text-lg mt-2"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.8 }}
@@ -84,14 +94,24 @@ const RequestDemo = () => {
           <TypeAnimation
             sequence={[
               "For recruiting teams and companies evaluating Velric...",
-              2000,
-              "Tell us a bit about your org and goals.",
-              2000,
+              2500,
+              "",
+              800,
+              "Tell us a bit about your organization and goals.",
+              2500,
+              "",
+              800,
             ]}
-            wrapper="span"
+            speed={50} // slower typing speed
+            deletionSpeed={40} // smoother backspacing
             cursor={true}
             repeat={Infinity}
-            style={{ display: "inline-block" }}
+            wrapper="span"
+            style={{
+              display: "inline-block",
+              color: "rgba(255, 255, 255, 0.85)",
+              transition: "all 0.3s ease-in-out",
+            }}
           />
         </motion.div>
       </motion.section>
@@ -210,7 +230,6 @@ const Field = ({
   type?: string;
   required?: boolean;
   placeholder?: string;
-
 }) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
