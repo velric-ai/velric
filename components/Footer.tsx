@@ -7,8 +7,9 @@ const Footer = () => (
   <footer className="bg-[#0D0D0D] text-white border-t border-[#E0E0DC]/10 px-6 md:px-12 lg:px-20 pt-12 pb-6">
     {/* Tagline */}
     <div className="max-w-7xl mx-auto mb-8 text-center">
-      <h2 className="text-xl md:text-2xl font-bold text-[#F5F5F5]">
-        The Global Benchmark for Hiring
+      <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-400 via-purple-300 to-blue-400 bg-clip-text text-transparent animate-gradient-x relative">
+        <span className="absolute inset-0 bg-gradient-to-r from-purple-400 via-purple-300 to-blue-400 bg-clip-text text-transparent blur-sm opacity-50"></span>
+        <span className="relative z-10">The Global Benchmark for Hiring</span>
       </h2>
     </div>
 

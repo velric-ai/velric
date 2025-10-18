@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import Image from "next/image";
 import { Circle, Triangle, Hexagon } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -54,9 +53,17 @@ const Merch = () => {
     }
   ], []);
 
-  // Debug: Log the image paths
+  // Debug: Log the image paths and test accessibility
   useEffect(() => {
     console.log("Merch items with image paths:", merchItems.map(item => ({ name: item.name, image: item.image })));
+
+    // Test if images are accessible
+    merchItems.forEach(item => {
+      const img = new Image();
+      img.onload = () => console.log(`✅ Image accessible: ${item.image}`);
+      img.onerror = () => console.error(`❌ Image NOT accessible: ${item.image}`);
+      img.src = item.image;
+    });
   }, [merchItems]);
 
   return (
@@ -122,32 +129,39 @@ const Merch = () => {
               }}
             >
               {/* Product Image */}
-              <div className="relative h-80 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center p-8 overflow-hidden">
-                <div className="relative w-full h-full flex items-center justify-center">
-                  {/* Next.js Image */}
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    width={280}
-                    height={280}
-                    className="object-contain hover:scale-110 transition-transform duration-500 drop-shadow-2xl"
-                    priority={index < 2}
-                    quality={95}
-                    unoptimized
-                    onLoad={() => {
-                      console.log(`Successfully loaded image: ${item.image}`);
-                    }}
-                    onError={(e) => {
-                      console.error(`Failed to load image: ${item.image}`, e);
-                      // Fallback: try to show regular img tag
-                      const imgElement = e.currentTarget;
-                      const fallbackImg = document.createElement('img');
-                      fallbackImg.src = item.image;
-                      fallbackImg.alt = item.name;
-                      fallbackImg.className = "object-contain w-full h-full hover:scale-110 transition-transform duration-500 drop-shadow-2xl";
-                      imgElement.parentNode?.replaceChild(fallbackImg, imgElement);
-                    }}
-                  />
+              <div className="relative h-80 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-8 overflow-hidden rounded-t-3xl product-image-container">
+                <div className="relative w-full h-full flex items-center justify-center min-h-[200px]">
+                  {/* Enhanced Image Display */}
+                  <div className="relative w-full h-full max-w-xs max-h-xs bg-white/70 rounded-lg p-4 backdrop-blur-sm border border-white/20 shadow-lg">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="merch-product-image w-full h-full object-contain hover:scale-110 transition-transform duration-500 drop-shadow-2xl"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                        display: 'block',
+                        margin: 'auto',
+                        opacity: 1,
+                        visibility: 'visible'
+                      }}
+                      onLoad={(e) => {
+                        console.log(`Successfully loaded image: ${item.image}`);
+                        e.currentTarget.style.opacity = '1';
+                        e.currentTarget.style.visibility = 'visible';
+                      }}
+                      onError={(e) => {
+                        console.error(`Failed to load image: ${item.image}`);
+                        console.error(`Full path attempted: ${window.location.origin}${item.image}`);
+                        // Show fallback with better styling
+                        const fallback = document.createElement('div');
+                        fallback.className = 'w-full h-full flex items-center justify-center text-purple-400 text-6xl font-bold bg-gradient-to-br from-purple-900/20 to-purple-700/20 rounded-lg border border-purple-500/30';
+                        fallback.innerHTML = item.name.charAt(0);
+                        e.currentTarget.parentNode?.appendChild(fallback);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
                 </div>
                 <div className="absolute top-4 right-4 bg-purple-500 text-white text-sm px-3 py-1 rounded-full font-semibold shadow-lg">
                   {item.price}

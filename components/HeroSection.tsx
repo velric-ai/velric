@@ -114,6 +114,7 @@ export default function HeroSection() {
           <motion.span
             className="word highlight-results"
             data-word="4"
+            data-text="Hiring."
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}

@@ -9,6 +9,9 @@ import InteractiveAIVisual from "@/components/InteractiveAIVisual";
 import HumanAIConnection from "@/components/HumanAIConnection";
 import InteractiveDashboard from "@/components/InteractiveDashboard";
 import MissionFlow from "@/components/MissionFlow";
+import CircularProgressRing from "@/components/CircularProgressRing";
+import AnimatedDashboard from "@/components/AnimatedDashboard";
+import ConnectionAnimation from "@/components/ConnectionAnimation";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { Circle, Triangle, Hexagon } from "lucide-react";
@@ -175,79 +178,106 @@ export default function Home() {
           </motion.div>
         </section>
 
-        {/* ⚙️ How Velric Works - Cluely-style Feature Cards */}
-        <section className="features-section section-spacing relative z-10">
+        {/* ⚙️ How Velric Works - Completely Redesigned with Custom Visuals */}
+        <section className="velric-works-section section-spacing relative z-10 max-w-7xl mx-auto px-4 md:px-8 lg:px-16">
           <motion.h2
-            className="section-title"
+            className="text-4xl md:text-5xl font-extrabold mb-16 text-center text-white relative z-10"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            How <span className="highlight">Velric</span> Works
+            How <span className="bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">Velric</span> Works
           </motion.h2>
 
-          <div className="features-grid">
-            {/* Card 1 */}
+          {/* Cards Grid */}
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            
+            {/* Card 1 - Take Real-World Missions */}
             <motion.div
-              className="feature-card"
-              initial={{ opacity: 0, y: 50 }}
+              className="velric-card group relative"
+              initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
+              transition={{ duration: 0.8, delay: 0.1, ease: [0.4, 0.0, 0.2, 1] }}
+              whileHover={{ 
+                y: -8,
+                boxShadow: "0 25px 50px rgba(147, 51, 234, 0.4)"
+              }}
             >
-              <div className="feature-visual">
-                <MissionFlow
-                  width={400}
-                  height={280}
-                  text="Mission Interface"
-                  className="w-full h-full rounded-2xl"
-                />
-                <div className="feature-badge">No simulations</div>
+              {/* Custom Circular Progress Ring */}
+              <div className="flex justify-center mb-6">
+                <CircularProgressRing />
               </div>
-              <h3>Take Real-World Missions</h3>
-              <p>Convert professional deliverables into interactive missions to gain hands-on experience with actual industry work.</p>
+              
+              <h3 className="text-xl font-bold text-white mb-3 group-hover:text-purple-300 transition-colors">
+                1. Take Real-World Missions
+              </h3>
+              <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                Convert professional deliverables into interactive missions to gain hands-on experience with actual industry work.
+              </p>
+              
+              <div className="inline-block bg-purple-500 text-white text-xs px-3 py-1 rounded-full">
+                No simulations
+              </div>
             </motion.div>
 
-            {/* Card 2 */}
+            {/* Card 2 - Get Your Velric Score */}
             <motion.div
-              className="feature-card"
-              initial={{ opacity: 0, y: 50 }}
+              className="velric-card group relative"
+              initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 0.8, delay: 0.3, ease: [0.4, 0.0, 0.2, 1] }}
+              whileHover={{ 
+                y: -8,
+                boxShadow: "0 25px 50px rgba(59, 130, 246, 0.4)"
+              }}
             >
-              <div className="feature-visual">
-                <InteractiveDashboard
-                  width={400}
-                  height={280}
-                  text="Score Dashboard"
-                  className="w-full h-full rounded-2xl"
-                />
+              {/* Custom Animated Dashboard */}
+              <div className="mb-6">
+                <AnimatedDashboard />
               </div>
-              <h3>Get Your Velric Score</h3>
-              <p>Our AI engine evaluates your work in real-time, providing comprehensive feedback and a detailed performance score.</p>
+              
+              <h3 className="text-xl font-bold text-white mb-3 group-hover:text-blue-300 transition-colors">
+                2. Get Your Velric Score
+              </h3>
+              <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                Our AI engine evaluates your work in real-time, providing comprehensive feedback and a detailed performance score.
+              </p>
+              
+              <div className="inline-block bg-blue-500 text-white text-xs px-3 py-1 rounded-full">
+                AI-Powered
+              </div>
             </motion.div>
 
-            {/* Card 3 */}
+            {/* Card 3 - Unlock Career Opportunities */}
             <motion.div
-              className="feature-card"
-              initial={{ opacity: 0, y: 50 }}
+              className="velric-card group relative"
+              initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+              transition={{ duration: 0.8, delay: 0.5, ease: [0.4, 0.0, 0.2, 1] }}
+              whileHover={{ 
+                y: -8,
+                boxShadow: "0 25px 50px rgba(34, 197, 94, 0.4)"
+              }}
             >
-              <div className="feature-visual">
-                <HumanAIConnection
-                  width={400}
-                  height={280}
-                  text="Career Opportunities"
-                  className="w-full h-full rounded-2xl"
-                />
-                <div className="feature-badge">Get Hired</div>
+              {/* Custom Connection Animation */}
+              <div className="mb-6">
+                <ConnectionAnimation />
               </div>
-              <h3>Unlock Career Opportunities</h3>
-              <p>Showcase your skills and portfolio to top employers. Let your real work speak louder than your resume.</p>
+              
+              <h3 className="text-xl font-bold text-white mb-3 group-hover:text-green-300 transition-colors">
+                3. Unlock Career Opportunities
+              </h3>
+              <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                Showcase your skills and portfolio to top employers. Let your real work speak louder than your resume.
+              </p>
+              
+              <div className="inline-block bg-green-500 text-white text-xs px-3 py-1 rounded-full">
+                Get Hired
+              </div>
             </motion.div>
           </div>
         </section>
