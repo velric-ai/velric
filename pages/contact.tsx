@@ -210,6 +210,7 @@ const Field = ({
   type?: string;
   required?: boolean;
   placeholder?: string;
+
 }) => (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
