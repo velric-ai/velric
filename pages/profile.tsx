@@ -191,6 +191,55 @@ export default function Profile() {
           </form>
         </div>
 
+        {/* Survey Responses */}
+        <div className="bg-gray-900/50 border border-gray-700 rounded-2xl p-8 mb-8">
+          <h3 className="text-xl font-bold text-white mb-4">Survey Responses</h3>
+          {user.user_metadata?.survey_completed ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Field of Interest</label>
+                  <p className="text-white">{user.user_metadata.survey_data?.field_of_interest || 'Not provided'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Skill Level</label>
+                  <p className="text-white">{user.user_metadata.survey_data?.skill_level || 'Not provided'}</p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Resume Summary</label>
+                <div className="bg-gray-800 rounded-lg p-4 max-h-32 overflow-y-auto">
+                  <p className="text-white text-sm whitespace-pre-wrap">
+                    {user.user_metadata.survey_data?.resume_text 
+                      ? `${user.user_metadata.survey_data.resume_text.substring(0, 200)}${user.user_metadata.survey_data.resume_text.length > 200 ? '...' : ''}`
+                      : 'Not provided'
+                    }
+                  </p>
+                </div>
+              </div>
+              <Link 
+                href="/survey"
+                className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors duration-300"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit Survey Responses
+              </Link>
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <p className="text-gray-400 mb-4">You haven't completed the survey yet.</p>
+              <Link 
+                href="/survey"
+                className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-blue-600 transition-all duration-300 inline-flex items-center gap-2"
+              >
+                Complete Survey
+              </Link>
+            </div>
+          )}
+        </div>
+
         {/* Account Info */}
         <div className="bg-gray-900/50 border border-gray-700 rounded-2xl p-8">
           <h3 className="text-xl font-bold text-white mb-4">Account Information</h3>

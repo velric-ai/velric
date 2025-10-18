@@ -1,7 +1,8 @@
-// lib/authContext.ts
+// lib/authContext.tsx
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from './supabaseClient';
+import { useRouter } from 'next/router';
 
 interface AuthContextType {
   user: User | null;
@@ -21,6 +22,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     // Get initial session
