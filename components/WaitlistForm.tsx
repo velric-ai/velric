@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import AfterSubmit from "./AfterSubmit";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Mail, Briefcase, Check, Sparkles, ChevronDown } from "lucide-react";
 
