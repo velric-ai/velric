@@ -44,7 +44,7 @@ export default async function handler(
     });
   } catch (error) {
     console.error('Error updating user mission:', error);
-    res.status(500).json({
+    res.status(500).json({ 
       success: false,
       error: 'Failed to update user mission',
       userMission: {} as any
