@@ -16,24 +16,33 @@ export async function getCompletedSubmissionsByUser(userId: string) {
   return data || [];
 }
 // lib/supabaseClient.ts
-import { createClient } from '@supabase/supabase-js';
-import { MissionTemplate, UserMission, Project, ProjectDoc, UserMissionActionRequest } from '@/types';
-import { MockDataStore, mockMissionTemplates } from '@/data/mockMissions';
+import { createClient } from "@supabase/supabase-js";
+import {
+  MissionTemplate,
+  UserMission,
+  Project,
+  ProjectDoc,
+  UserMissionActionRequest,
+} from "@/types";
+import { MockDataStore, mockMissionTemplates } from "@/data/mockMissions";
 
 // Supabase configuration
-const supabaseUrl = 'https://yzszgcnuxpkvxueivbyx.supabase.co';
-const supabaseKey = process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = "https://yzszgcnuxpkvxueivbyx.supabase.co";
+const supabaseKey =
+  process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 // Initialize Supabase client
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Toggle between dummy data and real Supabase
-export const USE_DUMMY = !supabaseKey || process.env.USE_DUMMY_DATA === 'true';
+export const USE_DUMMY = !supabaseKey || process.env.USE_DUMMY_DATA === "true";
 
 if (USE_DUMMY) {
-  console.warn('Using dummy data mode. Set SUPABASE_KEY environment variable to use real database.');
+  console.warn(
+    "Using dummy data mode. Set SUPABASE_KEY environment variable to use real database."
+  );
 } else {
-  console.log('Connected to Supabase database.');
+  console.log("Connected to Supabase database.");
 }
 
 const mockStore = MockDataStore.getInstance();
@@ -59,10 +68,10 @@ export async function getMissions(status?: string): Promise<MissionTemplate[]> {
   }
 
   // Real Supabase implementation
-  let query = supabase.from('mission_templates').select('*');
+  let query = supabase.from("missions").select("*");
   if (status) {
     // Join with user_missions table to filter by status
-    query = query.eq('user_missions.status', status);
+    query = query.eq("user_missions.status", status);
   }
 
   const { data, error } = await query;
@@ -79,7 +88,7 @@ export async function getMissionById(
   }
 
   const { data, error } = await supabase
-    .from("mission_templates")
+    .from("missions")
     .select("*")
     .eq("id", id)
     .single();
@@ -269,50 +278,37 @@ export async function addGeneratedMissions(
     return;
   }
 
-  const { error } = await supabase.from("mission_templates").insert(missions);
+  const { error } = await supabase.from("missions").insert(missions);
 
   if (error) throw error;
 }
 
 // Get personalized missions for a user
-export async function getPersonalizedMissions(userId: string): Promise<MissionTemplate[]> {
+export async function getPersonalizedMissions(userId: string) {
   if (USE_DUMMY) {
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     return mockStore.missionTemplates;
   }
 
-  // Get user survey data for personalization
-  const { data: surveyData } = await supabase
-    .from('user_surveys')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
+  const { data: existingMissions, error: existingError } = await supabase
+    .from("user_missions")
+    .select("mission_id")
+    .eq("user_id", userId);
 
-  // Get existing user missions to filter out already assigned ones
-  const { data: existingMissions } = await supabase
-    .from('user_missions')
-    .select('mission_id')
-    .eq('user_id', userId);
+  if (existingError) throw existingError;
 
-  const existingMissionIds = existingMissions?.map((um: any) => um.mission_id) || [];
+  const existingMissionIds = existingMissions?.map((m) => m.mission_id) || [];
 
-  // Query for missions that match user preferences
-  let query = supabase
-    .from('mission_templates')
-    .select('*')
-    .not('id', 'in', `(${existingMissionIds.join(',')})`)
-    .limit(20);
+  let query = supabase.from("missions").select("*");
 
-  if (surveyData?.difficulty_level) {
-    query = query.eq('difficulty', surveyData.difficulty_level);
+  if (existingMissionIds.length > 0) {
+    query = query.not("id", "in", `(${existingMissionIds.join(",")})`);
   }
 
-  const { data: missions, error } = await query;
+  const { data, error } = await query;
   if (error) throw error;
 
-  return missions || [];
+  return data || [];
 }
 
 // Get company projects for mission generation
@@ -323,51 +319,77 @@ export async function getCompanyProjects(filters?: {
   limit?: number;
 }): Promise<any[]> {
   if (USE_DUMMY) {
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     // Return mock company projects data
     return [
       {
-        id: '1',
-        company_name: 'Netflix',
-        project_title: 'Content Recommendation Engine',
-        project_description: 'Build a machine learning system that analyzes user viewing history and preferences to recommend personalized content',
-        technologies_used: ['Python', 'TensorFlow', 'Redis', 'FastAPI', 'PostgreSQL'],
-        industry: 'Media',
-        difficulty_level: 'Advanced',
-        project_type: 'Data Science',
-        estimated_time: '6-8 hours',
-        learning_objectives: ['Machine Learning algorithms', 'Collaborative filtering', 'Content-based filtering', 'Real-time recommendations'],
-        business_context: 'Netflix uses sophisticated recommendation algorithms to keep users engaged and reduce churn'
+        id: "1",
+        company_name: "Netflix",
+        project_title: "Content Recommendation Engine",
+        project_description:
+          "Build a machine learning system that analyzes user viewing history and preferences to recommend personalized content",
+        technologies_used: [
+          "Python",
+          "TensorFlow",
+          "Redis",
+          "FastAPI",
+          "PostgreSQL",
+        ],
+        industry: "Media",
+        difficulty_level: "Advanced",
+        project_type: "Data Science",
+        estimated_time: "6-8 hours",
+        learning_objectives: [
+          "Machine Learning algorithms",
+          "Collaborative filtering",
+          "Content-based filtering",
+          "Real-time recommendations",
+        ],
+        business_context:
+          "Netflix uses sophisticated recommendation algorithms to keep users engaged and reduce churn",
       },
       {
-        id: '2', 
-        company_name: 'Stripe',
-        project_title: 'Payment Processing System',
-        project_description: 'Create a secure payment processing system with fraud detection and multi-currency support',
-        technologies_used: ['Node.js', 'Express', 'PostgreSQL', 'Redis', 'Docker'],
-        industry: 'Finance',
-        difficulty_level: 'Advanced',
-        project_type: 'Backend',
-        estimated_time: '5-7 hours',
-        learning_objectives: ['Payment processing', 'Security best practices', 'Fraud detection', 'API design'],
-        business_context: 'Stripe processes billions of dollars in transactions and needs robust systems'
-      }
+        id: "2",
+        company_name: "Stripe",
+        project_title: "Payment Processing System",
+        project_description:
+          "Create a secure payment processing system with fraud detection and multi-currency support",
+        technologies_used: [
+          "Node.js",
+          "Express",
+          "PostgreSQL",
+          "Redis",
+          "Docker",
+        ],
+        industry: "Finance",
+        difficulty_level: "Advanced",
+        project_type: "Backend",
+        estimated_time: "5-7 hours",
+        learning_objectives: [
+          "Payment processing",
+          "Security best practices",
+          "Fraud detection",
+          "API design",
+        ],
+        business_context:
+          "Stripe processes billions of dollars in transactions and needs robust systems",
+      },
     ];
   }
 
   let query = supabase
-    .from('company_projects')
-    .select('*')
-    .eq('is_active', true);
+    .from("company_projects")
+    .select("*")
+    .eq("is_active", true);
 
   if (filters?.industry) {
-    query = query.eq('industry', filters.industry);
+    query = query.eq("industry", filters.industry);
   }
   if (filters?.difficulty) {
-    query = query.eq('difficulty_level', filters.difficulty);
+    query = query.eq("difficulty_level", filters.difficulty);
   }
   if (filters?.projectType) {
-    query = query.eq('project_type', filters.projectType);
+    query = query.eq("project_type", filters.projectType);
   }
 
   query = query.limit(filters?.limit || 10);
@@ -379,35 +401,36 @@ export async function getCompanyProjects(filters?: {
 }
 
 // Save user survey data
-export async function saveUserSurvey(userId: string, surveyData: {
-  experienceLevel?: string;
-  programmingLanguages?: string[];
-  interests?: string[];
-  careerGoals?: string[];
-  industryPreferences?: string[];
-  availabilityHoursPerWeek?: number;
-  preferredProjectTypes?: string[];
-  resumeText?: string;
-}): Promise<void> {
+export async function saveUserSurvey(
+  userId: string,
+  surveyData: {
+    experienceLevel?: string;
+    programmingLanguages?: string[];
+    interests?: string[];
+    careerGoals?: string[];
+    industryPreferences?: string[];
+    availabilityHoursPerWeek?: number;
+    preferredProjectTypes?: string[];
+    resumeText?: string;
+  }
+): Promise<void> {
   if (USE_DUMMY) {
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     return;
   }
 
-  const { error } = await supabase
-    .from('user_surveys')
-    .upsert({
-      user_id: userId,
-      experience_level: surveyData.experienceLevel,
-      programming_languages: surveyData.programmingLanguages,
-      interests: surveyData.interests,
-      career_goals: surveyData.careerGoals,
-      industry_preferences: surveyData.industryPreferences,
-      availability_hours_per_week: surveyData.availabilityHoursPerWeek,
-      preferred_project_types: surveyData.preferredProjectTypes,
-      resume_text: surveyData.resumeText,
-      completed_at: new Date().toISOString()
-    });
+  const { error } = await supabase.from("user_surveys").upsert({
+    user_id: userId,
+    experience_level: surveyData.experienceLevel,
+    programming_languages: surveyData.programmingLanguages,
+    interests: surveyData.interests,
+    career_goals: surveyData.careerGoals,
+    industry_preferences: surveyData.industryPreferences,
+    availability_hours_per_week: surveyData.availabilityHoursPerWeek,
+    preferred_project_types: surveyData.preferredProjectTypes,
+    resume_text: surveyData.resumeText,
+    completed_at: new Date().toISOString(),
+  });
 
   if (error) throw error;
 }
@@ -415,27 +438,27 @@ export async function saveUserSurvey(userId: string, surveyData: {
 // Get user survey data
 export async function getUserSurvey(userId: string): Promise<any> {
   if (USE_DUMMY) {
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     return {
-      experience_level: 'intermediate',
-      programming_languages: ['JavaScript', 'Python', 'React'],
-      interests: ['Full-Stack Development', 'AI/ML', 'Web Development'],
-      career_goals: ['Senior Software Engineer'],
-      industry_preferences: ['Technology', 'E-commerce'],
+      experience_level: "intermediate",
+      programming_languages: ["JavaScript", "Python", "React"],
+      interests: ["Full-Stack Development", "AI/ML", "Web Development"],
+      career_goals: ["Senior Software Engineer"],
+      industry_preferences: ["Technology", "E-commerce"],
       availability_hours_per_week: 10,
-      preferred_project_types: ['Full-Stack', 'Backend'],
-      resume_text: 'Sample resume text...'
+      preferred_project_types: ["Full-Stack", "Backend"],
+      resume_text: "Sample resume text...",
     };
   }
 
   const { data, error } = await supabase
-    .from('user_surveys')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+    .from("user_surveys")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
     .limit(1)
     .single();
 
-  if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
+  if (error && error.code !== "PGRST116") throw error; // PGRST116 is "not found"
   return data;
 }
