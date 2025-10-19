@@ -12,15 +12,20 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@supabase/supabase-js": "^2.75.1",
+    "@supabase/supabase-js": "^2.75.0",
     "framer-motion": "^12.23.9",
     "lucide-react": "^0.536.0",
-    "next": "15.4.4",
+    "next": "^15.5.4",
+<<<<<<< HEAD
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+=======
     "openai": "^6.5.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-hook-form": "^7.62.0",
-    "zod": "^4.1.9"
+>>>>>>> origin/rabbihusainlatest
+    "react-hook-form": "^7.65.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

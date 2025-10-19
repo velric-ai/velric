@@ -27,8 +27,15 @@ const supabaseKey = process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE
 // Initialize Supabase client
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Toggle between dummy data and real Supabase
-export const USE_DUMMY = !supabaseKey || process.env.USE_DUMMY_DATA === 'true';
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+
+// let supabase: any = null;
 
 if (USE_DUMMY) {
   console.warn('Using dummy data mode. Set SUPABASE_KEY environment variable to use real database.');
