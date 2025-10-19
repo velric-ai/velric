@@ -408,3 +408,27 @@ export async function getUserSurvey(userId: string): Promise<any> {
   if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
   return data;
 }
+
+// Get user's mission status
+export async function getUserMissionStatus(userId: string, missionId: string): Promise<any> {
+  if (USE_DUMMY) {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // Check if mission exists in mock data
+    const userMission = mockStore.userMissions.find(
+      um => um.user_id === userId && um.mission_id === missionId
+    );
+    
+    return userMission || null;
+  }
+
+  const { data, error } = await supabase
+    .from('user_missions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('mission_id', missionId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
+  return data;
+}

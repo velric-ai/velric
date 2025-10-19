@@ -15,6 +15,11 @@ export default function MissionDetailPage() {
   const [mission, setMission] = useState<MissionTemplate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [missionStatus, setMissionStatus] = useState<string>('suggested');
+  const [isStarting, setIsStarting] = useState(false);
+
+  // For demo purposes, using a hardcoded user ID
+  const userId = "demo-user-123";
 
   useEffect(() => {
     if (!id || typeof id !== 'string') return;
@@ -24,14 +29,31 @@ export default function MissionDetailPage() {
         setIsLoading(true);
         setError('');
 
-        const response = await fetch(`/api/missions/${id}`);
-        const data = await response.json();
+        // Fetch mission details
+        const missionResponse = await fetch(`/api/missions/${id}`);
+        const missionData = await missionResponse.json();
 
-        if (!data.success) {
-          throw new Error(data.error || 'Mission not found');
+        if (!missionData.success) {
+          throw new Error(missionData.error || 'Mission not found');
         }
 
-        setMission(data.mission);
+        setMission(missionData.mission);
+
+        // Fetch user's mission status
+        try {
+          const statusResponse = await fetch(`/api/user/missions/${id}?userId=${userId}`);
+          const statusData = await statusResponse.json();
+          
+          if (statusData.success && statusData.userMission) {
+            setMissionStatus(statusData.userMission.status);
+          } else {
+            setMissionStatus('suggested'); // Default status
+          }
+        } catch (statusError) {
+          console.warn('Could not fetch mission status:', statusError);
+          setMissionStatus('suggested');
+        }
+
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load mission';
         setError(errorMessage);
@@ -41,10 +63,44 @@ export default function MissionDetailPage() {
     };
 
     fetchMission();
-  }, [id]);
+  }, [id, userId]);
 
   const handleGoBack = () => {
     router.back();
+  };
+
+  const handleStartMission = async () => {
+    if (!mission || !id) return;
+
+    try {
+      setIsStarting(true);
+
+      const response = await fetch('/api/user/missions/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          missionId: id
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMissionStatus('in_progress');
+        // Navigate to submission page
+        router.push(`/submission/${id}`);
+      } else {
+        alert('Failed to start mission: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error starting mission:', error);
+      alert('Failed to start mission. Please try again.');
+    } finally {
+      setIsStarting(false);
+    }
   };
 
   if (isLoading) {
@@ -321,34 +377,87 @@ export default function MissionDetailPage() {
                     {/* Enhanced Progress Section */}
                     <div className="mt-10">
                       <h3 className="text-xl font-semibold text-[#F5F5F5] mb-4 font-['Space_Grotesk'] flex items-center">
-                        <div className="w-2 h-2 bg-[#00D9FF] rounded-full mr-2 animate-pulse"></div>
+                        <div className={`w-2 h-2 rounded-full mr-2 ${
+                          missionStatus === 'completed' ? 'bg-green-400' : 
+                          missionStatus === 'in_progress' ? 'bg-blue-400 animate-pulse' : 
+                          missionStatus === 'submitted' ? 'bg-yellow-400' :
+                          'bg-gray-400'
+                        }`}></div>
                         Your Progress
                       </h3>
                       <div className="bg-[#0D0D0D]/70 rounded-full h-4 mb-3 overflow-hidden border border-gray-700/50 relative">
                         <div className="absolute inset-0 bg-gradient-to-r from-[#6A0DAD]/20 to-[#00D9FF]/20 animate-pulse"></div>
-                        <div className="bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] h-4 rounded-full w-0 transition-all duration-1000 relative z-10"></div>
+                        <div className={`bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] h-4 rounded-full transition-all duration-1000 relative z-10 ${
+                          missionStatus === 'completed' ? 'w-full' :
+                          missionStatus === 'submitted' ? 'w-4/5' :
+                          missionStatus === 'in_progress' ? 'w-1/4' :
+                          'w-0'
+                        }`}></div>
                       </div>
                       <p className="text-gray-400 text-sm font-['Inter'] flex items-center">
-                        <span className="w-2 h-2 bg-gray-500 rounded-full mr-2"></span>
-                        0% Complete
+                        <span className={`w-2 h-2 rounded-full mr-2 ${
+                          missionStatus === 'completed' ? 'bg-green-400' : 
+                          missionStatus === 'in_progress' ? 'bg-blue-400' : 
+                          missionStatus === 'submitted' ? 'bg-yellow-400' :
+                          'bg-gray-500'
+                        }`}></span>
+                        {missionStatus === 'completed' ? '100% Complete' :
+                         missionStatus === 'submitted' ? '80% Complete - Under Review' :
+                         missionStatus === 'in_progress' ? '25% Complete - In Progress' :
+                         '0% Complete - Not Started'}
                       </p>
                     </div>
 
                     {/* Enhanced Action Buttons */}
                     <div className="space-y-4 mt-8">
-                      <button
-                        type="button"
-                        onClick={() => router.push(`/submission/${mission.id}`)}
-                        className="w-full bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] hover:from-[#6A0DAD]/80 hover:to-[#00D9FF]/80 text-white py-4 rounded-2xl font-semibold font-['Inter'] transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-lg hover:shadow-[#6A0DAD]/50 relative overflow-hidden group/button"
-                      >
-                        <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover/button:translate-x-full transition-transform duration-700"></div>
-                        <span className="relative z-10 flex items-center justify-center">
-                          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Start Mission
-                        </span>
-                      </button>
+                      {missionStatus === 'suggested' && (
+                        <button
+                          type="button"
+                          onClick={handleStartMission}
+                          disabled={isStarting}
+                          className="w-full bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] hover:from-[#6A0DAD]/80 hover:to-[#00D9FF]/80 text-white py-4 rounded-2xl font-semibold font-['Inter'] transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-lg hover:shadow-[#6A0DAD]/50 relative overflow-hidden group/button disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:translate-y-0"
+                        >
+                          <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover/button:translate-x-full transition-transform duration-700"></div>
+                          <span className="relative z-10 flex items-center justify-center">
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 10a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {isStarting ? 'Starting Mission...' : 'Start Mission'}
+                          </span>
+                        </button>
+                      )}
+
+                      {missionStatus === 'in_progress' && (
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/submission/${mission.id}`)}
+                          className="w-full bg-gradient-to-r from-[#00D9FF] to-[#6A0DAD] hover:from-[#00D9FF]/80 hover:to-[#6A0DAD]/80 text-white py-4 rounded-2xl font-semibold font-['Inter'] transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-lg hover:shadow-[#00D9FF]/50 relative overflow-hidden group/button"
+                        >
+                          <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover/button:translate-x-full transition-transform duration-700"></div>
+                          <span className="relative z-10 flex items-center justify-center">
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a1 1 0 01-1-1V9a1 1 0 011-1h1a2 2 0 100-4H4a1 1 0 01-1-1V4a1 1 0 011-1h3a1 1 0 001-1z" />
+                            </svg>
+                            Continue Mission
+                          </span>
+                        </button>
+                      )}
+
+                      {(missionStatus === 'submitted' || missionStatus === 'completed') && (
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/submission/${mission.id}`)}
+                          className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-600/80 hover:to-green-500/80 text-white py-4 rounded-2xl font-semibold font-['Inter'] transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-lg hover:shadow-green-500/50 relative overflow-hidden group/button"
+                        >
+                          <div className="absolute inset-0 bg-white/10 transform -skew-x-12 -translate-x-full group-hover/button:translate-x-full transition-transform duration-700"></div>
+                          <span className="relative z-10 flex items-center justify-center">
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            View Submission
+                          </span>
+                        </button>
+                      )}
 
                       <button
                         type="button"

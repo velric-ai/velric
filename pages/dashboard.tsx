@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import DashboardSection from "@/components/DashboardSection";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { MissionTemplate } from "@/types";
 
 // Hardcoded example data matching database schema
@@ -89,6 +90,7 @@ const mockMissions = {
 };
 
 export default function Dashboard() {
+  const router = useRouter();
   const [missions, setMissions] = useState(mockMissions);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -97,6 +99,36 @@ export default function Dashboard() {
   // For demo purposes, using a hardcoded user ID
   // In a real app, this would come from authentication context
   const userId = "demo-user-123";
+
+  // Mission action handlers
+  const handleStarMission = async (missionId: string) => {
+    try {
+      // TODO: Update mission status in backend
+      console.log('Starring mission:', missionId);
+      // For now, just refresh missions
+      await fetchUserMissions();
+    } catch (error) {
+      console.error('Error starring mission:', error);
+    }
+  };
+
+  const handleStartMission = async (missionId: string) => {
+    try {
+      // Navigate to mission detail page
+      router.push(`/missions/${missionId}`);
+    } catch (error) {
+      console.error('Error starting mission:', error);
+    }
+  };
+
+  const handleViewMission = async (missionId: string) => {
+    try {
+      // Navigate to mission detail page
+      router.push(`/missions/${missionId}`);
+    } catch (error) {
+      console.error('Error viewing mission:', error);
+    }
+  };
 
   useEffect(() => {
     fetchUserMissions();
@@ -228,20 +260,20 @@ export default function Dashboard() {
               className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12"
             >
               <div className="bg-[#1C1C1E] p-6 rounded-2xl text-center">
-                <div className="text-2xl font-bold text-[#6A0DAD]">{mockMissions.completed.length}</div>
+                <div className="text-2xl font-bold text-[#6A0DAD]">{missions.completed.length}</div>
                 <div className="text-sm text-white/70">Completed</div>
               </div>
               <div className="bg-[#1C1C1E] p-6 rounded-2xl text-center">
-                <div className="text-2xl font-bold text-[#00D9FF]">{mockMissions.inProgress.length}</div>
+                <div className="text-2xl font-bold text-[#00D9FF]">{missions.inProgress.length}</div>
                 <div className="text-sm text-white/70">In Progress</div>
               </div>
               <div className="bg-[#1C1C1E] p-6 rounded-2xl text-center">
-                <div className="text-2xl font-bold text-[#F5F5F5]">{mockMissions.starred.length}</div>
+                <div className="text-2xl font-bold text-[#F5F5F5]">{missions.starred.length}</div>
                 <div className="text-sm text-white/70">Starred</div>
               </div>
               <div className="bg-[#1C1C1E] p-6 rounded-2xl text-center">
                 <div className="text-2xl font-bold text-[#6A0DAD]">
-                  {mockMissions.completed.reduce((sum, mission) => sum + (mission.grade || 0), 0) + (mockMissions.completed.length * 10)}
+                  {missions.completed.reduce((sum, mission) => sum + (mission.grade || 0), 0) + (missions.completed.length * 10)}
                 </div>
                 <div className="text-sm text-white/70">Velric Score</div>
               </div>
@@ -257,36 +289,48 @@ export default function Dashboard() {
             <DashboardSection
               title="Starred Missions"
               description="Missions you've saved for later"
-              missions={mockMissions.starred}
+              missions={missions.starred}
               emptyMessage="No starred missions yet. Star missions you want to work on later!"
               icon="⭐"
+              onStar={handleStarMission}
+              onStart={handleStartMission}
+              onView={handleViewMission}
             />
 
             {/* In Progress Missions */}
             <DashboardSection
               title="In Progress"
               description="Missions you're currently working on"
-              missions={mockMissions.inProgress}
+              missions={missions.inProgress}
               emptyMessage="No active missions. Start a mission to see it here!"
               icon="🚀"
+              onStar={handleStarMission}
+              onStart={handleStartMission}
+              onView={handleViewMission}
             />
 
             {/* Completed Missions */}
             <DashboardSection
               title="Completed"
               description="Missions you've successfully finished"
-              missions={mockMissions.completed}
+              missions={missions.completed}
               emptyMessage="No completed missions yet. Complete your first mission to see it here!"
               icon="✅"
+              onStar={handleStarMission}
+              onStart={handleStartMission}
+              onView={handleViewMission}
             />
 
             {/* Suggested Missions */}
             <DashboardSection
               title="Suggested for You"
               description="AI-recommended missions based on your skills and interests"
-              missions={mockMissions.suggested}
+              missions={missions.suggested}
               emptyMessage="No suggestions available. Complete your profile to get personalized recommendations!"
               icon="💡"
+              onStar={handleStarMission}
+              onStart={handleStartMission}
+              onView={handleViewMission}
             />
 
           </div>
