@@ -10,18 +10,46 @@ const MissionSubmissionPage: React.FC = () => {
   const [missionData, setMissionData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const formRef = useRef<HTMLDivElement>(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   useEffect(() => {
-    if (missionId) {
-      // Simulated mission data
-      setTimeout(() => {
+    const fetchMissionData = async () => {
+      if (!missionId || typeof missionId !== 'string') return;
+      
+      try {
+        setLoading(true);
+        
+        const response = await fetch(`/api/missions/${missionId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          setMissionData({
+            id: data.mission.id,
+            title: data.mission.title,
+            description: data.mission.description,
+            deadline: data.mission.timeLimit || "7 days",
+            status: "active",
+            mission: data.mission // Store full mission data
+          });
+        } else {
+          console.error('Failed to fetch mission:', data.error);
+          // Fallback to mock data
+          setMissionData({
+            id: missionId,
+            title: `Mission ${missionId}`,
+            description: "Join our innovative community and submit your groundbreaking mission.",
+            deadline: "7 days",
+            status: "active",
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching mission data:', error);
+        // Fallback to mock data
         setMissionData({
           id: missionId,
           title: `Mission ${missionId}`,
-          description:
-            "Join our innovative community and share your groundbreaking mission solution below.",
-          deadline: "2026-03-25",
+          description: "Join our innovative community and submit your groundbreaking mission.",
+          deadline: "7 days",
           status: "active",
           difficulty: "Intermediate",
           time_estimate: "3 hours",
@@ -29,46 +57,54 @@ const MissionSubmissionPage: React.FC = () => {
           skills: ["React", "TypeScript", "Next.js"],
           industries: ["Technology", "Education"],
         });
+      } finally {
         setLoading(false);
-      }, 1000);
-    }
+      }
+    };
+
+    fetchMissionData();
   }, [missionId]);
 
-  // Handle submission
-  const handleSubmit = async (data: { submissionText: string }) => {
+  const handleSubmission = async (formData: { interests?: string[]; resumeText?: string }) => {
+    if (!missionId) return;
+    
     try {
       setIsSubmitting(true);
-      console.log("Mission submission:", data);
-
-      // Post to our submissions API. Use a mock user id for now.
-      const payload = {
-        submissionText: data.submissionText,
-        missionId: missionId as string,
-        userId: "user-1", // TODO: replace with real auth user id
-      };
-
-      const resp = await fetch("/api/submissions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      
+      // Mock user ID - in real app, this would come from auth context
+      const userId = "demo-user-123";
+      
+      // Update user mission status to submitted
+      const response = await fetch('/api/user_missions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          missionId,
+          action: 'submit'
+        })
       });
-
-      const result = await resp.json();
-      if (!result.success) throw new Error(result.error || "Submission failed");
-
-      // Redirect to feedback page using returned submission id
-      router.push(`/feedback/${result.id}`);
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setSubmitSuccess(true);
+        // Redirect to dashboard after a short delay
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 2000);
+      } else {
+        console.error('Submission failed:', data.error);
+        alert('Submission failed. Please try again.');
+      }
     } catch (error) {
-      console.error("Submission failed:", error);
-      alert("Something went wrong while submitting your mission.");
+      console.error('Error submitting mission:', error);
+      alert('Submission failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Scroll to form when user starts mission
-  const scrollToForm = () => {
-    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   if (loading) {
@@ -120,25 +156,18 @@ const MissionSubmissionPage: React.FC = () => {
           {/* Divider Glow */}
           <div className="h-[1px] bg-gradient-to-r from-[#6A0DAD]/30 via-transparent to-[#00D9FF]/30" />
 
-          {/* Submission Section */}
-          <div ref={formRef} className="relative max-w-5xl mx-auto">
-            <div className="absolute -top-10 -left-10 w-32 h-32 bg-gradient-to-br from-[#6A0DAD]/20 to-transparent rounded-full blur-3xl"></div>
-            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-gradient-to-br from-[#00D9FF]/20 to-transparent rounded-full blur-3xl"></div>
-
-            <div className="bg-[#1C1C1E] border border-[#6A0DAD]/20 rounded-2xl p-10 md:p-14 shadow-2xl hover:shadow-[#6A0DAD]/20 hover:shadow-2xl transition-all duration-300">
-              <h2 className="text-[32px] font-bold font-sora text-white mb-4 antialiased text-center">
-                Submit Your Solution
-              </h2>
-              <p className="text-[18px] text-[#F5F5F5]/80 font-inter text-center mb-10">
-                Write your mission submission below and showcase your
-                creativity.
-              </p>
-
-              <SubmissionForm
-                onSubmit={handleSubmit}
-                isLoading={isSubmitting}
-              />
-            </div>
+            <SubmissionForm 
+              onSubmit={handleSubmission}
+              isLoading={isSubmitting}
+            />
+            
+            {/* Success Message */}
+            {submitSuccess && (
+              <div className="mt-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-center">
+                <p className="text-green-400 font-semibold">Mission submitted successfully!</p>
+                <p className="text-green-300 text-sm mt-2">Redirecting to dashboard...</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

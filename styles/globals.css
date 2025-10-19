@@ -1,4 +1,10 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
 
 html {
   scroll-behavior: smooth;
@@ -525,6 +531,7 @@ img {
 }
 
 .section-title .highlight {
+  color: var(--purple-light);
   background: linear-gradient(45deg, #9333EA, #A855F7, #3B82F6, #8B5CF6);
   background-size: 200% 200%;
   background-clip: text;

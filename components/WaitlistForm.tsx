@@ -1,3 +1,5 @@
+import { useState } from "react";
+import AfterSubmit from "./AfterSubmit";
 import { useState, useRef, useEffect } from "react";
 import AfterSubmit from "./AfterSubmit";
 import { motion, AnimatePresence } from "framer-motion";

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import Image from "next/image";
 import { Circle, Triangle, Hexagon } from "lucide-react";
 import { motion } from "framer-motion";
 
