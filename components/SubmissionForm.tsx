@@ -1,86 +1,30 @@
-// components/SubmissionForm.tsx
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Check, X } from 'lucide-react';
-import { interestOptions } from '@/lib/missionHelpers';
-import LoadingSpinner from './LoadingSpinner';
-
-const formSchema = z.object({
-  interests: z.array(z.string()).max(5, 'Please select no more than 5 interests'),
-  resumeText: z.string().optional()
-}).refine(
-  (data) => data.interests.length > 0 || (data.resumeText && data.resumeText.trim().length > 0),
-  {
-    message: 'Please provide either interests or resume text',
-    path: ['interests']
-  }
-);
-
-type FormData = z.infer<typeof formSchema>;
+import { useState } from "react";
+import { motion } from "framer-motion";
+import LoadingSpinner from "./LoadingSpinner";
 
 interface SubmissionFormProps {
-  onSubmit: (data: { interests?: string[]; resumeText?: string }) => void;
+  onSubmit: (data: { submissionText: string }) => void;
   isLoading: boolean;
 }
 
-export default function SubmissionForm({ onSubmit, isLoading }: SubmissionFormProps) {
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [resumeText, setResumeText] = useState<string>('');
-  
-  const {
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    clearErrors,
-    register
-  } = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      interests: [],
-      resumeText: ''
-    }
-  });
+export default function SubmissionForm({
+  onSubmit,
+  isLoading,
+}: SubmissionFormProps) {
+  const [submissionText, setSubmissionText] = useState("");
 
-  const toggleInterest = (interest: string) => {
-    if (isLoading) return;
-    
-    const newInterests = selectedInterests.includes(interest)
-      ? selectedInterests.filter(i => i !== interest)
-      : [...selectedInterests, interest];
-    
-    setSelectedInterests(newInterests);
-    setValue('interests', newInterests);
-    
-    if (newInterests.length > 0 || resumeText.trim().length > 0) {
-      clearErrors('interests');
-    }
-  };
-
-  const handleResumeTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setResumeText(value);
-    setValue('resumeText', value);
-    
-    if (value.trim().length > 0 || selectedInterests.length > 0) {
-      clearErrors('interests');
-    }
-  };
-
-  const onFormSubmit = (data: FormData) => {
-    onSubmit({
-      interests: data.interests.length > 0 ? data.interests : undefined,
-      resumeText: data.resumeText && data.resumeText.trim().length > 0 ? data.resumeText : undefined
-    });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!submissionText.trim()) return;
+    onSubmit({ submissionText: submissionText.trim() });
   };
 
   return (
-    <motion.div
+    <motion.form
+      onSubmit={handleSubmit}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[#1C1C1E] rounded-xl p-6 border border-gray-800"
+      className="bg-[#1C1C1E] rounded-2xl p-8 border border-gray-800 space-y-6"
     >
       <h3 className="text-xl font-bold text-white mb-4">
         Tell us about yourself
