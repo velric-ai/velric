@@ -13,6 +13,9 @@ export default function InteractiveDashboard({ width, height, text, className = 
   const [activeMetric, setActiveMetric] = useState(0);
   const [dataPoints, setDataPoints] = useState<number[]>([]);
 
+  // Check if this is the smaller diff-size variant
+  const isSmallSize = className.includes('diff-size') || width <= 320;
+
   useEffect(() => {
     // Generate random data points
     const generateData = () => {
@@ -57,17 +60,17 @@ export default function InteractiveDashboard({ width, height, text, className = 
       </div>
 
       {/* Header */}
-      <div className="absolute top-2 left-3 right-3">
+      <div className={`absolute ${isSmallSize ? 'top-0.5 left-3 right-4' : 'top-3 left-5 right-6'}`}>
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-white">AI Dashboard</h3>
-          <div className="bg-purple-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+          <h3 className={`font-semibold text-white ${isSmallSize ? 'text-xs' : 'text-xs'}`}>AI Dashboard</h3>
+          <div className={`bg-purple-500 text-white rounded-full font-medium ${isSmallSize ? 'text-xs px-1.5 py-0.5' : 'text-xs px-2 py-0.5'}`}>
             AI-POWERED
           </div>
         </div>
       </div>
 
       {/* Metrics Grid */}
-      <div className="absolute top-10 left-2 right-2 grid grid-cols-2 gap-1.5">
+      <div className={`absolute grid grid-cols-2 ${isSmallSize ? 'top-10 left-3 right-4 gap-1' : 'top-14 left-5 right-6 gap-2'}`}>
         {metrics.map((metric, index) => {
           const IconComponent = metric.icon;
           const isActive = activeMetric === index;
@@ -75,7 +78,9 @@ export default function InteractiveDashboard({ width, height, text, className = 
           return (
             <motion.div
               key={index}
-              className={`p-1.5 rounded-md border transition-all duration-300 cursor-pointer ${
+              className={`rounded-md border transition-all duration-300 cursor-pointer ${
+                isSmallSize ? 'p-1' : 'p-2'
+              } ${
                 isActive 
                   ? 'bg-purple-500/20 border-purple-400/50' 
                   : 'bg-gray-800/30 border-gray-600/30'
@@ -86,12 +91,12 @@ export default function InteractiveDashboard({ width, height, text, className = 
               }}
               onHoverStart={() => setActiveMetric(index)}
             >
-              <div className="flex items-center space-x-1">
-                <IconComponent className={`w-2.5 h-2.5 ${metric.color}`} />
-                <span className="text-xs text-gray-300 truncate flex-1">{metric.label}</span>
+              <div className={`flex items-center ${isSmallSize ? 'space-x-1' : 'space-x-1.5'}`}>
+                <IconComponent className={`${isSmallSize ? 'w-2 h-2' : 'w-2.5 h-2.5'} ${metric.color}`} />
+                <span className={`text-gray-300 flex-1 ${isSmallSize ? 'text-xs' : 'text-xs'}`}>{metric.label}</span>
               </div>
               <motion.div 
-                className="text-xs font-bold text-white mt-0.5"
+                className={`font-bold text-white ${isSmallSize ? 'text-xs mt-0.5' : 'text-xs mt-1'}`}
                 animate={{ scale: isActive ? 1.02 : 1 }}
               >
                 {metric.value}
@@ -102,7 +107,7 @@ export default function InteractiveDashboard({ width, height, text, className = 
       </div>
 
       {/* Chart Area */}
-      <div className="absolute bottom-8 left-2 right-2 h-12">
+      <div className={`absolute ${isSmallSize ? 'bottom-8 left-3 right-4 h-4' : 'bottom-12 left-5 right-6 h-10'}`}>
         <svg className="w-full h-full">
           {/* Chart Grid */}
           <defs>
@@ -166,13 +171,13 @@ export default function InteractiveDashboard({ width, height, text, className = 
       </div>
 
       {/* Status Bar */}
-      <div className="absolute bottom-1 left-2 right-2">
+      <div className={`absolute ${isSmallSize ? 'bottom-3 left-3 right-4' : 'bottom-5 left-5 right-6'}`}>
         <div className="flex items-center justify-between text-xs text-gray-400">
-          <span className="truncate text-xs">Real-time Analytics</span>
+          <span className={`${isSmallSize ? 'text-xs' : 'text-xs'}`}>Real-time Analytics</span>
           <motion.span
             animate={{ opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 2, repeat: Infinity }}
-            className="ml-2 text-xs"
+            className={`whitespace-nowrap ${isSmallSize ? 'text-xs' : 'text-xs'}`}
           >
             Live Data
           </motion.span>

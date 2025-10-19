@@ -2,6 +2,8 @@ import Head from "next/head";
 import Navbar from "@/components/Navbar";
 import DashboardSection from "@/components/DashboardSection";
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { MissionTemplate } from "@/types";
 
 // Hardcoded example data matching database schema
 const mockMissions = {
@@ -87,6 +89,84 @@ const mockMissions = {
 };
 
 export default function Dashboard() {
+  const [missions, setMissions] = useState(mockMissions);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // For demo purposes, using a hardcoded user ID
+  // In a real app, this would come from authentication context
+  const userId = "demo-user-123";
+
+  useEffect(() => {
+    fetchUserMissions();
+  }, []);
+
+  const fetchUserMissions = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Fetch user missions from API
+      const response = await fetch(`/api/user/missions?userId=${userId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        // Transform API data to match expected format
+        const transformedMissions = {
+          starred: data.missions.filter((m: any) => m.status === 'starred'),
+          inProgress: data.missions.filter((m: any) => m.status === 'in_progress'),
+          completed: data.missions.filter((m: any) => m.status === 'completed'),
+          suggested: data.missions.filter((m: any) => m.status === 'suggested' || !m.status)
+        };
+        
+        setMissions(transformedMissions);
+      } else {
+        console.warn('Failed to fetch missions:', data.error);
+        // Keep using mock data as fallback
+      }
+    } catch (error) {
+      console.error('Error fetching missions:', error);
+      setError('Failed to load missions. Using sample data.');
+      // Keep using mock data as fallback
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const generatePersonalizedMissions = async () => {
+    try {
+      setIsGenerating(true);
+      setError(null);
+      
+      const response = await fetch('/api/personalized_missions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          count: 5,
+          regenerate: true
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Refresh missions after generation
+        await fetchUserMissions();
+      } else {
+        setError(data.error || 'Failed to generate personalized missions');
+      }
+    } catch (error) {
+      console.error('Error generating missions:', error);
+      setError('Failed to generate personalized missions');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <>
       <Head>
@@ -110,9 +190,34 @@ export default function Dashboard() {
               <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-[#F5F5F5] bg-clip-text text-transparent">
                 Your Mission Dashboard
               </h1>
-              <p className="text-lg text-white/80 max-w-2xl mx-auto">
+              <p className="text-lg text-white/80 max-w-2xl mx-auto mb-6">
                 Track your progress, manage active missions, and discover new challenges tailored to your skills.
               </p>
+              
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6 max-w-2xl mx-auto">
+                  <p className="text-red-400">{error}</p>
+                </div>
+              )}
+              
+              {/* Generate Missions Button */}
+              <div className="flex gap-4 justify-center">
+                <button
+                  onClick={generatePersonalizedMissions}
+                  disabled={isGenerating}
+                  className="px-6 py-3 bg-gradient-to-r from-[#007AFF] to-[#0056CC] text-white font-semibold rounded-lg hover:from-[#0056CC] hover:to-[#003D99] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGenerating ? 'Generating...' : 'Generate Personalized Missions'}
+                </button>
+                <button
+                  onClick={fetchUserMissions}
+                  disabled={isLoading}
+                  className="px-6 py-3 bg-white/10 text-white font-semibold rounded-lg hover:bg-white/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Loading...' : 'Refresh'}
+                </button>
+              </div>
             </motion.div>
 
             {/* Stats Overview */}

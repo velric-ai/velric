@@ -5,7 +5,7 @@ export interface MissionTemplate {
   description: string;
   skills: string[];
   industries: string[];
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
   time_estimate: string;
   category?: string;
   created_at?: string;
@@ -26,7 +26,7 @@ export interface UserMission {
   id: string;
   user_id: string;
   mission_id: string;
-  status: 'suggested' | 'starred' | 'in_progress' | 'completed' | 'submitted';
+  status: "suggested" | "starred" | "in_progress" | "completed" | "submitted";
   started_at?: string;
   completed_at?: string;
   submitted_at?: string;
@@ -48,7 +48,7 @@ export interface Project {
   description: string;
   user_id: string;
   mission_id?: string;
-  status: 'draft' | 'in_progress' | 'completed' | 'published';
+  status: "draft" | "in_progress" | "completed" | "published";
   created_at: string;
   updated_at: string;
 }
@@ -58,7 +58,7 @@ export interface ProjectDoc {
   project_id: string;
   title: string;
   content: string;
-  doc_type: 'readme' | 'spec' | 'design' | 'notes' | 'other';
+  doc_type: "readme" | "spec" | "design" | "notes" | "other";
   order_index: number;
   created_at: string;
   updated_at: string;
@@ -102,7 +102,7 @@ export interface GenerateMissionsResponse {
 export interface UserMissionActionRequest {
   userId: string;
   missionId: string;
-  action: 'star' | 'start' | 'submit' | 'complete';
+  action: "star" | "start" | "submit" | "complete";
 }
 
 export interface UserMissionActionResponse {
@@ -117,8 +117,26 @@ export interface Mission {
   title: string;
   description: string;
   category: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
   estimatedTime: string;
   skills: string[];
   tags: string[];
+}
+
+export interface Submission {
+  id: string;
+  user_id: string;
+  mission_id?: string | null;
+  text: string;
+  feedback?: string | null;
+  summary?: string | null;
+  grades?: Record<string, number> | null;
+  overall_score?: number | null; // 0-100
+  letter_grade?: string | null; // e.g. A, B+, etc.
+  rubric?: Record<string, string> | null; // criterion -> short descriptor
+  positiveTemplates?: string[] | null; // short positive feedback templates
+  improvementTemplates?: string[] | null; // short improvement templates
+  status: "draft" | "submitted" | "graded";
+  created_at: string;
+  updated_at: string;
 }

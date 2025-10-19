@@ -114,6 +114,7 @@ export default function HeroSection() {
           <motion.span
             className="word highlight-results"
             data-word="4"
+            data-text="Hiring."
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
@@ -128,7 +129,7 @@ export default function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.8 }}
         >
-          Companies recruit through AI missions, and every candidate earns a Velric Score that proves real ability.
+          Proof driven hiring starts with us.
         </motion.p>
 
         <motion.div

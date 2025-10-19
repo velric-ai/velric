@@ -13,6 +13,9 @@ export default function MissionFlow({ width, height, text, className = "" }: Mis
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
+  // Check if this is the smaller diff-size variant
+  const isSmallSize = className.includes('diff-size') || width <= 320;
+
   const steps = [
     { icon: Play, label: 'Start Mission', color: 'text-blue-400' },
     { icon: Sparkles, label: 'AI Analysis', color: 'text-purple-400' },
@@ -33,7 +36,7 @@ export default function MissionFlow({ width, height, text, className = "" }: Mis
     }, 2000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [steps.length]);
 
   return (
     <div 
@@ -57,8 +60,8 @@ export default function MissionFlow({ width, height, text, className = "" }: Mis
       </div>
 
       {/* Mission Steps */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="flex items-center space-x-8">
+      <div className={`absolute inset-0 flex items-center justify-center ${isSmallSize ? 'top-2' : ''}`}>
+        <div className={`flex items-center ${isSmallSize ? 'space-x-4' : 'space-x-8'}`}>
           {steps.map((step, index) => {
             const IconComponent = step.icon;
             const isActive = currentStep === index;
@@ -67,7 +70,9 @@ export default function MissionFlow({ width, height, text, className = "" }: Mis
             return (
               <React.Fragment key={index}>
                 <motion.div
-                  className={`relative p-4 rounded-full border-2 transition-all duration-500 ${
+                  className={`relative rounded-full border-2 transition-all duration-500 ${
+                    isSmallSize ? 'p-2' : 'p-4'
+                  } ${
                     isActive 
                       ? 'bg-purple-500/30 border-purple-400 shadow-lg shadow-purple-500/50' 
                       : isCompleted
@@ -75,13 +80,13 @@ export default function MissionFlow({ width, height, text, className = "" }: Mis
                       : 'bg-gray-800/30 border-gray-600/50'
                   }`}
                   animate={{
-                    scale: isActive ? 1.2 : 1,
+                    scale: isActive ? (isSmallSize ? 1.1 : 1.2) : 1,
                     rotate: isActive ? [0, 5, -5, 0] : 0
                   }}
                   transition={{ duration: 0.5 }}
                 >
                   <IconComponent 
-                    className={`w-6 h-6 ${
+                    className={`${isSmallSize ? 'w-4 h-4' : 'w-6 h-6'} ${
                       isActive ? 'text-purple-200' : 
                       isCompleted ? 'text-green-300' : 
                       'text-gray-400'
@@ -101,30 +106,34 @@ export default function MissionFlow({ width, height, text, className = "" }: Mis
                   {/* Completion Checkmark */}
                   {isCompleted && (
                     <motion.div
-                      className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center"
+                      className={`absolute -top-1 -right-1 bg-green-500 rounded-full flex items-center justify-center ${
+                        isSmallSize ? 'w-3 h-3' : 'w-4 h-4'
+                      }`}
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 500 }}
                     >
-                      <CheckCircle className="w-3 h-3 text-white" />
+                      <CheckCircle className={`text-white ${isSmallSize ? 'w-2 h-2' : 'w-3 h-3'}`} />
                     </motion.div>
                   )}
 
                   {/* Step Label */}
-                  <motion.div
-                    className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 whitespace-nowrap"
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: isActive ? 1 : 0.6, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <span className={`text-xs font-medium ${
-                      isActive ? 'text-purple-300' : 
-                      isCompleted ? 'text-green-300' : 
-                      'text-gray-400'
-                    }`}>
-                      {step.label}
-                    </span>
-                  </motion.div>
+                  {!isSmallSize && (
+                    <motion.div
+                      className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 whitespace-nowrap"
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: isActive ? 1 : 0.6, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <span className={`text-xs font-medium ${
+                        isActive ? 'text-purple-300' : 
+                        isCompleted ? 'text-green-300' : 
+                        'text-gray-400'
+                      }`}>
+                        {step.label}
+                      </span>
+                    </motion.div>
+                  )}
                 </motion.div>
 
                 {/* Arrow between steps */}
@@ -137,7 +146,7 @@ export default function MissionFlow({ width, height, text, className = "" }: Mis
                     }}
                     transition={{ duration: 0.5 }}
                   >
-                    <ArrowRight className={`w-5 h-5 ${
+                    <ArrowRight className={`${isSmallSize ? 'w-3 h-3' : 'w-5 h-5'} ${
                       currentStep > index ? 'text-purple-400' : 'text-gray-500'
                     }`} />
                   </motion.div>
@@ -149,8 +158,8 @@ export default function MissionFlow({ width, height, text, className = "" }: Mis
       </div>
 
       {/* Progress Bar */}
-      <div className="absolute bottom-6 left-3 right-3">
-        <div className="w-full h-2 bg-gray-800/50 rounded-full overflow-hidden">
+      <div className={`absolute ${isSmallSize ? 'bottom-3 left-4 right-4' : 'bottom-6 left-6 right-6'}`}>
+        <div className={`w-full bg-gray-800/50 rounded-full overflow-hidden ${isSmallSize ? 'h-1.5' : 'h-2'}`}>
           <motion.div
             className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"
             initial={{ width: '0%' }}
@@ -158,9 +167,9 @@ export default function MissionFlow({ width, height, text, className = "" }: Mis
             transition={{ duration: 0.5 }}
           />
         </div>
-        <div className="flex justify-between mt-1 text-xs text-gray-400 px-1">
+        <div className={`flex justify-between text-xs text-gray-400 ${isSmallSize ? 'mt-1 px-0.5' : 'mt-2 px-1'}`}>
           <span>Mission Progress</span>
-          <span>{Math.round(((currentStep + 1) / steps.length) * 100)}%</span>
+          <span className="font-medium">{Math.round(((currentStep + 1) / steps.length) * 100)}%</span>
         </div>
       </div>
 
