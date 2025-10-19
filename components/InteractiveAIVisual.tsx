@@ -33,8 +33,8 @@ export default function InteractiveAIVisual() {
     { icon: Brain, position: { x: 50, y: 20 }, label: 'AI Brain' },
     { icon: Zap, position: { x: 80, y: 40 }, label: 'Processing' },
     { icon: Target, position: { x: 70, y: 70 }, label: 'Targeting' },
-    { icon: Code, position: { x: 30, y: 80 }, label: 'Code Gen' },
-    { icon: Cpu, position: { x: 20, y: 50 }, label: 'Computing' },
+    { icon: Code, position: { x: 15, y: 70 }, label: 'Code Gen' },
+    { icon: Cpu, position: { x: 20, y: 35 }, label: 'Computing' },
     { icon: Network, position: { x: 50, y: 50 }, label: 'Network' }
   ];
 
