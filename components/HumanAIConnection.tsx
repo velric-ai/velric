@@ -229,14 +229,7 @@ export default function HumanAIConnection({ width, height, text, className = "" 
         </span>
       </motion.div>
 
-      {/* Hover Instruction */}
-      <motion.div
-        className="absolute top-4 right-4 text-xs text-purple-400/60"
-        animate={{ opacity: isConnected ? 0 : [0.5, 1, 0.5] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      >
-        Hover to connect
-      </motion.div>
+
     </div>
   );
 }

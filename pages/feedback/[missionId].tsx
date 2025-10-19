@@ -4,25 +4,26 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 
 const FeedbackPage: React.FC = () => {
   const router = useRouter();
-  const { missionId } = router.query;
-  const [missionData, setMissionData] = useState<any>(null);
+  const { missionId } = router.query; // here missionId is actually the submission id
+  const [submission, setSubmission] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate fetching mission data (same as submission page)
-    if (missionId) {
-      setTimeout(() => {
-        setMissionData({
-          id: missionId,
-          title: `Mission ${missionId}`,
-          description:
-            "Join our innovative community and submit your groundbreaking mission.",
-          deadline: "2026-03-25",
-          status: "active",
-        });
+    if (!missionId) return;
+    const id = missionId as string;
+    const fetchFeedback = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/feedback/${id}`);
+        const data = await res.json();
+        if (data.success) setSubmission(data.submission);
+      } catch (err) {
+        console.error(err);
+      } finally {
         setLoading(false);
-      }, 1200); // slight delay for UX demo
-    }
+      }
+    };
+    fetchFeedback();
   }, [missionId]);
 
   if (loading) {
@@ -77,18 +78,6 @@ const FeedbackPage: React.FC = () => {
 
             <div className="max-w-4xl mx-auto px-4 md:px-8 lg:px-16">
               <div className="bg-[#1C1C1E] rounded-2xl p-8 md:p-12 shadow-2xl border border-[#6A0DAD]/20 hover:scale-105 transition-all duration-300 hover:shadow-[#6A0DAD]/20 hover:shadow-2xl">
-                {/* Mission Name Section */}
-                <div className="mb-12">
-                  <h2 className="text-[25px] font-bold font-sora text-white mb-4 antialiased">
-                    Mission Name
-                  </h2>
-                  <div className="bg-[#0D0D0D] border border-[#6A0DAD]/30 rounded-2xl p-6">
-                    <p className="text-[20px] text-[#F5F5F5] font-inter">
-                      {missionData?.title || `Mission ${missionId}`}
-                    </p>
-                  </div>
-                </div>
-
                 {/* Submission Status Section */}
                 <div className="mb-12">
                   <h2 className="text-[25px] font-bold font-sora text-white mb-4 antialiased">
@@ -98,7 +87,9 @@ const FeedbackPage: React.FC = () => {
                     <div className="flex items-center space-x-4">
                       <div className="w-4 h-4 bg-[#00D9FF] rounded-full animate-pulse"></div>
                       <p className="text-[18px] text-[#F5F5F5] font-inter">
-                        Submitted
+                        {submission?.status === "graded"
+                          ? "Graded"
+                          : submission?.status || "Submitted"}
                       </p>
                     </div>
                   </div>
@@ -110,25 +101,22 @@ const FeedbackPage: React.FC = () => {
                     Feedback
                   </h2>
                   <div className="bg-[#0D0D0D] border border-[#6A0DAD]/30 rounded-2xl p-6">
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 mx-auto bg-gradient-to-br from-[#6A0DAD]/20 to-[#00D9FF]/20 rounded-2xl flex items-center justify-center mb-6">
-                        <svg
-                          className="w-8 h-8 text-[#6A0DAD]"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                          />
-                        </svg>
-                      </div>
-                      <p className="text-[18px] text-[#F5F5F5]/60 font-inter">
-                        Your feedback will appear here
-                      </p>
+                    <div className="space-y-4">
+                      {submission?.summary && (
+                        <div className="text-white text-[18px] font-inter font-medium">
+                          {submission.summary}
+                        </div>
+                      )}
+                      {submission?.feedback && (
+                        <div className="text-[#F5F5F5]/80 text-[15px] whitespace-pre-wrap">
+                          {submission.feedback}
+                        </div>
+                      )}
+                      {!submission?.feedback && (
+                        <div className="text-[18px] text-[#F5F5F5]/60 font-inter">
+                          Your feedback will appear here
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -142,11 +130,11 @@ const FeedbackPage: React.FC = () => {
                     <div className="text-center py-8">
                       <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[#6A0DAD]/20 to-[#00D9FF]/20 rounded-full flex items-center justify-center mb-4">
                         <span className="text-[32px] font-bold text-[#6A0DAD] font-sora">
-                          A+
+                          {submission?.letter_grade ?? "—"}
                         </span>
                       </div>
                       <p className="text-[18px] text-[#F5F5F5]/60 font-inter">
-                        Grade: +10
+                        Grade
                       </p>
                     </div>
                   </div>
@@ -165,75 +153,68 @@ const FeedbackPage: React.FC = () => {
                             Criteria
                           </th>
                           <th className="text-[16px] font-semibold text-[#00D9FF] font-inter py-4 px-4 text-center">
-                            Excellent (5)
-                          </th>
-                          <th className="text-[16px] font-semibold text-[#6A0DAD] font-inter py-4 px-4 text-center">
-                            Good (3)
-                          </th>
-                          <th className="text-[16px] font-semibold text-[#FF6B6B] font-inter py-4 px-4 text-center">
-                            Needs Work (1)
+                            Score
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="space-y-4">
-                        <tr className="border-b border-[#6A0DAD]/10">
-                          <td className="text-[14px] text-[#F5F5F5] font-inter py-4 pr-6 font-medium">
-                            Completeness
-                          </td>
-                          <td className="text-[14px] text-[#F5F5F5]/80 font-inter py-4 px-4">
-                            Fully meets requirements
-                          </td>
-                          <td className="text-[14px] text-[#F5F5F5]/80 font-inter py-4 px-4">
-                            Mostly complete
-                          </td>
-                          <td className="text-[14px] text-[#F5F5F5]/80 font-inter py-4 px-4">
-                            Missing key parts
-                          </td>
-                        </tr>
-                        <tr className="border-b border-[#6A0DAD]/10">
-                          <td className="text-[14px] text-[#F5F5F5] font-inter py-4 pr-6 font-medium">
-                            Clarity
-                          </td>
-                          <td className="text-[14px] text-[#F5F5F5]/80 font-inter py-4 px-4">
-                            Very clear
-                          </td>
-                          <td className="text-[14px] text-[#F5F5F5]/80 font-inter py-4 px-4">
-                            Understandable
-                          </td>
-                          <td className="text-[14px] text-[#F5F5F5]/80 font-inter py-4 px-4">
-                            Hard to follow
-                          </td>
-                        </tr>
-                        <tr className="border-b border-[#6A0DAD]/10">
-                          <td className="text-[14px] text-[#F5F5F5] font-inter py-4 pr-6 font-medium">
-                            Originality
-                          </td>
-                          <td className="text-[14px] text-[#F5F5F5]/80 font-inter py-4 px-4">
-                            Highly creative
-                          </td>
-                          <td className="text-[14px] text-[#F5F5F5]/80 font-inter py-4 px-4">
-                            Some creativity
-                          </td>
-                          <td className="text-[14px] text-[#F5F5F5]/80 font-inter py-4 px-4">
-                            Generic
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="text-[14px] text-[#F5F5F5] font-inter py-4 pr-6 font-medium">
-                            Presentation
-                          </td>
-                          <td className="text-[14px] text-[#F5F5F5]/80 font-inter py-4 px-4">
-                            Professional & neat
-                          </td>
-                          <td className="text-[14px] text-[#F5F5F5]/80 font-inter py-4 px-4">
-                            Acceptable
-                          </td>
-                          <td className="text-[14px] text-[#F5F5F5]/80 font-inter py-4 px-4">
-                            Messy
-                          </td>
-                        </tr>
+                      <tbody>
+                        {(submission?.grades
+                          ? Object.entries(
+                              submission.grades as Record<string, number>
+                            )
+                          : []
+                        ).map(([k, v]) => (
+                          <tr key={k} className="border-b border-[#6A0DAD]/10">
+                            <td className="text-[14px] text-[#F5F5F5] font-inter py-4 pr-6 font-medium">
+                              {k}
+                            </td>
+                            <td className="text-[14px] text-[#F5F5F5]/80 font-inter py-4 px-4 text-center">
+                              {Number(v)}/10
+                            </td>
+                          </tr>
+                        ))}
+                        {!submission?.grades && (
+                          <tr>
+                            <td
+                              className="text-[14px] text-[#F5F5F5]/80 font-inter py-4"
+                              colSpan={2}
+                            >
+                              Not graded yet.
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
+                    {/* Rubric descriptions */}
+                    {submission?.rubric && (
+                      <div className="mt-6 grid grid-cols-1 gap-3">
+                        {Object.entries(
+                          submission.rubric as Record<string, string>
+                        ).map(([crit, desc]) => (
+                          <div
+                            key={crit}
+                            className="bg-[#0D0D0D] border border-[#6A0DAD]/10 rounded-xl p-3"
+                          >
+                            <div className="text-[14px] text-[#00D9FF] font-semibold">
+                              {crit}
+                            </div>
+                            <div className="text-[13px] text-[#F5F5F5]/80">
+                              {desc}
+                            </div>
+                          </div>
+                        ))}
+                        {/* Velric overall score out of 10 */}
+                        {typeof submission.velricScore === "number" && (
+                          <div className="bg-[#1C1C1E] border border-[#6A0DAD]/30 rounded-xl p-3 mt-2 text-center">
+                            <span className="text-[16px] font-bold text-[#00D9FF]">
+                              Velric Score:{" "}
+                              {Math.round(submission.velricScore / 10)}
+                              /10
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -249,23 +230,24 @@ const FeedbackPage: React.FC = () => {
                         Positive Feedback
                       </h3>
                       <div className="space-y-3">
-                        <div className="bg-[#00D9FF]/10 border border-[#00D9FF]/20 rounded-xl p-4">
-                          <p className="text-[14px] text-[#F5F5F5] font-inter">
-                            "Great work! You demonstrated strong understanding
-                            of the mission goals."
-                          </p>
-                        </div>
-                        <div className="bg-[#00D9FF]/10 border border-[#00D9FF]/20 rounded-xl p-4">
-                          <p className="text-[14px] text-[#F5F5F5] font-inter">
-                            "Excellent creativity and originality in your
-                            approach."
-                          </p>
-                        </div>
-                        <div className="bg-[#00D9FF]/10 border border-[#00D9FF]/20 rounded-xl p-4">
-                          <p className="text-[14px] text-[#F5F5F5] font-inter">
-                            "Outstanding presentation and attention to detail."
-                          </p>
-                        </div>
+                        {(submission?.positiveTemplates ?? []).length > 0 ? (
+                          (submission.positiveTemplates as string[]).map(
+                            (t, i) => (
+                              <div
+                                key={i}
+                                className="bg-[#00D9FF]/10 border border-[#00D9FF]/20 rounded-xl p-4"
+                              >
+                                <p className="text-[14px] text-[#F5F5F5] font-inter">
+                                  {t}
+                                </p>
+                              </div>
+                            )
+                          )
+                        ) : (
+                          <div className="text-[14px] text-[#F5F5F5]/60">
+                            No positive templates generated yet.
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -275,24 +257,24 @@ const FeedbackPage: React.FC = () => {
                         Improvement Areas
                       </h3>
                       <div className="space-y-3">
-                        <div className="bg-[#FF6B6B]/10 border border-[#FF6B6B]/20 rounded-xl p-4">
-                          <p className="text-[14px] text-[#F5F5F5] font-inter">
-                            "Try to expand on your explanation in section X for
-                            more clarity."
-                          </p>
-                        </div>
-                        <div className="bg-[#FF6B6B]/10 border border-[#FF6B6B]/20 rounded-xl p-4">
-                          <p className="text-[14px] text-[#F5F5F5] font-inter">
-                            "Please check formatting – ensure PDF is well
-                            structured."
-                          </p>
-                        </div>
-                        <div className="bg-[#FF6B6B]/10 border border-[#FF6B6B]/20 rounded-xl p-4">
-                          <p className="text-[14px] text-[#F5F5F5] font-inter">
-                            "Consider adding more specific examples to support
-                            your points."
-                          </p>
-                        </div>
+                        {(submission?.improvementTemplates ?? []).length > 0 ? (
+                          (submission.improvementTemplates as string[]).map(
+                            (t, i) => (
+                              <div
+                                key={i}
+                                className="bg-[#FF6B6B]/10 border border-[#FF6B6B]/20 rounded-xl p-4"
+                              >
+                                <p className="text-[14px] text-[#F5F5F5] font-inter">
+                                  {t}
+                                </p>
+                              </div>
+                            )
+                          )
+                        ) : (
+                          <div className="text-[14px] text-[#F5F5F5]/60">
+                            No improvement templates generated yet.
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
