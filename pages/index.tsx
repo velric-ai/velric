@@ -14,7 +14,7 @@ import AnimatedDashboard from "@/components/AnimatedDashboard";
 import ConnectionAnimation from "@/components/ConnectionAnimation";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
-import { Circle, Triangle, Hexagon } from "lucide-react";
+import { Circle, Triangle } from "lucide-react";
 
 export default function Home() {
   // Custom cursor glow effect
@@ -124,11 +124,7 @@ export default function Home() {
             size={60}
             fill="currentColor"
           />
-          <Hexagon
-            className="absolute bottom-1/3 left-1/3 text-purple-600/8 floating-element"
-            size={100}
-            fill="currentColor"
-          />
+
           <div className="absolute top-2/3 right-16 w-24 h-24 bg-gradient-to-r from-purple-500/8 to-purple-300/8 rounded-full blur-xl floating-element"></div>
           <div className="absolute bottom-32 left-20 w-20 h-20 bg-gradient-to-l from-purple-400/12 to-purple-600/12 rounded-lg rotate-45 floating-element"></div>
         </div>
@@ -178,10 +174,10 @@ export default function Home() {
           </motion.div>
         </section>
 
-        {/* ⚙️ How Velric Works - Completely Redesigned with Custom Visuals */}
-        <section className="velric-works-section section-spacing relative z-10 max-w-7xl mx-auto px-4 md:px-8 lg:px-16">
+        {/* ⚙️ How Velric Works - NEW DESIGN */}
+        <section className="px-4 md:px-8 lg:px-16 py-20 section-spacing relative z-10">
           <motion.h2
-            className="text-4xl md:text-5xl font-extrabold mb-16 text-center text-white relative z-10"
+            className="text-4xl md:text-5xl font-extrabold mb-16 text-center text-white"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -190,361 +186,609 @@ export default function Home() {
             How <span className="bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">Velric</span> Works
           </motion.h2>
 
-          {/* Cards Grid */}
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            
-            {/* Card 1 - Take Real-World Missions */}
-            <motion.div
-              className="velric-card group relative"
-              initial={{ opacity: 0, y: 60 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.8, delay: 0.1, ease: [0.4, 0.0, 0.2, 1] }}
-              whileHover={{ 
-                y: -8,
-                boxShadow: "0 25px 50px rgba(147, 51, 234, 0.4)"
-              }}
-            >
-              {/* Custom Circular Progress Ring */}
-              <div className="flex justify-center mb-6">
-                <CircularProgressRing />
-              </div>
-              
-              <h3 className="text-xl font-bold text-white mb-3 group-hover:text-purple-300 transition-colors">
-                1. Take Real-World Missions
-              </h3>
-              <p className="text-gray-300 text-sm leading-relaxed mb-4">
-                Convert professional deliverables into interactive missions to gain hands-on experience with actual industry work.
-              </p>
-              
-              <div className="inline-block bg-purple-500 text-white text-xs px-3 py-1 rounded-full">
-                No simulations
-              </div>
-            </motion.div>
+          {/* Desktop Layout */}
+          <div className="hidden lg:block max-w-7xl mx-auto">
+            {/* Timeline Line */}
+            <div className="relative flex items-center justify-between mb-20">
+              <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-blue-500 to-green-500 transform -translate-y-1/2 z-0 rounded-full"></div>
 
-            {/* Card 2 - Get Your Velric Score */}
-            <motion.div
-              className="velric-card group relative"
-              initial={{ opacity: 0, y: 60 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.8, delay: 0.3, ease: [0.4, 0.0, 0.2, 1] }}
-              whileHover={{ 
-                y: -8,
-                boxShadow: "0 25px 50px rgba(59, 130, 246, 0.4)"
-              }}
-            >
-              {/* Custom Animated Dashboard */}
-              <div className="mb-6">
-                <AnimatedDashboard />
-              </div>
-              
-              <h3 className="text-xl font-bold text-white mb-3 group-hover:text-blue-300 transition-colors">
-                2. Get Your Velric Score
-              </h3>
-              <p className="text-gray-300 text-sm leading-relaxed mb-4">
-                Our AI engine evaluates your work in real-time, providing comprehensive feedback and a detailed performance score.
-              </p>
-              
-              <div className="inline-block bg-blue-500 text-white text-xs px-3 py-1 rounded-full">
-                AI-Powered
-              </div>
-            </motion.div>
-
-            {/* Card 3 - Unlock Career Opportunities */}
-            <motion.div
-              className="velric-card group relative"
-              initial={{ opacity: 0, y: 60 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.8, delay: 0.5, ease: [0.4, 0.0, 0.2, 1] }}
-              whileHover={{ 
-                y: -8,
-                boxShadow: "0 25px 50px rgba(34, 197, 94, 0.4)"
-              }}
-            >
-              {/* Custom Connection Animation */}
-              <div className="mb-6">
-                <ConnectionAnimation />
-              </div>
-              
-              <h3 className="text-xl font-bold text-white mb-3 group-hover:text-green-300 transition-colors">
-                3. Unlock Career Opportunities
-              </h3>
-              <p className="text-gray-300 text-sm leading-relaxed mb-4">
-                Showcase your skills and portfolio to top employers. Let your real work speak louder than your resume.
-              </p>
-              
-              <div className="inline-block bg-green-500 text-white text-xs px-3 py-1 rounded-full">
-                Get Hired
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* 🚀 What Makes Us Different - Cluely Style */}
-        <section className="differentiators-section section-spacing relative z-10">
-          <motion.h2
-            className="section-heading"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            What Makes Us <span className="gradient-text">Different</span>
-          </motion.h2>
-
-          <div className="diff-grid">
-            {/* Card 1 - No Resumes */}
-            <motion.div
-              className="diff-card"
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.6 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
-              <div className="diff-icon">
-                <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3>1. No Resumes</h3>
-              <p>Resumes were invented in the 1930s and haven&apos;t evolved since. Velric replaces them with personalized proof of work missions that reveal how candidates actually think, build, and perform.</p>
-              <div className="diff-visual">
-                <MissionFlow
-                  width={320}
-                  height={180}
-                  text="No Resumes"
-                  className="w-full h-full rounded-xl diff-size"
-                />
-              </div>
-            </motion.div>
-
-            {/* Card 2 - No Guesswork */}
-            <motion.div
-              className="diff-card"
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.6 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <div className="diff-icon">
-                <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                </svg>
-              </div>
-              <h3>2. No Guesswork</h3>
-              <p>Recruiters waste hours screening candidates based on buzzwords. Velric&apos;s AI evaluates real work, generating a Velric Score that quantifies skill, consistency, and problem solving ability.</p>
-              <div className="diff-visual">
-                <HumanAIConnection
-                  width={320}
-                  height={180}
-                  text="No Guesswork"
-                  className="w-full h-full rounded-xl diff-size"
-                />
-              </div>
-            </motion.div>
-
-            {/* Card 3 - No Bias (Featured) */}
-            <motion.div
-              className="diff-card featured"
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.6 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <div className="diff-icon">
-                <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <h3>3. No Bias</h3>
-              <p>Every candidate is measured by the same standard. The Velric Score levels the playing field, removing subjective judgment and giving companies data backed confidence in every hire.</p>
-              <div className="diff-visual">
-                <InteractiveDashboard
-                  width={320}
-                  height={180}
-                  text="No Bias"
-                  className="w-full h-full rounded-xl diff-size"
-                />
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-
-
-        {/* 🌍 A Platform for Everyone - Enhanced with Animations */}
-        <section className="bg-[#0D0D0D] px-4 md:px-8 lg:px-16 py-20 text-center section-spacing relative z-10">
-          <motion.h2
-            className="text-4xl md:text-5xl font-extrabold mb-12 text-white"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            A Platform for <span className="text-purple-400">Everyone</span>
-          </motion.h2>
-          <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
-            {[
-              {
-                title: "For Talent",
-                icon: "GraduationCap" as keyof typeof import('lucide-react'),
-                description: "Prove your skills through personalized AI built proof of work missions.",
-                features: [
-                  "→ Earn your Velric Score, a measurable signal of ability.",
-                  "→ Get hired by companies looking for proven execution.",
-                  "→ Build a portfolio backed by data."
-                ]
-              },
-              {
-                title: "For Employers",
-                icon: "Building2" as keyof typeof import('lucide-react'),
-                description: "Hire through proof, NOT resumes.",
-                features: [
-                  "→ Access a global pool of pre validated talent.",
-                  "→ Filter candidates by Velric Score and real performance data.",
-                  "→ Replace guesswork with AI driven evaluation."
-                ]
-              },
-              {
-                title: "For Partners",
-                icon: "BookOpen" as keyof typeof import('lucide-react'),
-                description: "Join the movement redefining how the world hires.",
-                features: [
-                  "→ Integrate Velric missions into training or hiring workflows.",
-                  "→ Gain insights into skill benchmarks across industries.",
-                  "→ Build your brand around proof based opportunity."
-                ]
-              }
-            ].map((item, idx) => (
+              {/* Step Numbers */}
               <motion.div
-                key={idx}
-                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl shadow-lg border border-purple-500/20 h-full flex flex-col relative overflow-hidden group cursor-pointer"
+                className="relative z-10 w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold shadow-lg"
+                initial={{ opacity: 0, scale: 0 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                1
+              </motion.div>
+              <motion.div
+                className="relative z-10 w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-bold shadow-lg"
+                initial={{ opacity: 0, scale: 0 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                2
+              </motion.div>
+              <motion.div
+                className="relative z-10 w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white text-xl font-bold shadow-lg"
+                initial={{ opacity: 0, scale: 0 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+              >
+                3
+              </motion.div>
+            </div>
+
+            {/* Cards Row */}
+            <div className="grid grid-cols-3 gap-8">
+              {/* Card 1 */}
+              <motion.div
+                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-purple-500/20 text-center"
                 initial={{ opacity: 0, y: 60 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.7, delay: idx * 0.2 }}
-                whileHover={{ 
-                  y: -8, 
-                  scale: 1.02,
-                  boxShadow: "0 20px 40px rgba(147, 51, 234, 0.3)"
-                }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.1 }}
+                whileHover={{ y: -8, scale: 1.02 }}
               >
-                {/* Background Glow Effect */}
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl" />
-                
-                {/* Animated Border Glow */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-purple-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
-                
-                {/* Floating Particles */}
-                <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                  {[...Array(3)].map((_, particleIdx) => (
-                    <motion.div
-                      key={particleIdx}
-                      className="absolute w-1 h-1 bg-purple-400 rounded-full"
-                      style={{
-                        left: `${20 + particleIdx * 30}%`,
-                        top: `${30 + (particleIdx % 2) * 40}%`,
-                      }}
-                      animate={{
-                        y: [0, -15, 0],
-                        opacity: [0.3, 1, 0.3],
-                        scale: [1, 1.5, 1]
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        delay: particleIdx * 0.3
-                      }}
-                    />
-                  ))}
+                <div className="mb-6">
+                  <CircularProgressRing />
                 </div>
-                
-                <div className="text-center relative z-10">
-                  <motion.div
-                    className="relative inline-block"
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {(() => {
-                      const LucideIcon = require('lucide-react')[item.icon];
-                      return (
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                          <LucideIcon className="w-14 h-14 mb-4 mx-auto text-white group-hover:text-purple-300 transition-colors duration-300 relative z-10" strokeWidth={1.5} />
-                        </div>
-                      );
-                    })()}
-                  </motion.div>
-                  <motion.h3 
-                    className="text-xl font-semibold mb-2 text-white group-hover:text-purple-200 transition-colors duration-300"
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    {item.title}
-                  </motion.h3>
-                  <p className="text-gray-300 group-hover:text-gray-200 text-sm mb-4 transition-colors duration-300">{item.description}</p>
-                </div>
-                <motion.div
-                  className="text-left text-white/80 text-sm space-y-2 flex-grow relative z-10"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: idx * 0.2 + 0.3 }}
-                >
-                  {item.features.map((feature, featureIdx) => (
-                    <motion.div
-                      key={featureIdx}
-                      className="relative group/feature"
-                      initial={{ opacity: 0, x: -20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.4, delay: idx * 0.2 + 0.4 + featureIdx * 0.1 }}
-                      whileHover={{ x: 5 }}
-                    >
-                      <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-purple-500 to-blue-500 opacity-0 group-hover/feature:opacity-100 transition-opacity duration-300 rounded-full" />
-                      <p className="pl-4 group-hover/feature:text-purple-200 transition-colors duration-300 relative">
-                        <span className="text-purple-400 group-hover/feature:text-purple-300 transition-colors duration-300">→</span>
-                        <span className="ml-2">{feature.substring(2)}</span>
-                      </p>
-                    </motion.div>
-                  ))}
-                </motion.div>
+                <h3 className="text-xl font-bold text-white mb-4">Take Real-World Missions</h3>
+                <p className="text-gray-300 text-sm leading-relaxed">
+                  Convert professional deliverables into interactive missions to gain hands-on experience with actual industry work.
+                </p>
               </motion.div>
-            ))}
+
+              {/* Card 2 */}
+              <motion.div
+                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-blue-500/20 text-center"
+                initial={{ opacity: 0, y: 60 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                whileHover={{ y: -8, scale: 1.02 }}
+              >
+                <div className="mb-6">
+                  <AnimatedDashboard />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-4">Get Your Velric Score</h3>
+                <p className="text-gray-300 text-sm leading-relaxed">
+                  Our AI engine evaluates your work in real-time, providing comprehensive feedback and a detailed performance score.
+                </p>
+              </motion.div>
+
+              {/* Card 3 */}
+              <motion.div
+                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-green-500/20 text-center"
+                initial={{ opacity: 0, y: 60 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.5 }}
+                whileHover={{ y: -8, scale: 1.02 }}
+              >
+                <div className="mb-6">
+                  <ConnectionAnimation />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-4">Unlock Career Opportunities</h3>
+                <p className="text-gray-300 text-sm leading-relaxed">
+                  Showcase your skills and portfolio to top employers. Let your real work speak louder than your resume.
+                </p>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Mobile Layout */}
+          <div className="lg:hidden space-y-8 max-w-2xl mx-auto">
+            {/* Step 1 */}
+            <motion.div
+              className="flex items-start space-x-6"
+              initial={{ opacity: 0, y: 60 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.1 }}
+            >
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
+                1
+              </div>
+              <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-4 rounded-xl border border-purple-500/20 flex-1">
+                <div className="mb-4">
+                  <CircularProgressRing />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-3">Take Real-World Missions</h3>
+                <p className="text-gray-300 text-sm">
+                  Convert professional deliverables into interactive missions to gain hands-on experience with actual industry work.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Step 2 */}
+            <motion.div
+              className="flex items-start space-x-6"
+              initial={{ opacity: 0, y: 60 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            >
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
+                2
+              </div>
+              <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-4 rounded-xl border border-blue-500/20 flex-1">
+                <div className="mb-4">
+                  <AnimatedDashboard />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-3">Get Your Velric Score</h3>
+                <p className="text-gray-300 text-sm">
+                  Our AI engine evaluates your work in real-time, providing comprehensive feedback and a detailed performance score.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Step 3 */}
+            <motion.div
+              className="flex items-start space-x-6"
+              initial={{ opacity: 0, y: 60 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+            >
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
+                3
+              </div>
+              <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-4 rounded-xl border border-green-500/20 flex-1">
+                <div className="mb-4">
+                  <ConnectionAnimation />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-3">Unlock Career Opportunities</h3>
+                <p className="text-gray-300 text-sm">
+                  Showcase your skills and portfolio to top employers. Let your real work speak louder than your resume.
+                </p>
+              </div>
+            </motion.div>
           </div>
         </section>
 
-        {/* 📝 Waitlist - Enhanced with Animations */}
-        <section className="px-4 md:px-8 lg:px-16 py-20 text-center section-spacing relative z-10">
+        {/* 🚀 What Makes Us Different - NEW DESIGN */}
+        <section className="px-4 md:px-8 lg:px-16 py-20 section-spacing relative z-10">
           <motion.h2
-            className="text-3xl md:text-4xl font-bold mb-4"
+            className="text-4xl md:text-5xl font-extrabold mb-16 text-center text-white"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            Join <span className="text-purple-400 font-bold">Waitlist</span>
+            What Makes Us <span className="bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">Different</span>
           </motion.h2>
-          <motion.p
-            className="mb-8 text-lg text-white/80"
-            initial={{ opacity: 0, y: 20 }}
+
+          <div className="max-w-7xl mx-auto">
+            {/* Desktop Layout - 2x2 Grid with bottom card spanning full width */}
+            <div className="hidden lg:block">
+              {/* Top Row - 2 Cards */}
+              <div className="grid grid-cols-2 gap-8 mb-8">
+                {/* Card 1 - No Resumes */}
+                <motion.div
+                  className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-8 rounded-2xl border border-purple-500/20 relative overflow-hidden"
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  whileHover={{ y: -8, scale: 1.02 }}
+                >
+                  <div className="absolute top-6 left-6 w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div className="pt-20">
+                    <h3 className="text-2xl font-bold text-white mb-4">No Resumes</h3>
+                    <p className="text-gray-300 text-sm leading-relaxed mb-6">
+                      Resumes were invented in the 1930s and haven&apos;t evolved since. Velric replaces them with personalized proof of work missions that reveal how candidates actually think, build, and perform.
+                    </p>
+                    <div className="bg-[#2A2A2E] rounded-xl p-4 h-32 flex items-center justify-center">
+                      <MissionFlow width={280} height={120} text="No Resumes" className="w-full h-full" />
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Card 2 - No Guesswork */}
+                <motion.div
+                  className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-8 rounded-2xl border border-blue-500/20 relative overflow-hidden"
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  whileHover={{ y: -8, scale: 1.02 }}
+                >
+                  <div className="absolute top-6 left-6 w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                  </div>
+                  <div className="pt-20">
+                    <h3 className="text-2xl font-bold text-white mb-4">No Guesswork</h3>
+                    <p className="text-gray-300 text-sm leading-relaxed mb-6">
+                      Recruiters waste hours screening candidates based on buzzwords. Velric&apos;s AI evaluates real work, generating a Velric Score that quantifies skill, consistency, and problem solving ability.
+                    </p>
+                    <div className="bg-[#2A2A2E] rounded-xl p-4 h-32 flex items-center justify-center">
+                      <HumanAIConnection width={280} height={120} text="No Guesswork" className="w-full h-full" />
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* Bottom Row - Full Width Card */}
+              <motion.div
+                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-8 rounded-2xl border border-green-500/20 relative overflow-hidden"
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                whileHover={{ y: -8, scale: 1.01 }}
+              >
+                <div className="flex items-start space-x-8">
+                  <div className="flex-shrink-0">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-6">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <div className="max-w-md">
+                      <h3 className="text-2xl font-bold text-white mb-4">No Bias</h3>
+                      <p className="text-gray-300 text-sm leading-relaxed">
+                        Every candidate is measured by the same standard. The Velric Score levels the playing field, removing subjective judgment and giving companies data backed confidence in every hire.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex-1 bg-[#2A2A2E] rounded-xl p-6 h-48 flex items-center justify-center">
+                    <InteractiveDashboard width={400} height={180} text="AI Dashboard" className="w-full h-full" />
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Mobile Layout */}
+            <div className="lg:hidden space-y-6">
+              {/* Card 1 - No Resumes */}
+              <motion.div
+                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-purple-500/20"
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white">No Resumes</h3>
+                </div>
+                <p className="text-gray-300 text-sm mb-4">
+                  Resumes were invented in the 1930s and haven&apos;t evolved since. Velric replaces them with personalized proof of work missions.
+                </p>
+                <div className="bg-[#2A2A2E] rounded-xl p-4 h-24">
+                  <MissionFlow width={240} height={80} text="No Resumes" className="w-full h-full" />
+                </div>
+              </motion.div>
+
+              {/* Card 2 - No Guesswork */}
+              <motion.div
+                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-blue-500/20"
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white">No Guesswork</h3>
+                </div>
+                <p className="text-gray-300 text-sm mb-4">
+                  Velric&apos;s AI evaluates real work, generating a Velric Score that quantifies skill, consistency, and problem solving ability.
+                </p>
+                <div className="bg-[#2A2A2E] rounded-xl p-4 h-24">
+                  <HumanAIConnection width={240} height={80} text="No Guesswork" className="w-full h-full" />
+                </div>
+              </motion.div>
+
+              {/* Card 3 - No Bias */}
+              <motion.div
+                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-green-500/20"
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white">No Bias</h3>
+                </div>
+                <p className="text-gray-300 text-sm mb-4">
+                  The Velric Score levels the playing field, removing subjective judgment and giving companies data backed confidence.
+                </p>
+                <div className="bg-[#2A2A2E] rounded-xl p-4 h-24">
+                  <InteractiveDashboard width={240} height={80} text="AI Dashboard" className="w-full h-full" />
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+
+
+        {/* 🌍 A Platform for Everyone - NEW DESIGN */}
+        <section className="px-4 md:px-8 lg:px-16 py-20 text-center section-spacing relative z-10">
+          <motion.h2
+            className="text-4xl md:text-5xl font-extrabold mb-16 text-white"
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            transition={{ duration: 0.6 }}
           >
-            Be first to access the future of <strong className="text-purple-300">execution-based learning</strong>.
-          </motion.p>
-          <motion.div
-            className="max-w-lg mx-auto"
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            <WaitlistForm />
-          </motion.div>
+            A Platform for <span className="bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">Everyone</span>
+          </motion.h2>
+
+          <div className="max-w-7xl mx-auto">
+            {/* Desktop Layout */}
+            <div className="hidden lg:grid lg:grid-cols-3 gap-8 mb-20">
+              {/* Card 1 - For Talent */}
+              <motion.div
+                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-8 rounded-2xl border border-purple-500/20 text-left"
+                initial={{ opacity: 0, y: 60 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: 0.1 }}
+                whileHover={{ y: -8, scale: 1.02 }}
+              >
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-6">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">For Talent</h3>
+                <p className="text-gray-300 text-sm mb-6 leading-relaxed">
+                  Prove your skills through personalized AI built proof of work missions.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-start space-x-3">
+                    <span className="text-purple-400 mt-1">•</span>
+                    <span className="text-gray-300 text-sm">Earn your Velric Score, a measurable signal of ability</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <span className="text-purple-400 mt-1">•</span>
+                    <span className="text-gray-300 text-sm">Get hired by companies looking for proven execution</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <span className="text-purple-400 mt-1">•</span>
+                    <span className="text-gray-300 text-sm">Build a portfolio backed by data</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Card 2 - For Employers */}
+              <motion.div
+                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-8 rounded-2xl border border-blue-500/20 text-left"
+                initial={{ opacity: 0, y: 60 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: 0.2 }}
+                whileHover={{ y: -8, scale: 1.02 }}
+              >
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-6">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">For Employers</h3>
+                <p className="text-gray-300 text-sm mb-6 leading-relaxed">
+                  Hire through proof, NOT resumes.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-start space-x-3">
+                    <span className="text-blue-400 mt-1">•</span>
+                    <span className="text-gray-300 text-sm">Access a global pool of pre validated talent</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <span className="text-blue-400 mt-1">•</span>
+                    <span className="text-gray-300 text-sm">Filter candidates by Velric Score and real performance data</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <span className="text-blue-400 mt-1">•</span>
+                    <span className="text-gray-300 text-sm">Replace guesswork with AI driven evaluation</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Card 3 - For Partners */}
+              <motion.div
+                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-8 rounded-2xl border border-green-500/20 text-left"
+                initial={{ opacity: 0, y: 60 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: 0.3 }}
+                whileHover={{ y: -8, scale: 1.02 }}
+              >
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-6">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">For Partners</h3>
+                <p className="text-gray-300 text-sm mb-6 leading-relaxed">
+                  Join the movement redefining how the world hires.
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-start space-x-3">
+                    <span className="text-green-400 mt-1">•</span>
+                    <span className="text-gray-300 text-sm">Integrate Velric missions into training or hiring workflows</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <span className="text-green-400 mt-1">•</span>
+                    <span className="text-gray-300 text-sm">Gain insights into skill benchmarks across industries</span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <span className="text-green-400 mt-1">•</span>
+                    <span className="text-gray-300 text-sm">Build your brand around proof based opportunity</span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Mobile Layout */}
+            <div className="lg:hidden space-y-6 mb-16">
+              {/* Card 1 - For Talent */}
+              <motion.div
+                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-purple-500/20 text-left"
+                initial={{ opacity: 0, y: 60 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: 0.1 }}
+              >
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white">For Talent</h3>
+                </div>
+                <p className="text-gray-300 text-sm mb-4">Prove your skills through personalized AI built proof of work missions.</p>
+                <div className="space-y-2">
+                  <div className="flex items-start space-x-2">
+                    <span className="text-purple-400 text-xs mt-1">•</span>
+                    <span className="text-gray-300 text-xs">Earn your Velric Score, a measurable signal of ability</span>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <span className="text-purple-400 text-xs mt-1">•</span>
+                    <span className="text-gray-300 text-xs">Get hired by companies looking for proven execution</span>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <span className="text-purple-400 text-xs mt-1">•</span>
+                    <span className="text-gray-300 text-xs">Build a portfolio backed by data</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Card 2 - For Employers */}
+              <motion.div
+                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-blue-500/20 text-left"
+                initial={{ opacity: 0, y: 60 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: 0.2 }}
+              >
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white">For Employers</h3>
+                </div>
+                <p className="text-gray-300 text-sm mb-4">Hire through proof, NOT resumes.</p>
+                <div className="space-y-2">
+                  <div className="flex items-start space-x-2">
+                    <span className="text-blue-400 text-xs mt-1">•</span>
+                    <span className="text-gray-300 text-xs">Access a global pool of pre validated talent</span>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <span className="text-blue-400 text-xs mt-1">•</span>
+                    <span className="text-gray-300 text-xs">Filter candidates by Velric Score and real performance data</span>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <span className="text-blue-400 text-xs mt-1">•</span>
+                    <span className="text-gray-300 text-xs">Replace guesswork with AI driven evaluation</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Card 3 - For Partners */}
+              <motion.div
+                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-green-500/20 text-left"
+                initial={{ opacity: 0, y: 60 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: 0.3 }}
+              >
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white">For Partners</h3>
+                </div>
+                <p className="text-gray-300 text-sm mb-4">Join the movement redefining how the world hires.</p>
+                <div className="space-y-2">
+                  <div className="flex items-start space-x-2">
+                    <span className="text-green-400 text-xs mt-1">•</span>
+                    <span className="text-gray-300 text-xs">Integrate Velric missions into training or hiring workflows</span>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <span className="text-green-400 text-xs mt-1">•</span>
+                    <span className="text-gray-300 text-xs">Gain insights into skill benchmarks across industries</span>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <span className="text-green-400 text-xs mt-1">•</span>
+                    <span className="text-gray-300 text-xs">Build your brand around proof based opportunity</span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Join Waitlist Section */}
+            <motion.div
+              className="text-center"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">Join Waitlist</h3>
+              <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
+                Be first to access the future of execution-based learning.
+              </p>
+
+              {/* Waitlist Form */}
+              <div className="max-w-md mx-auto space-y-4">
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  className="w-full px-4 py-3 bg-[#2A2A2E] border border-purple-500/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-500/50 transition-colors"
+                />
+                <input
+                  type="email"
+                  placeholder="Email Address"
+                  className="w-full px-4 py-3 bg-[#2A2A2E] border border-purple-500/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-500/50 transition-colors"
+                />
+                <select
+                  className="w-full px-4 py-3 bg-[#2A2A2E] border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
+                  title="Select your area of interest"
+                  aria-label="Area of Interest"
+                >
+                  <option value="">Area of Interest</option>
+                  <option value="talent">For Talent</option>
+                  <option value="employers">For Employers</option>
+                  <option value="partners">For Partners</option>
+                </select>
+              </div>
+            </motion.div>
+          </div>
         </section>
+
+
 
         <Footer />
       </main>

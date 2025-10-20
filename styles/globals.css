@@ -1210,4 +1210,19 @@ line Section Styles */
     left: 2rem;
     transform: translateX(0);
   }
+}/* Fi
+x for white floating hexagon bug */
+.floating-element svg {
+  opacity: 0.08 !important;
+  color: inherit !important;
+}
+
+/* Ensure all floating elements have proper transparency */
+.floating-element {
+  opacity: 0.08 !important;
+}
+
+/* Specific fix for Hexagon component */
+.floating-element[size="100"] {
+  opacity: 0.05 !important;
 }

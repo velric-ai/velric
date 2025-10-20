@@ -58,9 +58,9 @@ const Merch = () => {
   useEffect(() => {
     console.log("Merch items with image paths:", merchItems.map(item => ({ name: item.name, image: item.image })));
 
-    // Test if images are accessible
+    // Test if images are accessible using document.createElement
     merchItems.forEach(item => {
-      const img = new Image();
+      const img = document.createElement('img');
       img.onload = () => console.log(`✅ Image accessible: ${item.image}`);
       img.onerror = () => console.error(`❌ Image NOT accessible: ${item.image}`);
       img.src = item.image;
@@ -137,19 +137,10 @@ const Merch = () => {
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="merch-product-image w-full h-full object-contain hover:scale-110 transition-transform duration-500 drop-shadow-2xl"
-                      style={{
-                        maxWidth: '100%',
-                        maxHeight: '100%',
-                        display: 'block',
-                        margin: 'auto',
-                        opacity: 1,
-                        visibility: 'visible'
-                      }}
+                      className="merch-product-image w-full h-full max-w-full max-h-full block mx-auto object-contain hover:scale-110 transition-transform duration-500 drop-shadow-2xl opacity-100 visible"
                       onLoad={(e) => {
                         console.log(`Successfully loaded image: ${item.image}`);
-                        e.currentTarget.style.opacity = '1';
-                        e.currentTarget.style.visibility = 'visible';
+                        e.currentTarget.classList.add('opacity-100', 'visible');
                       }}
                       onError={(e) => {
                         console.error(`Failed to load image: ${item.image}`);
@@ -159,7 +150,7 @@ const Merch = () => {
                         fallback.className = 'w-full h-full flex items-center justify-center text-purple-400 text-6xl font-bold bg-gradient-to-br from-purple-900/20 to-purple-700/20 rounded-lg border border-purple-500/30';
                         fallback.innerHTML = item.name.charAt(0);
                         e.currentTarget.parentNode?.appendChild(fallback);
-                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.classList.add('hidden');
                       }}
                     />
                   </div>
@@ -171,7 +162,7 @@ const Merch = () => {
 
               {/* Product Info */}
               <div className="p-8 relative">
-                <div className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ opacity: 0 }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <h3 className="text-2xl font-bold text-white mb-3 relative z-10">{item.name}</h3>
                 <p className="text-gray-300 text-base mb-6 leading-relaxed relative z-10">{item.description}</p>
 
