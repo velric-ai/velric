@@ -1,0 +1,1 @@
+I created a responsive landing page using Tailwind with a hero, features, and a call-to-action button. The layout is mobile-first and tested on multiple screen sizes.

@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { StaticMission } from "@/data/staticMissions";
 import { ArrowLeft, Clock, TrendingUp, Users, Star } from "lucide-react";
+import SubmissionForm from "@/components/SubmissionForm";
 
 export default function MissionsPage() {
   const router = useRouter();
@@ -209,6 +210,7 @@ export default function MissionsPage() {
                       </div>
 
                       {/* Start Button */}
+                     {/*
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -220,6 +222,7 @@ export default function MissionsPage() {
                       >
                         Start Mission
                       </motion.button>
+                      */}
                     </div>
                   </motion.div>
                 ))}

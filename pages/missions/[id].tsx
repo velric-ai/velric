@@ -103,6 +103,41 @@ export default function MissionDetailPage() {
     }
   };
 
+                     const [submissionText, setSubmissionText] = useState('');
+const [isSubmitting, setIsSubmitting] = useState(false);
+
+const handleSubmit = async () => {
+  if (!submissionText || !mission) return;
+
+  setIsSubmitting(true);
+  try {
+    const response = await fetch('/api/submitMission', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text: submissionText,
+        prompt: (mission as any).evaluationPrompt || "Please evaluate this mission submission."
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      const encodedFeedback = encodeURIComponent(data.feedback);
+      router.push(`/feedback?feedback=${encodedFeedback}`);
+    } else {
+      alert('Failed to get feedback: ' + data.error);
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Submission failed');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
   if (isLoading) {
     return (
       <>
@@ -429,8 +464,26 @@ export default function MissionDetailPage() {
                          '0% Complete - Not Started'}
                       </p>
                     </div>
+                   
+                   <div className="mt-10">
+  <h3 className="text-xl font-semibold mb-2">Submit Your Mission</h3>
+  <textarea
+    className="w-full h-40 p-4 rounded bg-gray-800 text-white border border-gray-600"
+    placeholder="Write your answer here..."
+    value={submissionText}
+    onChange={(e) => setSubmissionText(e.target.value)}
+  />
+  <button
+    onClick={handleSubmit}
+    disabled={isSubmitting}
+    className="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded transition-all disabled:opacity-50"
+  >
+    {isSubmitting ? 'Submitting...' : 'Submit for Feedback'}
+  </button>
+</div>
 
                     {/* Enhanced Action Buttons */}
+                   {/*
                     <div className="space-y-4 mt-8">
                       {missionStatus === 'suggested' && (
                         <button
@@ -495,6 +548,8 @@ export default function MissionDetailPage() {
                         </span>
                       </button>
                     </div>
+                     */}
+
                   </div>
                 </div>
               </div>
