@@ -1,0 +1,36 @@
+# Netlify Configuration File
+
+[build]
+  publish = ".next"
+  command = "npm install --legacy-peer-deps && npm run build"
+
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_VERSION = "9"
+  USE_DUMMY_DATA = "true"
+  NEXT_PUBLIC_SUPABASE_URL = "https://yzszgcnuxpkvxueivbyx.supabase.co"
+
+# Redirect all requests to Next.js
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for security and performance
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    cache-control = "no-cache"
+
+# Handle Next.js static files
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    cache-control = "public, max-age=31536000, immutable"

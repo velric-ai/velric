@@ -28,7 +28,8 @@ const supabaseKey = process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Toggle between dummy data and real Supabase
-export const USE_DUMMY = !supabaseKey || process.env.USE_DUMMY_DATA === 'true';
+// Default to dummy data in production deployments without API keys
+export const USE_DUMMY = !supabaseKey || process.env.USE_DUMMY_DATA !== 'false';
 
 if (USE_DUMMY) {
   console.warn('Using dummy data mode. Set SUPABASE_KEY environment variable to use real database.');
@@ -438,4 +439,90 @@ export async function getUserSurvey(userId: string): Promise<any> {
 
   if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
   return data;
+}
+
+// Get user's mission status
+export async function getUserMissionStatus(userId: string, missionId: string): Promise<any> {
+  if (USE_DUMMY) {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // Check if mission exists in mock data
+    const userMission = mockStore.userMissions.find(
+      um => um.user_id === userId && um.mission_id === missionId
+    );
+    
+    return userMission || null;
+  }
+
+  const { data, error } = await supabase
+    .from('user_missions')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('mission_id', missionId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
+  return data;
+}
+
+// Get submission by ID
+export async function getSubmissionById(submissionId: string): Promise<any> {
+  if (USE_DUMMY) {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // Return mock submission data
+    return {
+      id: submissionId,
+      user_id: "demo-user-123",
+      mission_id: "1",
+      submission_text: "This is a mock submission for testing purposes.",
+      status: "submitted",
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  const { data, error } = await supabase
+    .from('user_missions')
+    .select('*')
+    .eq('id', submissionId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
+// Create a new submission
+export async function createSubmission(submissionData: {
+  userId: string;
+  missionId: string;
+  submissionText: string;
+}): Promise<any> {
+  if (USE_DUMMY) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const newSubmission = {
+      id: `submission-${Date.now()}`,
+      user_id: submissionData.userId,
+      mission_id: submissionData.missionId,
+      submission_text: submissionData.submissionText,
+      status: "submitted",
+      created_at: new Date().toISOString(),
+    };
+
+    return { success: true, submission: newSubmission };
+  }
+
+  const { data, error } = await supabase
+    .from('user_missions')
+    .insert({
+      user_id: submissionData.userId,
+      mission_id: submissionData.missionId,
+      submission_text: submissionData.submissionText,
+      status: 'submitted'
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return { success: true, submission: data };
 }

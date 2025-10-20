@@ -65,7 +65,7 @@ const MissionSubmissionPage: React.FC = () => {
     fetchMissionData();
   }, [missionId]);
 
-  const handleSubmission = async (formData: { interests?: string[]; resumeText?: string }) => {
+  const handleSubmission = async (formData: { submissionText: string }) => {
     if (!missionId) return;
     
     try {
@@ -156,6 +156,8 @@ const MissionSubmissionPage: React.FC = () => {
           {/* Divider Glow */}
           <div className="h-[1px] bg-gradient-to-r from-[#6A0DAD]/30 via-transparent to-[#00D9FF]/30" />
 
+          {/* Submission Form Section */}
+          <div className="max-w-5xl mx-auto">
             <SubmissionForm 
               onSubmit={handleSubmission}
               isLoading={isSubmitting}
