@@ -1,10 +1,9 @@
 // pages/api/missions/index.ts
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getMissions } from '@/lib/supabaseClient';
-import { MissionTemplate } from '@/types';
+import { getAllMissions, StaticMission } from '@/data/staticMissions';
 
 interface ApiResponse {
-  missions?: MissionTemplate[];
+  missions?: StaticMission[];
   error?: string;
   success: boolean;
 }
@@ -21,10 +20,7 @@ export default async function handler(
   }
 
   try {
-    const { status } = req.query;
-    const statusFilter = typeof status === 'string' ? status : undefined;
-    
-    const missions = await getMissions(statusFilter);
+    const missions = getAllMissions();
     
     res.status(200).json({
       success: true,

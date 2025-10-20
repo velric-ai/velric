@@ -4,7 +4,7 @@ import DashboardSection from "@/components/DashboardSection";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { MissionTemplate } from "@/types";
+import { StaticMission } from "@/data/staticMissions";
 
 // Hardcoded example data matching database schema
 const mockMissions = {
@@ -91,7 +91,17 @@ const mockMissions = {
 
 export default function Dashboard() {
   const router = useRouter();
-  const [missions, setMissions] = useState(mockMissions);
+  const [missions, setMissions] = useState<{
+    starred: StaticMission[];
+    inProgress: StaticMission[];
+    completed: StaticMission[];
+    suggested: StaticMission[];
+  }>({
+    starred: [],
+    inProgress: [],
+    completed: [],
+    suggested: []
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -139,64 +149,35 @@ export default function Dashboard() {
       setIsLoading(true);
       setError(null);
       
-      // Fetch user missions from API
-      const response = await fetch(`/api/user/missions?userId=${userId}`);
+      // Fetch all missions from our static data API
+      const response = await fetch('/api/missions');
       const data = await response.json();
       
       if (data.success) {
-        // Transform API data to match expected format
-        const transformedMissions = {
-          starred: data.missions.filter((m: any) => m.status === 'starred'),
-          inProgress: data.missions.filter((m: any) => m.status === 'in_progress'),
-          completed: data.missions.filter((m: any) => m.status === 'completed'),
-          suggested: data.missions.filter((m: any) => m.status === 'suggested' || !m.status)
-        };
+        // For demo purposes, distribute missions across categories
+        const allMissions = data.missions;
         
-        setMissions(transformedMissions);
+        setMissions({
+          starred: [], // Keep empty for now
+          inProgress: [], // Keep empty for now  
+          completed: [], // Keep empty for now
+          suggested: allMissions // Put all 5 missions in suggested
+        });
       } else {
         console.warn('Failed to fetch missions:', data.error);
-        // Keep using mock data as fallback
+        setError('Failed to load missions. Please click Generate Personalized Missions.');
       }
     } catch (error) {
       console.error('Error fetching missions:', error);
-      setError('Failed to load missions. Using sample data.');
-      // Keep using mock data as fallback
+      setError('Failed to load missions. Please click Generate Personalized Missions.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const generatePersonalizedMissions = async () => {
-    try {
-      setIsGenerating(true);
-      setError(null);
-      
-      const response = await fetch('/api/personalized_missions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          count: 5,
-          regenerate: true
-        })
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // Refresh missions after generation
-        await fetchUserMissions();
-      } else {
-        setError(data.error || 'Failed to generate personalized missions');
-      }
-    } catch (error) {
-      console.error('Error generating missions:', error);
-      setError('Failed to generate personalized missions');
-    } finally {
-      setIsGenerating(false);
-    }
+    // Navigate to the dedicated missions page
+    router.push('/missions');
   };
 
   return (
@@ -273,7 +254,7 @@ export default function Dashboard() {
               </div>
               <div className="bg-[#1C1C1E] p-6 rounded-2xl text-center">
                 <div className="text-2xl font-bold text-[#6A0DAD]">
-                  {missions.completed.reduce((sum, mission) => sum + (mission.grade || 0), 0) + (missions.completed.length * 10)}
+                  {missions.completed.reduce((sum, mission) => sum + (mission.grade || 85), 0)}
                 </div>
                 <div className="text-sm text-white/70">Velric Score</div>
               </div>

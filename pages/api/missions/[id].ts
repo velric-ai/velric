@@ -1,10 +1,9 @@
 // pages/api/missions/[id].ts
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getMissionById } from '@/lib/supabaseClient';
-import { MissionTemplate } from '@/types';
+import { getMissionById, StaticMission } from '@/data/staticMissions';
 
 interface ApiResponse {
-  mission?: MissionTemplate;
+  mission?: StaticMission;
   error?: string;
   success: boolean;
 }
@@ -30,7 +29,7 @@ export default async function handler(
       });
     }
     
-    const mission = await getMissionById(id);
+    const mission = getMissionById(id);
     
     if (!mission) {
       return res.status(404).json({
