@@ -464,3 +464,65 @@ export async function getUserMissionStatus(userId: string, missionId: string): P
   if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
   return data;
 }
+
+// Get submission by ID
+export async function getSubmissionById(submissionId: string): Promise<any> {
+  if (USE_DUMMY) {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // Return mock submission data
+    return {
+      id: submissionId,
+      user_id: "demo-user-123",
+      mission_id: "1",
+      submission_text: "This is a mock submission for testing purposes.",
+      status: "submitted",
+      created_at: new Date().toISOString(),
+    };
+  }
+
+  const { data, error } = await supabase
+    .from('user_missions')
+    .select('*')
+    .eq('id', submissionId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
+// Create a new submission
+export async function createSubmission(submissionData: {
+  userId: string;
+  missionId: string;
+  submissionText: string;
+}): Promise<any> {
+  if (USE_DUMMY) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const newSubmission = {
+      id: `submission-${Date.now()}`,
+      user_id: submissionData.userId,
+      mission_id: submissionData.missionId,
+      submission_text: submissionData.submissionText,
+      status: "submitted",
+      created_at: new Date().toISOString(),
+    };
+
+    return { success: true, submission: newSubmission };
+  }
+
+  const { data, error } = await supabase
+    .from('user_missions')
+    .insert({
+      user_id: submissionData.userId,
+      mission_id: submissionData.missionId,
+      submission_text: submissionData.submissionText,
+      status: 'submitted'
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return { success: true, submission: data };
+}
