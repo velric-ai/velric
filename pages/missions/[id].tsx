@@ -6,13 +6,13 @@ import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { MissionTemplate } from '@/types';
+import { StaticMission } from '@/data/staticMissions';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 
 export default function MissionDetailPage() {
   const router = useRouter();
   const { id } = router.query;
-  const [mission, setMission] = useState<MissionTemplate | null>(null);
+  const [mission, setMission] = useState<StaticMission | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [missionStatus, setMissionStatus] = useState<string>('suggested');
@@ -234,11 +234,26 @@ export default function MissionDetailPage() {
                     </div>
 
                     <p className="text-[#F5F5F5] text-lg mb-8 leading-relaxed font-['Inter'] hover:text-[#00D9FF]/80 transition-colors duration-300">
-                      {mission.details?.overview || mission.description}
+                      {mission.description}
                     </p>
 
-                    {/* Requirements with Enhanced Styling */}
-                    {mission.details?.requirements && (
+                    {/* Context Section */}
+                    {mission.context && (
+                      <div className="mb-8">
+                        <div className="flex items-center mb-6">
+                          <div className="w-8 h-8 bg-gradient-to-r from-[#00D9FF]/20 to-[#6A0DAD]/20 rounded-lg flex items-center justify-center mr-3 border border-[#00D9FF]/30">
+                            <svg className="w-4 h-4 text-[#00D9FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <h3 className="text-2xl font-semibold text-[#F5F5F5] font-['Space_Grotesk']">Context</h3>
+                        </div>
+                        <p className="text-[#F5F5F5] text-lg leading-relaxed font-['Inter']">{mission.context}</p>
+                      </div>
+                    )}
+
+                    {/* Tasks Section */}
+                    {mission.tasks && (
                       <div className="mb-8">
                         <div className="flex items-center mb-6">
                           <div className="w-8 h-8 bg-gradient-to-r from-[#00D9FF]/20 to-[#6A0DAD]/20 rounded-lg flex items-center justify-center mr-3 border border-[#00D9FF]/30">
@@ -246,21 +261,23 @@ export default function MissionDetailPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                             </svg>
                           </div>
-                          <h3 className="text-2xl font-semibold text-[#F5F5F5] font-['Space_Grotesk']">Requirements</h3>
+                          <h3 className="text-2xl font-semibold text-[#F5F5F5] font-['Space_Grotesk']">Tasks</h3>
                         </div>
                         <ul className="space-y-4">
-                          {mission.details.requirements.map((req, index) => (
+                          {mission.tasks.map((task, index) => (
                             <li key={index} className="flex items-start group/item hover:translate-x-2 transition-transform duration-200">
-                              <div className="w-3 h-3 bg-gradient-to-r from-[#00D9FF] to-[#6A0DAD] rounded-full mt-3 mr-4 flex-shrink-0 group-hover/item:scale-125 transition-transform duration-200"></div>
-                              <span className="text-[#F5F5F5] text-lg font-['Inter'] group-hover/item:text-[#00D9FF]/80 transition-colors duration-200">{req}</span>
+                              <div className="w-6 h-6 bg-gradient-to-r from-[#00D9FF] to-[#6A0DAD] rounded-full mt-1 mr-4 flex-shrink-0 group-hover/item:scale-110 transition-transform duration-200 flex items-center justify-center">
+                                <span className="text-white text-sm font-bold">{index + 1}</span>
+                              </div>
+                              <span className="text-[#F5F5F5] text-lg font-['Inter'] group-hover/item:text-[#00D9FF]/80 transition-colors duration-200">{task}</span>
                             </li>
                           ))}
                         </ul>
                       </div>
                     )}
 
-                    {/* Technologies with Interactive Tags */}
-                    {mission.details?.technologies && (
+                    {/* Skills with Interactive Tags */}
+                    {mission.skills && (
                       <div className="mb-8">
                         <div className="flex items-center mb-6">
                           <div className="w-8 h-8 bg-gradient-to-r from-[#6A0DAD]/20 to-[#00D9FF]/20 rounded-lg flex items-center justify-center mr-3 border border-[#6A0DAD]/30">
@@ -268,37 +285,37 @@ export default function MissionDetailPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                             </svg>
                           </div>
-                          <h3 className="text-2xl font-semibold text-[#F5F5F5] font-['Space_Grotesk']">Technologies</h3>
+                          <h3 className="text-2xl font-semibold text-[#F5F5F5] font-['Space_Grotesk']">Required Skills</h3>
                         </div>
                         <div className="flex flex-wrap gap-3">
-                          {mission.details.technologies.map((tech, index) => (
+                          {mission.skills.map((skill, index) => (
                             <span
                               key={index}
                               className="bg-[#0D0D0D] text-[#F5F5F5] px-4 py-2 rounded-2xl text-sm font-['Inter'] border border-gray-600 hover:border-[#00D9FF]/50 hover:bg-[#00D9FF]/10 hover:scale-105 transition-all duration-200 cursor-pointer"
                             >
-                              {tech}
+                              {skill}
                             </span>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {/* Learning Outcomes */}
-                    {mission.details?.learningOutcomes && (
+                    {/* Evaluation Metrics */}
+                    {mission.evaluationMetrics && (
                       <div>
                         <div className="flex items-center mb-6">
                           <div className="w-8 h-8 bg-gradient-to-r from-[#6A0DAD]/20 to-[#00D9FF]/20 rounded-lg flex items-center justify-center mr-3 border border-[#6A0DAD]/30">
                             <svg className="w-4 h-4 text-[#6A0DAD]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                             </svg>
                           </div>
-                          <h3 className="text-2xl font-semibold text-[#F5F5F5] font-['Space_Grotesk']">What You'll Learn</h3>
+                          <h3 className="text-2xl font-semibold text-[#F5F5F5] font-['Space_Grotesk']">Evaluation Criteria</h3>
                         </div>
                         <ul className="space-y-4">
-                          {mission.details.learningOutcomes.map((outcome, index) => (
+                          {mission.evaluationMetrics.map((metric, index) => (
                             <li key={index} className="flex items-start group/item hover:translate-x-2 transition-transform duration-200">
                               <div className="w-3 h-3 bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] rounded-full mt-3 mr-4 flex-shrink-0 group-hover/item:scale-125 transition-transform duration-200"></div>
-                              <span className="text-[#F5F5F5] text-lg font-['Inter'] group-hover/item:text-[#6A0DAD]/80 transition-colors duration-200">{outcome}</span>
+                              <span className="text-[#F5F5F5] text-lg font-['Inter'] group-hover/item:text-[#6A0DAD]/80 transition-colors duration-200">{metric}</span>
                             </li>
                           ))}
                         </ul>
@@ -351,27 +368,32 @@ export default function MissionDetailPage() {
                         </div>
                       </div>
 
-                      {mission.submissions && (
-                        <div className="group/metric hover:scale-105 transition-transform duration-200">
-                          <label className="text-gray-400 text-xs font-['Inter'] uppercase tracking-widest mb-2 block">Submissions:</label>
-                          <div className="p-3 bg-[#0D0D0D]/50 rounded-xl border border-gray-700/50 group-hover/metric:border-[#6A0DAD]/30 transition-all duration-200">
-                            <p className="text-[#F5F5F5] font-semibold text-lg font-['Inter']">
-                              <span className="text-2xl bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] bg-clip-text text-transparent">{mission.submissions}</span> developers
-                            </p>
-                          </div>
+                      <div className="group/metric hover:scale-105 transition-transform duration-200">
+                        <label className="text-gray-400 text-xs font-['Inter'] uppercase tracking-widest mb-2 block">Time Estimate:</label>
+                        <div className="p-3 bg-[#0D0D0D]/50 rounded-xl border border-gray-700/50 group-hover/metric:border-[#00D9FF]/30 transition-all duration-200">
+                          <p className="text-[#F5F5F5] font-semibold text-lg font-['Inter']">
+                            <span className="text-2xl bg-gradient-to-r from-[#00D9FF] to-[#6A0DAD] bg-clip-text text-transparent">{mission.timeEstimate}</span>
+                          </p>
                         </div>
-                      )}
+                      </div>
 
-                      {mission.timeLimit && (
-                        <div className="group/metric hover:scale-105 transition-transform duration-200">
-                          <label className="text-gray-400 text-xs font-['Inter'] uppercase tracking-widest mb-2 block">Time Limit:</label>
-                          <div className="p-3 bg-[#0D0D0D]/50 rounded-xl border border-gray-700/50 group-hover/metric:border-[#00D9FF]/30 transition-all duration-200">
-                            <p className="text-[#F5F5F5] font-semibold text-lg font-['Inter']">
-                              <span className="text-2xl bg-gradient-to-r from-[#00D9FF] to-[#6A0DAD] bg-clip-text text-transparent">{mission.timeLimit}</span>
-                            </p>
-                          </div>
+                      <div className="group/metric hover:scale-105 transition-transform duration-200">
+                        <label className="text-gray-400 text-xs font-['Inter'] uppercase tracking-widest mb-2 block">Difficulty:</label>
+                        <div className="p-3 bg-[#0D0D0D]/50 rounded-xl border border-gray-700/50 group-hover/metric:border-[#6A0DAD]/30 transition-all duration-200">
+                          <p className="text-[#F5F5F5] font-semibold text-lg font-['Inter']">
+                            <span className="text-2xl bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] bg-clip-text text-transparent">{mission.difficulty}</span>
+                          </p>
                         </div>
-                      )}
+                      </div>
+
+                      <div className="group/metric hover:scale-105 transition-transform duration-200">
+                        <label className="text-gray-400 text-xs font-['Inter'] uppercase tracking-widest mb-2 block">Company:</label>
+                        <div className="p-3 bg-[#0D0D0D]/50 rounded-xl border border-gray-700/50 group-hover/metric:border-[#00D9FF]/30 transition-all duration-200">
+                          <p className="text-[#F5F5F5] font-semibold text-lg font-['Inter']">
+                            <span className="text-xl bg-gradient-to-r from-[#00D9FF] to-[#6A0DAD] bg-clip-text text-transparent">{mission.company}</span>
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Enhanced Progress Section */}
