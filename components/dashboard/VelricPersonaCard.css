@@ -1,0 +1,196 @@
+/* VelricPersonaCard.css */
+.velric-persona-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.persona-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+.persona-section {
+  margin-bottom: 16px;
+}
+
+.persona-section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.strengths-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.strengths-list li {
+  font-size: 14px;
+  color: #4b5563;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.strength-bullet {
+  color: #10b981;
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+.emerging-areas-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.emerging-areas-list li {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.emerging-bullet {
+  color: #9ca3af;
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+.work-style-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.work-style-tag {
+  font-size: 12px;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+}
+
+.work-style-separator {
+  margin-left: 8px;
+  color: #9ca3af;
+}
+
+.projection-panel {
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.projection-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e3a8a;
+  margin-bottom: 4px;
+}
+
+.projection-text {
+  font-size: 14px;
+  color: #1e40af;
+  line-height: 1.4;
+}
+
+.loading-skeleton {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.skeleton-title {
+  height: 24px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  width: 75%;
+  margin-bottom: 16px;
+}
+
+.skeleton-section {
+  margin-bottom: 16px;
+}
+
+.skeleton-line {
+  height: 16px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.skeleton-line.full {
+  width: 100%;
+}
+
+.skeleton-line.partial {
+  width: 85%;
+}
+
+.skeleton-tags {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.skeleton-tag {
+  height: 24px;
+  background-color: #e5e7eb;
+  border-radius: 12px;
+}
+
+.skeleton-tag.small {
+  width: 64px;
+}
+
+.skeleton-tag.medium {
+  width: 80px;
+}
+
+.skeleton-tag.large {
+  width: 72px;
+}
+
+.skeleton-projection {
+  height: 64px;
+  background-color: #e5e7eb;
+  border-radius: 8px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px 0;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  color: #9ca3af;
+  margin-bottom: 12px;
+}
+
+.empty-state-title {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.empty-state-subtitle {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}

@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { useEffect } from "react";
-import CTAButton from "./CTAButton";
 import Image from "next/image";
 
 export default function HeroSection() {
@@ -132,14 +131,7 @@ export default function HeroSection() {
           Proof driven hiring starts with us.
         </motion.p>
 
-        <motion.div
-          className="mt-8"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 1.0, type: "spring", stiffness: 100 }}
-        >
-          <CTAButton />
-        </motion.div>
+
 
         {/* Company Logos Ticker - Continuous Scroll */}
         <motion.div

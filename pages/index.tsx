@@ -1,7 +1,6 @@
 import Head from "next/head";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import WaitlistForm from "@/components/WaitlistForm";
 
 import Footer from "@/components/Footer";
 
@@ -747,44 +746,6 @@ export default function Home() {
                 </div>
               </motion.div>
             </div>
-
-            {/* Join Waitlist Section */}
-            <motion.div
-              className="text-center"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-            >
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">Join Waitlist</h3>
-              <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
-                Be first to access the future of execution-based learning.
-              </p>
-
-              {/* Waitlist Form */}
-              <div className="max-w-md mx-auto space-y-4">
-                <input
-                  type="text"
-                  placeholder="Full Name"
-                  className="w-full px-4 py-3 bg-[#2A2A2E] border border-purple-500/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-500/50 transition-colors"
-                />
-                <input
-                  type="email"
-                  placeholder="Email Address"
-                  className="w-full px-4 py-3 bg-[#2A2A2E] border border-purple-500/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-500/50 transition-colors"
-                />
-                <select
-                  className="w-full px-4 py-3 bg-[#2A2A2E] border border-purple-500/20 rounded-xl text-white focus:outline-none focus:border-purple-500/50 transition-colors"
-                  title="Select your area of interest"
-                  aria-label="Area of Interest"
-                >
-                  <option value="">Area of Interest</option>
-                  <option value="talent">For Talent</option>
-                  <option value="employers">For Employers</option>
-                  <option value="partners">For Partners</option>
-                </select>
-              </div>
-            </motion.div>
           </div>
         </section>
 

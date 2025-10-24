@@ -1,0 +1,370 @@
+/* ===== VELRIC DASHBOARD GLASSMORPHISM STYLES ===== */
+
+/* Dashboard Background with Dark Gradient */
+.dashboard-background {
+  background: linear-gradient(135deg, #1a0b2e 0%, #16213e 50%, #0f3460 100%);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Add subtle noise texture */
+.dashboard-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(147, 51, 234, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.08) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Glassmorphism Card Base */
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 300ms ease;
+  pointer-events: none;
+}
+
+.glass-card:hover::before {
+  opacity: 1;
+}
+
+.glass-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Floating Animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+.floating-card {
+  animation: float 6s ease-in-out infinite;
+}
+
+.floating-card:nth-child(2n) {
+  animation-delay: -2s;
+}
+
+.floating-card:nth-child(3n) {
+  animation-delay: -4s;
+}
+
+/* Velric Score Circle Enhancements */
+.score-circle-container {
+  position: relative;
+}
+
+.score-circle {
+  transition: stroke-dashoffset 2s ease-out;
+  filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.5));
+}
+
+.score-circle-animated {
+  stroke: url(#scoreGradient);
+  stroke-width: 10;
+  animation: rotateGradient 4s linear infinite;
+}
+
+@keyframes rotateGradient {
+  0% { stroke-dasharray: 0 628; }
+  50% { stroke-dasharray: 314 314; }
+  100% { stroke-dasharray: 628 0; }
+}
+
+/* Domain Cards with Unique Gradients */
+.domain-card-backend {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(238, 90, 111, 0.1) 100%);
+  border-color: rgba(255, 107, 107, 0.2);
+}
+
+.domain-card-frontend {
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.1) 100%);
+  border-color: rgba(79, 172, 254, 0.2);
+}
+
+.domain-card-analytics {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-color: rgba(102, 126, 234, 0.2);
+}
+
+.domain-card-strategy {
+  background: linear-gradient(135deg, rgba(240, 147, 251, 0.1) 0%, rgba(245, 87, 108, 0.1) 100%);
+  border-color: rgba(240, 147, 251, 0.2);
+}
+
+.domain-card-mobile {
+  background: linear-gradient(135deg, rgba(168, 237, 234, 0.1) 0%, rgba(254, 214, 227, 0.1) 100%);
+  border-color: rgba(168, 237, 234, 0.2);
+}
+
+.domain-card-ai {
+  background: linear-gradient(135deg, rgba(253, 235, 113, 0.1) 0%, rgba(248, 216, 0, 0.1) 100%);
+  border-color: rgba(253, 235, 113, 0.2);
+}
+
+/* Typography Enhancements */
+.glass-text-primary {
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.glass-text-secondary {
+  color: #b8c5d6;
+}
+
+.glass-text-muted {
+  color: #a0a0c5;
+}
+
+.glass-text-accent-positive {
+  color: #00f5a0;
+  text-shadow: 0 0 10px rgba(0, 245, 160, 0.5);
+}
+
+.glass-text-accent-negative {
+  color: #ff6b9d;
+  text-shadow: 0 0 10px rgba(255, 107, 157, 0.5);
+}
+
+.glass-text-accent-neutral {
+  color: #4facfe;
+  text-shadow: 0 0 10px rgba(79, 172, 254, 0.5);
+}
+
+/* Quick Stats Cards */
+.quick-stat-positive {
+  background: linear-gradient(135deg, rgba(0, 245, 160, 0.1) 0%, rgba(0, 245, 160, 0.05) 100%);
+  border-color: rgba(0, 245, 160, 0.2);
+}
+
+.quick-stat-neutral {
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(79, 172, 254, 0.05) 100%);
+  border-color: rgba(79, 172, 254, 0.2);
+}
+
+.quick-stat-info {
+  background: linear-gradient(135deg, rgba(118, 75, 162, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border-color: rgba(118, 75, 162, 0.2);
+}
+
+/* Status Badges */
+.status-badge-public {
+  background: linear-gradient(135deg, #00f5a0, #00d084);
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(0, 245, 160, 0.5);
+  box-shadow: 0 0 20px rgba(0, 245, 160, 0.3);
+}
+
+.status-badge-private {
+  background: linear-gradient(135deg, #764ba2, #667eea);
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(118, 75, 162, 0.5);
+  box-shadow: 0 0 20px rgba(118, 75, 162, 0.3);
+}
+
+.status-badge-connected {
+  background: linear-gradient(135deg, #00f2fe, #4facfe);
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+  box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+}
+
+/* Button Enhancements */
+.glass-button {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #ffffff;
+  padding: 12px 24px;
+  transition: all 300ms ease;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.glass-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.6);
+  background: linear-gradient(135deg, #7c8ef0, #8a5fb8);
+}
+
+/* Navigation Tabs */
+.nav-tab {
+  color: #b8c5d6;
+  transition: all 300ms ease;
+  position: relative;
+}
+
+.nav-tab.active {
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(102, 126, 234, 0.8);
+}
+
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 1px;
+  box-shadow: 0 0 10px rgba(102, 126, 234, 0.8);
+}
+
+.nav-tab:hover:not(.active) {
+  color: #ffffff;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+/* Mission Cards */
+.mission-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  transition: all 300ms ease;
+}
+
+.mission-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Score Badges */
+.score-badge-excellent {
+  background: linear-gradient(135deg, #00f5a0, #00d084);
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(0, 245, 160, 0.4);
+}
+
+.score-badge-good {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(79, 172, 254, 0.4);
+}
+
+.score-badge-average {
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(240, 147, 251, 0.4);
+}
+
+.score-badge-poor {
+  background: linear-gradient(135deg, #ff6b9d, #c471ed);
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(255, 107, 157, 0.4);
+}
+
+/* Persona Card Special Styling */
+.persona-card {
+  background: linear-gradient(135deg, rgba(118, 75, 162, 0.1) 0%, rgba(102, 126, 234, 0.1) 100%);
+  border-color: rgba(118, 75, 162, 0.2);
+}
+
+.persona-type-text {
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-shadow: 0 0 20px rgba(118, 75, 162, 0.8);
+}
+
+.projection-box {
+  background: linear-gradient(135deg, rgba(118, 75, 162, 0.15) 0%, rgba(102, 126, 234, 0.15) 100%);
+  border: 1px solid rgba(118, 75, 162, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+/* Work Style Tags */
+.work-style-tag {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #b8c5d6;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+/* Header Glassmorphism */
+.glass-header {
+  background: rgba(26, 11, 46, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .glass-card {
+    border-radius: 16px;
+    backdrop-filter: blur(8px);
+  }
+  
+  .floating-card {
+    animation: none;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1199px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* Performance Optimizations */
+.glass-card,
+.glass-button,
+.mission-card {
+  will-change: transform, box-shadow;
+}
+
+/* Breathing Glow Effect */
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37); }
+  50% { box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2); }
+}
+
+.breathing-glow {
+  animation: breathe 4s ease-in-out infinite;
+}
