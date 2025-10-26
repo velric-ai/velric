@@ -7,59 +7,104 @@ export async function getCompletedSubmissionsByUser(userId: string) {
       (s) => s.user_id === userId && s.status === "graded"
     );
   }
-  const { data, error } = await supabase
-    .from("submissions")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("status", "graded");
-  if (error) throw error;
-  return data || [];
+  try {
+    const { data, error } = await supabase
+      .from("submissions")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("status", "graded");
+    if (error) throw error;
+    return data || [];
+  } catch (error: any) {
+    // Fall back to mockStore if table doesn't exist
+    if (error?.code === "PGRST205" || error?.code === "42P01") {
+      console.warn("Submissions table not found, using mockStore fallback");
+      return mockStore.submissions.filter(
+        (s) => s.user_id === userId && s.status === "graded"
+      );
+    }
+    throw error;
+  }
 }
 // lib/supabaseClient.ts
-import { createClient } from '@supabase/supabase-js';
-import { MissionTemplate, UserMission, Project, ProjectDoc, UserMissionActionRequest } from '@/types';
-import { MockDataStore, mockMissionTemplates } from '@/data/mockMissions';
+import { createClient } from "@supabase/supabase-js";
+import {
+  MissionTemplate,
+  UserMission,
+  Project,
+  ProjectDoc,
+  UserMissionActionRequest,
+} from "@/types";
+import { MockDataStore, mockMissionTemplates } from "@/data/mockMissions";
 
 // Supabase configuration
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yzszgcnuxpkvxueivbyx.supabase.co';
-const supabaseKey = process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "https://yzszgcnuxpkvxueivbyx.supabase.co";
+const supabaseKey =
+  process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 // Initialize Supabase client
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Determine if we should use dummy data
-const hasValidSupabaseConfig = supabaseKey && 
-  supabaseKey !== 'your_supabase_anon_key_here' && 
-  supabaseKey !== 'your_openai_api_key_here' &&
-  supabaseKey !== 'PUT_YOUR_SERVICE_ROLE_KEY_HERE' &&
-  supabaseKey !== 'PUT_YOUR_ANON_KEY_HERE' &&
-  supabaseUrl && supabaseUrl.startsWith('https://');
+const hasValidSupabaseConfig =
+  supabaseKey &&
+  supabaseKey !== "your_supabase_anon_key_here" &&
+  supabaseKey !== "your_openai_api_key_here" &&
+  supabaseKey !== "PUT_YOUR_SERVICE_ROLE_KEY_HERE" &&
+  supabaseKey !== "PUT_YOUR_ANON_KEY_HERE" &&
+  supabaseUrl &&
+  supabaseUrl.startsWith("https://");
 
 // Toggle between dummy data and real Supabase
-export const USE_DUMMY = !hasValidSupabaseConfig || process.env.USE_DUMMY_DATA === 'true';
+export const USE_DUMMY =
+  !hasValidSupabaseConfig || process.env.USE_DUMMY_DATA === "true";
 
 if (USE_DUMMY) {
-  console.warn('🟡 Using dummy data mode. To enable Supabase:');
-  console.warn('   1. Set up Supabase project at https://supabase.com');
-  console.warn('   2. Update SUPABASE_KEY and NEXT_PUBLIC_SUPABASE_URL in .env.local');
-  console.warn('   3. Set USE_DUMMY_DATA=false');
-  console.warn('   4. See SUPABASE_SETUP_GUIDE.md for detailed instructions');
+  console.warn("🟡 Using dummy data mode. To enable Supabase:");
+  console.warn("   1. Set up Supabase project at https://supabase.com");
+  console.warn(
+    "   2. Update SUPABASE_KEY and NEXT_PUBLIC_SUPABASE_URL in .env.local"
+  );
+  console.warn("   3. Set USE_DUMMY_DATA=false");
+  console.warn("   4. See SUPABASE_SETUP_GUIDE.md for detailed instructions");
 } else {
-  console.log('✅ Connected to Supabase database.');
+  console.log("✅ Connected to Supabase database.");
   console.log(`📊 Database URL: ${supabaseUrl}`);
-  console.log('🔄 Missions will be stored persistently and shared across developers');
+  console.log(
+    "🔄 Missions will be stored persistently and shared across developers"
+  );
 }
 
-const mockStore = MockDataStore.getInstance();
+// Make mockStore persistent across hot reloads (like dummyMissionStore)
+const globalForMockStore = global as typeof globalThis & {
+  mockStore: ReturnType<typeof MockDataStore.getInstance>;
+};
+
+const mockStore = globalForMockStore.mockStore || MockDataStore.getInstance();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForMockStore.mockStore = mockStore;
+}
 
 // Test Supabase connectivity
-export async function testSupabaseConnection(): Promise<{ connected: boolean; error?: string }> {
+export async function testSupabaseConnection(): Promise<{
+  connected: boolean;
+  error?: string;
+}> {
   if (USE_DUMMY) {
-    return { connected: false, error: 'Using dummy mode - Supabase not configured' };
+    return {
+      connected: false,
+      error: "Using dummy mode - Supabase not configured",
+    };
   }
 
   try {
-    const { data, error } = await supabase.from('missions').select('count').limit(1);
+    const { data, error } = await supabase
+      .from("missions")
+      .select("count")
+      .limit(1);
     if (error) throw error;
     return { connected: true };
   } catch (error) {
@@ -68,23 +113,27 @@ export async function testSupabaseConnection(): Promise<{ connected: boolean; er
 }
 
 // Initialize database schema if needed (for first-time setup)
-export async function initializeDatabase(): Promise<{ success: boolean; error?: string }> {
+export async function initializeDatabase(): Promise<{
+  success: boolean;
+  error?: string;
+}> {
   if (USE_DUMMY) {
-    return { success: false, error: 'Cannot initialize - using dummy mode' };
+    return { success: false, error: "Cannot initialize - using dummy mode" };
   }
 
   try {
     // Test if tables exist by trying to select from missions table
-    const { error } = await supabase.from('missions').select('id').limit(1);
-    
-    if (error && error.message.includes('does not exist')) {
+    const { error } = await supabase.from("missions").select("id").limit(1);
+
+    if (error && error.message.includes("does not exist")) {
       // Tables don't exist - they need to be created via Supabase dashboard or migration
-      return { 
-        success: false, 
-        error: 'Database tables do not exist. Please run the SQL migration in migrations/create_projects_schema.sql via your Supabase dashboard.' 
+      return {
+        success: false,
+        error:
+          "Database tables do not exist. Please run the SQL migration in migrations/create_projects_schema.sql via your Supabase dashboard.",
       };
     }
-    
+
     return { success: true };
   } catch (error) {
     return { success: false, error: String(error) };
@@ -112,10 +161,10 @@ export async function getMissions(status?: string): Promise<MissionTemplate[]> {
   }
 
   // Real Supabase implementation
-  let query = supabase.from('mission_templates').select('*');
+  let query = supabase.from("mission_templates").select("*");
   if (status) {
     // Join with user_missions table to filter by status
-    query = query.eq('user_missions.status', status);
+    query = query.eq("user_missions.status", status);
   }
 
   const { data, error } = await query;
@@ -328,38 +377,41 @@ export async function addGeneratedMissions(
 }
 
 // Get personalized missions for a user
-export async function getPersonalizedMissions(userId: string): Promise<MissionTemplate[]> {
+export async function getPersonalizedMissions(
+  userId: string
+): Promise<MissionTemplate[]> {
   if (USE_DUMMY) {
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     return mockStore.missionTemplates;
   }
 
   // Get user survey data for personalization
   const { data: surveyData } = await supabase
-    .from('user_surveys')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+    .from("user_surveys")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
     .limit(1)
     .single();
 
   // Get existing user missions to filter out already assigned ones
   const { data: existingMissions } = await supabase
-    .from('user_missions')
-    .select('mission_id')
-    .eq('user_id', userId);
+    .from("user_missions")
+    .select("mission_id")
+    .eq("user_id", userId);
 
-  const existingMissionIds = existingMissions?.map((um: any) => um.mission_id) || [];
+  const existingMissionIds =
+    existingMissions?.map((um: any) => um.mission_id) || [];
 
   // Query for missions that match user preferences
   let query = supabase
-    .from('mission_templates')
-    .select('*')
-    .not('id', 'in', `(${existingMissionIds.join(',')})`)
+    .from("mission_templates")
+    .select("*")
+    .not("id", "in", `(${existingMissionIds.join(",")})`)
     .limit(20);
 
   if (surveyData?.difficulty_level) {
-    query = query.eq('difficulty', surveyData.difficulty_level);
+    query = query.eq("difficulty", surveyData.difficulty_level);
   }
 
   const { data: missions, error } = await query;
@@ -376,51 +428,77 @@ export async function getCompanyProjects(filters?: {
   limit?: number;
 }): Promise<any[]> {
   if (USE_DUMMY) {
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     // Return mock company projects data
     return [
       {
-        id: '1',
-        company_name: 'Netflix',
-        project_title: 'Content Recommendation Engine',
-        project_description: 'Build a machine learning system that analyzes user viewing history and preferences to recommend personalized content',
-        technologies_used: ['Python', 'TensorFlow', 'Redis', 'FastAPI', 'PostgreSQL'],
-        industry: 'Media',
-        difficulty_level: 'Advanced',
-        project_type: 'Data Science',
-        estimated_time: '6-8 hours',
-        learning_objectives: ['Machine Learning algorithms', 'Collaborative filtering', 'Content-based filtering', 'Real-time recommendations'],
-        business_context: 'Netflix uses sophisticated recommendation algorithms to keep users engaged and reduce churn'
+        id: "1",
+        company_name: "Netflix",
+        project_title: "Content Recommendation Engine",
+        project_description:
+          "Build a machine learning system that analyzes user viewing history and preferences to recommend personalized content",
+        technologies_used: [
+          "Python",
+          "TensorFlow",
+          "Redis",
+          "FastAPI",
+          "PostgreSQL",
+        ],
+        industry: "Media",
+        difficulty_level: "Advanced",
+        project_type: "Data Science",
+        estimated_time: "6-8 hours",
+        learning_objectives: [
+          "Machine Learning algorithms",
+          "Collaborative filtering",
+          "Content-based filtering",
+          "Real-time recommendations",
+        ],
+        business_context:
+          "Netflix uses sophisticated recommendation algorithms to keep users engaged and reduce churn",
       },
       {
-        id: '2', 
-        company_name: 'Stripe',
-        project_title: 'Payment Processing System',
-        project_description: 'Create a secure payment processing system with fraud detection and multi-currency support',
-        technologies_used: ['Node.js', 'Express', 'PostgreSQL', 'Redis', 'Docker'],
-        industry: 'Finance',
-        difficulty_level: 'Advanced',
-        project_type: 'Backend',
-        estimated_time: '5-7 hours',
-        learning_objectives: ['Payment processing', 'Security best practices', 'Fraud detection', 'API design'],
-        business_context: 'Stripe processes billions of dollars in transactions and needs robust systems'
-      }
+        id: "2",
+        company_name: "Stripe",
+        project_title: "Payment Processing System",
+        project_description:
+          "Create a secure payment processing system with fraud detection and multi-currency support",
+        technologies_used: [
+          "Node.js",
+          "Express",
+          "PostgreSQL",
+          "Redis",
+          "Docker",
+        ],
+        industry: "Finance",
+        difficulty_level: "Advanced",
+        project_type: "Backend",
+        estimated_time: "5-7 hours",
+        learning_objectives: [
+          "Payment processing",
+          "Security best practices",
+          "Fraud detection",
+          "API design",
+        ],
+        business_context:
+          "Stripe processes billions of dollars in transactions and needs robust systems",
+      },
     ];
   }
 
   let query = supabase
-    .from('company_projects')
-    .select('*')
-    .eq('is_active', true);
+    .from("company_projects")
+    .select("*")
+    .eq("is_active", true);
 
   if (filters?.industry) {
-    query = query.eq('industry', filters.industry);
+    query = query.eq("industry", filters.industry);
   }
   if (filters?.difficulty) {
-    query = query.eq('difficulty_level', filters.difficulty);
+    query = query.eq("difficulty_level", filters.difficulty);
   }
   if (filters?.projectType) {
-    query = query.eq('project_type', filters.projectType);
+    query = query.eq("project_type", filters.projectType);
   }
 
   query = query.limit(filters?.limit || 10);
@@ -432,35 +510,36 @@ export async function getCompanyProjects(filters?: {
 }
 
 // Save user survey data
-export async function saveUserSurvey(userId: string, surveyData: {
-  experienceLevel?: string;
-  programmingLanguages?: string[];
-  interests?: string[];
-  careerGoals?: string[];
-  industryPreferences?: string[];
-  availabilityHoursPerWeek?: number;
-  preferredProjectTypes?: string[];
-  resumeText?: string;
-}): Promise<void> {
+export async function saveUserSurvey(
+  userId: string,
+  surveyData: {
+    experienceLevel?: string;
+    programmingLanguages?: string[];
+    interests?: string[];
+    careerGoals?: string[];
+    industryPreferences?: string[];
+    availabilityHoursPerWeek?: number;
+    preferredProjectTypes?: string[];
+    resumeText?: string;
+  }
+): Promise<void> {
   if (USE_DUMMY) {
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     return;
   }
 
-  const { error } = await supabase
-    .from('user_surveys')
-    .upsert({
-      user_id: userId,
-      experience_level: surveyData.experienceLevel,
-      programming_languages: surveyData.programmingLanguages,
-      interests: surveyData.interests,
-      career_goals: surveyData.careerGoals,
-      industry_preferences: surveyData.industryPreferences,
-      availability_hours_per_week: surveyData.availabilityHoursPerWeek,
-      preferred_project_types: surveyData.preferredProjectTypes,
-      resume_text: surveyData.resumeText,
-      completed_at: new Date().toISOString()
-    });
+  const { error } = await supabase.from("user_surveys").upsert({
+    user_id: userId,
+    experience_level: surveyData.experienceLevel,
+    programming_languages: surveyData.programmingLanguages,
+    interests: surveyData.interests,
+    career_goals: surveyData.careerGoals,
+    industry_preferences: surveyData.industryPreferences,
+    availability_hours_per_week: surveyData.availabilityHoursPerWeek,
+    preferred_project_types: surveyData.preferredProjectTypes,
+    resume_text: surveyData.resumeText,
+    completed_at: new Date().toISOString(),
+  });
 
   if (error) throw error;
 }
@@ -468,60 +547,84 @@ export async function saveUserSurvey(userId: string, surveyData: {
 // Get user survey data
 export async function getUserSurvey(userId: string): Promise<any> {
   if (USE_DUMMY) {
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     return {
-      experience_level: 'intermediate',
-      programming_languages: ['JavaScript', 'Python', 'React'],
-      interests: ['Full-Stack Development', 'AI/ML', 'Web Development'],
-      career_goals: ['Senior Software Engineer'],
-      industry_preferences: ['Technology', 'E-commerce'],
+      experience_level: "intermediate",
+      programming_languages: ["JavaScript", "Python", "React"],
+      interests: ["Full-Stack Development", "AI/ML", "Web Development"],
+      career_goals: ["Senior Software Engineer"],
+      industry_preferences: ["Technology", "E-commerce"],
       availability_hours_per_week: 10,
-      preferred_project_types: ['Full-Stack', 'Backend'],
-      resume_text: 'Sample resume text...'
+      preferred_project_types: ["Full-Stack", "Backend"],
+      resume_text: "Sample resume text...",
     };
   }
 
   const { data, error } = await supabase
-    .from('user_surveys')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+    .from("user_surveys")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
     .limit(1)
     .single();
 
-  if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
+  if (error && error.code !== "PGRST116") throw error; // PGRST116 is "not found"
   return data;
 }
 
 // Get user's mission status
-export async function getUserMissionStatus(userId: string, missionId: string): Promise<any> {
+export async function getUserMissionStatus(
+  userId: string,
+  missionId: string
+): Promise<any> {
   if (USE_DUMMY) {
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
     // Check if mission exists in mock data
     const userMission = mockStore.userMissions.find(
-      um => um.user_id === userId && um.mission_id === missionId
+      (um) => um.user_id === userId && um.mission_id === missionId
     );
-    
+
     return userMission || null;
   }
 
-  const { data, error } = await supabase
-    .from('user_missions')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('mission_id', missionId)
-    .single();
+  // Skip DB query for non-numeric mission IDs (generated missions)
+  if (!/^\d+$/.test(missionId)) {
+    // Check mockStore for generated missions
+    const userMission = mockStore.userMissions.find(
+      (um) => um.user_id === userId && um.mission_id === missionId
+    );
+    return userMission || null;
+  }
 
-  if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
-  return data;
+  try {
+    const { data, error } = await supabase
+      .from("user_missions")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("mission_id", missionId)
+      .single();
+
+    if (error && error.code !== "PGRST116") throw error; // PGRST116 is "not found"
+    return data;
+  } catch (error: any) {
+    // Gracefully handle missing table
+    if (error?.code === "PGRST205" || error?.code === "42P01") {
+      console.warn("User missions table not found, checking mockStore");
+      const userMission = mockStore.userMissions.find(
+        (um) => um.user_id === userId && um.mission_id === missionId
+      );
+      return userMission || null;
+    }
+    throw error;
+  }
 }
 
 // Get submission by ID
 export async function getSubmissionById(submissionId: string): Promise<any> {
   if (USE_DUMMY) {
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
     // Return mock submission data
     return {
       id: submissionId,
@@ -533,14 +636,51 @@ export async function getSubmissionById(submissionId: string): Promise<any> {
     };
   }
 
-  const { data, error } = await supabase
-    .from('user_missions')
-    .select('*')
-    .eq('id', submissionId)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from("submissions")
+      .select("*")
+      .eq("id", submissionId)
+      .single();
 
-  if (error && error.code !== 'PGRST116') throw error;
-  return data;
+    if (error && error.code !== "PGRST116") throw error;
+
+    // If DB returns null, also check mockStore
+    if (!data) {
+      console.log(
+        `[MockStore] DB returned null for ${submissionId}, checking mockStore...`
+      );
+      console.log(
+        `[MockStore] Total submissions in store: ${mockStore.submissions.length}`
+      );
+      console.log(
+        `[MockStore] Available IDs:`,
+        mockStore.submissions.map((s) => s.id)
+      );
+      const mockSubmission = mockStore.submissions.find(
+        (s) => s.id === submissionId
+      );
+      if (mockSubmission) {
+        console.log(
+          `[MockStore] Found submission ${submissionId} in mockStore`
+        );
+        return mockSubmission;
+      } else {
+        console.warn(
+          `[MockStore] Submission ${submissionId} NOT found in mockStore`
+        );
+      }
+    }
+
+    return data;
+  } catch (error: any) {
+    // Fall back to mockStore if table doesn't exist
+    if (error?.code === "PGRST205" || error?.code === "42P01") {
+      console.warn("Submissions table not found, using mockStore fallback");
+      return mockStore.submissions.find((s) => s.id === submissionId) || null;
+    }
+    throw error;
+  }
 }
 
 // Create a new submission
@@ -550,8 +690,8 @@ export async function createSubmission(submissionData: {
   submissionText: string;
 }): Promise<any> {
   if (USE_DUMMY) {
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const newSubmission = {
       id: `submission-${Date.now()}`,
       user_id: submissionData.userId,
@@ -559,31 +699,131 @@ export async function createSubmission(submissionData: {
       submission_text: submissionData.submissionText,
       status: "submitted",
       created_at: new Date().toISOString(),
-    };
+    } as any;
 
+    mockStore.submissions.push(newSubmission);
     return { success: true, submission: newSubmission };
   }
 
-  const { data, error } = await supabase
-    .from('user_missions')
-    .insert({
-      user_id: submissionData.userId,
-      mission_id: submissionData.missionId,
-      submission_text: submissionData.submissionText,
-      status: 'submitted'
-    })
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from("submissions")
+      .insert({
+        user_id: submissionData.userId,
+        mission_id: submissionData.missionId,
+        submission_text: submissionData.submissionText,
+        status: "submitted",
+      })
+      .select()
+      .single();
 
-  if (error) throw error;
-  return { success: true, submission: data };
+    if (error) throw error;
+    return { success: true, submission: data };
+  } catch (error: any) {
+    // Fall back to mockStore if table doesn't exist
+    if (error?.code === "PGRST205" || error?.code === "42P01") {
+      console.warn("Submissions table not found, using mockStore fallback");
+      const newSubmission = {
+        id: `submission-${Date.now()}`,
+        user_id: submissionData.userId,
+        mission_id: submissionData.missionId,
+        submission_text: submissionData.submissionText,
+        status: "submitted",
+        created_at: new Date().toISOString(),
+      } as any;
+      console.log(
+        `[MockStore] Adding submission ${newSubmission.id} to mockStore...`
+      );
+      console.log(
+        `[MockStore] Current submissions in store: ${mockStore.submissions.length}`
+      );
+      console.log(
+        `[MockStore] Available IDs:`,
+        mockStore.submissions.map((s) => s.id)
+      );
+      mockStore.submissions.push(newSubmission);
+      console.log(
+        `[MockStore] Added submission ${newSubmission.id}, total count: ${mockStore.submissions.length}`
+      );
+      console.log(
+        `[MockStore] All submission IDs:`,
+        mockStore.submissions.map((s) => s.id)
+      );
+      return { success: true, submission: newSubmission };
+    }
+    throw error;
+  }
+}
+
+// Update an existing submission with grading/velric score
+export async function updateSubmission(
+  submissionId: string,
+  updates: Partial<{
+    feedback: string | null;
+    grades: Record<string, number> | null;
+    summary: string | null;
+    overall_score: number | null;
+    letter_grade: string | null;
+    rubric: Record<string, string> | null;
+    positiveTemplates: string[] | null;
+    improvementTemplates: string[] | null;
+    velricScore: number | null;
+    status: string;
+  }>
+): Promise<any> {
+  if (USE_DUMMY) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const idx = mockStore.submissions.findIndex((s) => s.id === submissionId);
+    if (idx >= 0) {
+      mockStore.submissions[idx] = {
+        ...mockStore.submissions[idx],
+        ...updates,
+      } as any;
+      return mockStore.submissions[idx];
+    }
+    return null;
+  }
+  try {
+    const { data, error } = await supabase
+      .from("submissions")
+      .update(updates as any)
+      .eq("id", submissionId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    // Fall back to mockStore if table doesn't exist
+    if (error?.code === "PGRST205" || error?.code === "42P01") {
+      console.warn("Submissions table not found, using mockStore fallback");
+      const idx = mockStore.submissions.findIndex((s) => s.id === submissionId);
+      if (idx >= 0) {
+        mockStore.submissions[idx] = {
+          ...mockStore.submissions[idx],
+          ...updates,
+        } as any;
+        console.log(`[MockStore] Updated submission ${submissionId}:`, {
+          hasFeedback: !!mockStore.submissions[idx].feedback,
+          hasGrades: !!mockStore.submissions[idx].grades,
+          status: mockStore.submissions[idx].status,
+          velricScore: mockStore.submissions[idx].velricScore,
+        });
+        return mockStore.submissions[idx];
+      }
+      console.warn(
+        `[MockStore] Submission ${submissionId} not found for update`
+      );
+      return null;
+    }
+    throw error;
+  }
 }
 
 // ==========================================
 // NEW MISSION SYSTEM FUNCTIONS
 // ==========================================
 
-import { StaticMission } from '@/data/staticMissions';
+import { StaticMission } from "@/data/staticMissions";
 
 // Database types for missions
 export interface DatabaseMission {
@@ -604,251 +844,665 @@ export interface DatabaseMission {
 }
 
 export interface MissionWithDetails extends DatabaseMission {
-  skills: Array<{ id: string; name: string; category?: string; }>;
-  industries: Array<{ id: string; name: string; description?: string; }>;
-  tasks: Array<{ id: string; task_description: string; task_order: number; is_required: boolean; }>;
-  objectives: Array<{ id: string; objective_description: string; objective_order: number; }>;
-  resources: Array<{ id: string; resource_description: string; resource_type?: string; resource_order: number; }>;
-  evaluation_metrics: Array<{ id: string; metric_description: string; metric_weight: number; metric_order: number; }>;
+  skills: Array<{ id: string; name: string; category?: string }>;
+  industries: Array<{ id: string; name: string; description?: string }>;
+  tasks: Array<{
+    id: string;
+    task_description: string;
+    task_order: number;
+    is_required: boolean;
+  }>;
+  objectives: Array<{
+    id: string;
+    objective_description: string;
+    objective_order: number;
+  }>;
+  resources: Array<{
+    id: string;
+    resource_description: string;
+    resource_type?: string;
+    resource_order: number;
+  }>;
+  evaluation_metrics: Array<{
+    id: string;
+    metric_description: string;
+    metric_weight: number;
+    metric_order: number;
+  }>;
 }
 
 // Store AI-generated mission in Supabase
 // Internal helper to insert a mission and all its detail tables
 async function insertMissionWithDetails(
-  missionData: Omit<StaticMission, 'id' | 'status'>,
+  missionData: Omit<StaticMission, "id" | "status">,
   options: { aiGenerated: boolean; generatedBy: string }
 ): Promise<string> {
   if (USE_DUMMY) {
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     const newId = `mission-${Date.now()}`;
-    console.log('Would store mission in database:', { id: newId, ...missionData });
+    console.log("Would store mission in database:", {
+      id: newId,
+      ...missionData,
+    });
     return newId;
   }
 
   try {
-    // Insert the main mission record
-    const { data: mission, error: missionError } = await supabase
-      .from('missions')
-      .insert({
-        title: missionData.title,
-        description: missionData.description,
-        field: missionData.field,
-        difficulty: missionData.difficulty,
-        time_estimate: missionData.timeEstimate,
-        category: missionData.category,
-        company: missionData.company,
-        context: missionData.context,
-        is_ai_generated: options.aiGenerated,
-        generated_by: options.generatedBy,
-        status: 'active'
-      })
-      .select('id')
-      .single();
+    // Insert the main mission record (resilient to missing columns)
+    let mission: any = null;
+    let missionError: any = null;
+
+    // Attempt 1: full insert with all fields
+    console.log("[Mission Storage] Attempting to store mission:", {
+      title: missionData.title,
+      hasDifficulty: !!missionData.difficulty,
+      difficulty: missionData.difficulty,
+      hasTimeEstimate: !!missionData.timeEstimate,
+      timeEstimate: missionData.timeEstimate,
+      hasCompany: !!missionData.company,
+      company: missionData.company,
+      hasContext: !!missionData.context,
+      contextLength: missionData.context?.length || 0,
+    });
+
+    {
+      const res = await supabase
+        .from("missions")
+        .insert({
+          title: missionData.title,
+          description: missionData.description,
+          field: missionData.field,
+          difficulty: missionData.difficulty,
+          time_estimate: missionData.timeEstimate,
+          category: missionData.category,
+          company: missionData.company,
+          context: missionData.context,
+          is_ai_generated: options.aiGenerated,
+          generated_by: options.generatedBy,
+          status: "active",
+        })
+        .select("id")
+        .single();
+      mission = res.data;
+      missionError = res.error;
+
+      if (!missionError) {
+        console.log(
+          "[Mission Storage] ✅ Attempt 1 succeeded - stored with all fields"
+        );
+      } else {
+        console.warn(
+          "[Mission Storage] ❌ Attempt 1 failed:",
+          missionError.message
+        );
+      }
+    }
+
+    // Attempt 2: retry without optional fields if column missing
+    if (
+      missionError &&
+      (missionError.code === "PGRST204" || missionError.code === "42703")
+    ) {
+      console.warn(
+        "[Mission Storage] Attempt 2: dropping optional fields (context, category, company)"
+      );
+      const res = await supabase
+        .from("missions")
+        .insert({
+          title: missionData.title,
+          description: missionData.description,
+          field: missionData.field,
+          difficulty: missionData.difficulty,
+          time_estimate: missionData.timeEstimate,
+          is_ai_generated: options.aiGenerated,
+          generated_by: options.generatedBy,
+        })
+        .select("id")
+        .single();
+      mission = res.data;
+      missionError = res.error;
+
+      if (!missionError) {
+        console.log(
+          "[Mission Storage] ✅ Attempt 2 succeeded - stored without context/category/company"
+        );
+      } else {
+        console.warn(
+          "[Mission Storage] ❌ Attempt 2 failed:",
+          missionError.message
+        );
+      }
+    }
+
+    // Attempt 3: minimal required fields only
+    if (
+      missionError &&
+      (missionError.code === "PGRST204" || missionError.code === "42703")
+    ) {
+      console.warn("Mission insert attempt 3: minimal fields only");
+      const res = await supabase
+        .from("missions")
+        .insert({
+          title: missionData.title,
+          description: missionData.description,
+          field: missionData.field,
+          difficulty: missionData.difficulty,
+        })
+        .select("id")
+        .single();
+      mission = res.data;
+      missionError = res.error;
+
+      if (!missionError) {
+        console.log(
+          "[Mission Storage] ⚠️ Attempt 3 succeeded - stored with minimal fields only (no difficulty/time/company)"
+        );
+      } else {
+        console.warn(
+          "[Mission Storage] ❌ Attempt 3 failed:",
+          missionError.message
+        );
+      }
+    }
+
+    // Attempt 4: absolute minimum with field (NOT NULL constraint)
+    if (
+      missionError &&
+      (missionError.code === "PGRST204" ||
+        missionError.code === "42703" ||
+        missionError.code === "23502")
+    ) {
+      console.warn(
+        "Mission insert attempt 4: title, description, and field only"
+      );
+      const res = await supabase
+        .from("missions")
+        .insert({
+          title: missionData.title,
+          description: missionData.description,
+          field: missionData.field || "Technology",
+        })
+        .select("id")
+        .single();
+      mission = res.data;
+      missionError = res.error;
+
+      if (!missionError) {
+        console.log(
+          "[Mission Storage] ⚠️⚠️ Attempt 4 succeeded - stored with ONLY title/description/field"
+        );
+      } else {
+        console.warn(
+          "[Mission Storage] ❌ Attempt 4 failed:",
+          missionError.message
+        );
+      }
+    }
 
     if (missionError) throw missionError;
-    
+
     const missionId = mission.id;
+    console.log(
+      `[Mission Storage] Successfully inserted mission ${missionId} into missions table`
+    );
 
-    // Store skills
+    // Store skills (with error handling)
     if (missionData.skills && missionData.skills.length > 0) {
-      for (const skill of missionData.skills) {
-        // Insert or get skill
-        const { data: skillData, error: skillError } = await supabase
-          .from('skills')
-          .upsert({ name: skill, category: 'General' })
-          .select('id')
-          .single();
+      try {
+        for (const skill of missionData.skills) {
+          // Insert or get skill
+          const { data: skillData, error: skillError } = await supabase
+            .from("skills")
+            .upsert({ name: skill, category: "General" })
+            .select("id")
+            .single();
 
-        if (!skillError && skillData) {
-          // Link skill to mission
-          await supabase
-            .from('mission_skills')
-            .insert({ mission_id: missionId, skill_id: skillData.id });
+          if (!skillError && skillData) {
+            // Link skill to mission
+            await supabase
+              .from("mission_skills")
+              .insert({ mission_id: missionId, skill_id: skillData.id });
+          }
         }
+        console.log(
+          `[Mission Storage] Stored ${missionData.skills.length} skills for mission ${missionId}`
+        );
+      } catch (skillError: any) {
+        console.warn(
+          `[Mission Storage] Failed to store skills (table may not exist):`,
+          skillError.message
+        );
       }
     }
 
-    // Store industries
+    // Store industries (with error handling)
     if (missionData.industries && missionData.industries.length > 0) {
-      for (const industry of missionData.industries) {
-        // Insert or get industry
-        const { data: industryData, error: industryError } = await supabase
-          .from('industries')
-          .upsert({ name: industry })
-          .select('id')
-          .single();
+      try {
+        for (const industry of missionData.industries) {
+          // Insert or get industry
+          const { data: industryData, error: industryError } = await supabase
+            .from("industries")
+            .upsert({ name: industry })
+            .select("id")
+            .single();
 
-        if (!industryError && industryData) {
-          // Link industry to mission
-          await supabase
-            .from('mission_industries')
-            .insert({ mission_id: missionId, industry_id: industryData.id });
+          if (!industryError && industryData) {
+            // Link industry to mission
+            await supabase
+              .from("mission_industries")
+              .insert({ mission_id: missionId, industry_id: industryData.id });
+          }
         }
+        console.log(
+          `[Mission Storage] Stored ${missionData.industries.length} industries for mission ${missionId}`
+        );
+      } catch (industryError: any) {
+        console.warn(
+          `[Mission Storage] Failed to store industries (table may not exist):`,
+          industryError.message
+        );
       }
     }
 
-    // Store tasks
+    // Store tasks (with error handling)
     if (missionData.tasks && missionData.tasks.length > 0) {
-      const taskInserts = missionData.tasks.map((task, index) => ({
-        mission_id: missionId,
-        task_description: task,
-        task_order: index + 1,
-        is_required: true
-      }));
-      
-      await supabase.from('mission_tasks').insert(taskInserts);
+      try {
+        const taskInserts = missionData.tasks.map((task, index) => {
+          // Ensure task is a string - if it's an object, extract the task property
+          let taskStr = task;
+          if (typeof task === "object" && (task as any).task) {
+            taskStr = (task as any).task;
+          }
+          return {
+            mission_id: missionId,
+            task_description: String(taskStr),
+            task_order: index + 1,
+            is_required: true,
+          };
+        });
+
+        const { error: taskError } = await supabase
+          .from("mission_tasks")
+          .insert(taskInserts);
+        if (taskError) throw taskError;
+        console.log(
+          `[Mission Storage] Stored ${missionData.tasks.length} tasks for mission ${missionId}`
+        );
+      } catch (taskError: any) {
+        console.warn(
+          `[Mission Storage] Failed to store tasks (table may not exist):`,
+          taskError.message
+        );
+      }
     }
 
-    // Store objectives
+    // Store objectives (with error handling)
     if (missionData.objectives && missionData.objectives.length > 0) {
-      const objectiveInserts = missionData.objectives.map((objective, index) => ({
-        mission_id: missionId,
-        objective_description: objective,
-        objective_order: index + 1
-      }));
-      
-      await supabase.from('mission_objectives').insert(objectiveInserts);
+      try {
+        const objectiveInserts = missionData.objectives.map(
+          (objective, index) => ({
+            mission_id: missionId,
+            objective_description: objective,
+            objective_order: index + 1,
+          })
+        );
+
+        const { error: objectiveError } = await supabase
+          .from("mission_objectives")
+          .insert(objectiveInserts);
+        if (objectiveError) throw objectiveError;
+        console.log(
+          `[Mission Storage] Stored ${missionData.objectives.length} objectives for mission ${missionId}`
+        );
+      } catch (objectiveError: any) {
+        console.warn(
+          `[Mission Storage] Failed to store objectives (table may not exist):`,
+          objectiveError.message
+        );
+      }
     }
 
-    // Store resources
+    // Store resources (with error handling)
     if (missionData.resources && missionData.resources.length > 0) {
-      const resourceInserts = missionData.resources.map((resource, index) => ({
-        mission_id: missionId,
-        resource_description: resource,
-        resource_order: index + 1
-      }));
-      
-      await supabase.from('mission_resources').insert(resourceInserts);
+      try {
+        const resourceInserts = missionData.resources.map(
+          (resource, index) => ({
+            mission_id: missionId,
+            resource_description: resource,
+            resource_order: index + 1,
+          })
+        );
+
+        const { error: resourceError } = await supabase
+          .from("mission_resources")
+          .insert(resourceInserts);
+        if (resourceError) throw resourceError;
+        console.log(
+          `[Mission Storage] Stored ${missionData.resources.length} resources for mission ${missionId}`
+        );
+      } catch (resourceError: any) {
+        console.warn(
+          `[Mission Storage] Failed to store resources (table may not exist):`,
+          resourceError.message
+        );
+      }
     }
 
-    // Store evaluation metrics
-    if (missionData.evaluationMetrics && missionData.evaluationMetrics.length > 0) {
-      const metricInserts = missionData.evaluationMetrics.map((metric, index) => ({
-        mission_id: missionId,
-        metric_description: metric,
-        metric_weight: 1.0,
-        metric_order: index + 1
-      }));
-      
-      await supabase.from('mission_evaluation_metrics').insert(metricInserts);
+    // Store evaluation metrics (with error handling)
+    if (
+      missionData.evaluationMetrics &&
+      missionData.evaluationMetrics.length > 0
+    ) {
+      try {
+        const metricInserts = missionData.evaluationMetrics.map(
+          (metric, index) => ({
+            mission_id: missionId,
+            metric_description: metric,
+            metric_weight: 1.0,
+            metric_order: index + 1,
+          })
+        );
+
+        const { error: metricError } = await supabase
+          .from("mission_evaluation_metrics")
+          .insert(metricInserts);
+        if (metricError) throw metricError;
+        console.log(
+          `[Mission Storage] Stored ${missionData.evaluationMetrics.length} evaluation metrics for mission ${missionId}`
+        );
+      } catch (metricError: any) {
+        console.warn(
+          `[Mission Storage] Failed to store evaluation metrics (table may not exist):`,
+          metricError.message
+        );
+      }
     }
 
+    console.log(
+      `[Mission Storage] ✅ Successfully stored complete mission ${missionId}`
+    );
     return missionId;
   } catch (error) {
-    console.error('Error storing AI-generated mission:', error);
+    console.error("Error storing AI-generated mission:", error);
     throw error;
   }
 }
 
 // Store AI-generated mission in Supabase
 export async function storeAIGeneratedMission(
-  missionData: Omit<StaticMission, 'id' | 'status'>
+  missionData: Omit<StaticMission, "id" | "status">
 ): Promise<string> {
-  return insertMissionWithDetails(missionData, { aiGenerated: true, generatedBy: 'openai' });
+  return insertMissionWithDetails(missionData, {
+    aiGenerated: true,
+    generatedBy: "openai",
+  });
 }
 
 // Store a static/seed mission in Supabase (not AI generated)
 export async function storeStaticMission(
-  missionData: Omit<StaticMission, 'id' | 'status'>
+  missionData: Omit<StaticMission, "id" | "status">
 ): Promise<string> {
-  return insertMissionWithDetails(missionData, { aiGenerated: false, generatedBy: 'seed' });
+  return insertMissionWithDetails(missionData, {
+    aiGenerated: false,
+    generatedBy: "seed",
+  });
 }
 
 // Get all missions from database
 export async function getAllMissionsFromDB(): Promise<StaticMission[]> {
   if (USE_DUMMY) {
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     // Return static missions as fallback
-    const { getAllMissions } = await import('@/data/staticMissions');
+    const { getAllMissions } = await import("@/data/staticMissions");
     return getAllMissions();
   }
 
   try {
-    const { data: missions, error } = await supabase
-      .from('missions')
-      .select(`
-        *,
-        mission_skills (
-          skills (id, name, category)
-        ),
-        mission_industries (
-          industries (id, name, description)
-        ),
-        mission_tasks (id, task_description, task_order, is_required),
-        mission_objectives (id, objective_description, objective_order),
-        mission_resources (id, resource_description, resource_type, resource_order),
-        mission_evaluation_metrics (id, metric_description, metric_weight, metric_order)
-      `)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false });
+    let missions: any = null;
+    let error: any = null;
+
+    // Attempt 1: Full query with status filter
+    {
+      const res = await supabase
+        .from("missions")
+        .select(
+          `
+          *,
+          mission_skills (
+            skills (id, name, category)
+          ),
+          mission_industries (
+            industries (id, name, description)
+          ),
+          mission_tasks (id, task_description, task_order, is_required),
+          mission_objectives (id, objective_description, objective_order),
+          mission_resources (id, resource_description, resource_type, resource_order),
+          mission_evaluation_metrics (id, metric_description, metric_weight, metric_order)
+        `
+        )
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+      missions = res.data;
+      error = res.error;
+    }
+
+    // Retry without status filter if column missing
+    if (error && error.code === "42703") {
+      const res = await supabase
+        .from("missions")
+        .select(
+          `
+          *,
+          mission_skills (
+            skills (id, name, category)
+          ),
+          mission_industries (
+            industries (id, name, description)
+          ),
+          mission_tasks (id, task_description, task_order, is_required),
+          mission_objectives (id, objective_description, objective_order),
+          mission_resources (id, resource_description, resource_type, resource_order),
+          mission_evaluation_metrics (id, metric_description, metric_weight, metric_order)
+        `
+        )
+        .order("created_at", { ascending: false });
+      missions = res.data;
+      error = res.error;
+    }
+
+    // If relationship-based select fails, retry with plain select
+    if (error && error.code === "PGRST200") {
+      const res2 = await supabase
+        .from("missions")
+        .select("*")
+        .order("created_at", { ascending: false });
+      const plain = res2.data;
+      const plainErr = res2.error;
+      if (plainErr) throw plainErr;
+      return (plain || []).map(
+        (mission: any): StaticMission => ({
+          id: mission.id,
+          title: mission.title,
+          description: mission.description,
+          field: mission.field,
+          difficulty: mission.difficulty,
+          timeEstimate: mission.time_estimate,
+          category: mission.category,
+          company: mission.company,
+          context: mission.context,
+          status: "suggested",
+          skills: [],
+          industries: [],
+          tasks: [],
+          objectives: [],
+          resources: [],
+          evaluationMetrics: [],
+        })
+      );
+    }
 
     if (error) throw error;
 
     // Transform database format to StaticMission format
-    return missions.map((mission: any): StaticMission => ({
-      id: mission.id,
-      title: mission.title,
-      description: mission.description,
-      field: mission.field,
-      difficulty: mission.difficulty,
-      timeEstimate: mission.time_estimate,
-      category: mission.category,
-      company: mission.company,
-      context: mission.context,
-      status: "suggested",
-      skills: mission.mission_skills?.map((ms: any) => ms.skills.name) || [],
-      industries: mission.mission_industries?.map((mi: any) => mi.industries.name) || [],
-      tasks: mission.mission_tasks
-        ?.sort((a: any, b: any) => a.task_order - b.task_order)
-        ?.map((t: any) => t.task_description) || [],
-      objectives: mission.mission_objectives
-        ?.sort((a: any, b: any) => a.objective_order - b.objective_order)
-        ?.map((o: any) => o.objective_description) || [],
-      resources: mission.mission_resources
-        ?.sort((a: any, b: any) => a.resource_order - b.resource_order)
-        ?.map((r: any) => r.resource_description) || [],
-      evaluationMetrics: mission.mission_evaluation_metrics
-        ?.sort((a: any, b: any) => a.metric_order - b.metric_order)
-        ?.map((m: any) => m.metric_description) || []
-    }));
+    return missions.map(
+      (mission: any): StaticMission => ({
+        id: mission.id,
+        title: mission.title,
+        description: mission.description,
+        field: mission.field,
+        difficulty: mission.difficulty,
+        timeEstimate: mission.time_estimate,
+        category: mission.category,
+        company: mission.company,
+        context: mission.context,
+        status: "suggested",
+        skills: mission.mission_skills?.map((ms: any) => ms.skills.name) || [],
+        industries:
+          mission.mission_industries?.map((mi: any) => mi.industries.name) ||
+          [],
+        tasks:
+          mission.mission_tasks
+            ?.sort((a: any, b: any) => a.task_order - b.task_order)
+            ?.map((t: any) => t.task_description) || [],
+        objectives:
+          mission.mission_objectives
+            ?.sort((a: any, b: any) => a.objective_order - b.objective_order)
+            ?.map((o: any) => o.objective_description) || [],
+        resources:
+          mission.mission_resources
+            ?.sort((a: any, b: any) => a.resource_order - b.resource_order)
+            ?.map((r: any) => r.resource_description) || [],
+        evaluationMetrics:
+          mission.mission_evaluation_metrics
+            ?.sort((a: any, b: any) => a.metric_order - b.metric_order)
+            ?.map((m: any) => m.metric_description) || [],
+      })
+    );
   } catch (error) {
-    console.error('Error fetching missions from database:', error);
+    console.error("Error fetching missions from database:", error);
     // Fallback to static missions
-    const { getAllMissions } = await import('@/data/staticMissions');
+    const { getAllMissions } = await import("@/data/staticMissions");
     return getAllMissions();
   }
 }
 
 // Get specific mission by ID from database
-export async function getMissionByIdFromDB(id: string): Promise<StaticMission | null> {
+export async function getMissionByIdFromDB(
+  id: string
+): Promise<StaticMission | null> {
   if (USE_DUMMY) {
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     // Return static mission as fallback
-    const { getMissionById } = await import('@/data/staticMissions');
-    return getMissionById(id);
+    const { getMissionById } = await import("@/data/staticMissions");
+    return getMissionById(id) || null;
+  }
+
+  // If ID is not numeric, skip DB query (DB uses bigint, generated IDs are strings)
+  if (!/^\d+$/.test(id)) {
+    return null;
   }
 
   try {
-    const { data: mission, error } = await supabase
-      .from('missions')
-      .select(`
-        *,
-        mission_skills (
-          skills (id, name, category)
-        ),
-        mission_industries (
-          industries (id, name, description)
-        ),
-        mission_tasks (id, task_description, task_order, is_required),
-        mission_objectives (id, objective_description, objective_order),
-        mission_resources (id, resource_description, resource_type, resource_order),
-        mission_evaluation_metrics (id, metric_description, metric_weight, metric_order)
-      `)
-      .eq('id', id)
-      .eq('status', 'active')
-      .single();
+    let mission: any = null;
+    let error: any = null;
+
+    // Attempt 1: Full query with status filter
+    {
+      const res = await supabase
+        .from("missions")
+        .select(
+          `
+          *,
+          mission_skills (
+            skills (id, name, category)
+          ),
+          mission_industries (
+            industries (id, name, description)
+          ),
+          mission_tasks (id, task_description, task_order, is_required),
+          mission_objectives (id, objective_description, objective_order),
+          mission_resources (id, resource_description, resource_type, resource_order),
+          mission_evaluation_metrics (id, metric_description, metric_weight, metric_order)
+        `
+        )
+        .eq("id", id)
+        .eq("status", "active")
+        .single();
+      mission = res.data;
+      error = res.error;
+    }
+
+    // Retry without status filter if column missing
+    if (error && error.code === "42703") {
+      const res = await supabase
+        .from("missions")
+        .select(
+          `
+          *,
+          mission_skills (
+            skills (id, name, category)
+          ),
+          mission_industries (
+            industries (id, name, description)
+          ),
+          mission_tasks (id, task_description, task_order, is_required),
+          mission_objectives (id, objective_description, objective_order),
+          mission_resources (id, resource_description, resource_type, resource_order),
+          mission_evaluation_metrics (id, metric_description, metric_weight, metric_order)
+        `
+        )
+        .eq("id", id)
+        .single();
+      mission = res.data;
+      error = res.error;
+    }
+
+    // If relationship-based select fails, retry with plain select
+    if (error && error.code === "PGRST200") {
+      const res2 = await supabase
+        .from("missions")
+        .select("*")
+        .eq("id", id)
+        .single();
+      const plain = res2.data;
+      const plainErr = res2.error;
+      if (plainErr) throw plainErr;
+      if (!plain) return null;
+      return {
+        id: plain.id,
+        title: plain.title,
+        description: plain.description,
+        field: plain.field,
+        difficulty: plain.difficulty,
+        timeEstimate: plain.time_estimate,
+        category: plain.category,
+        company: plain.company,
+        context: plain.context,
+        status: "suggested",
+        skills: [],
+        industries: [],
+        tasks: [],
+        objectives: [],
+        resources: [],
+        evaluationMetrics: [],
+      };
+    }
 
     if (error) throw error;
+
+    // Debug: Log what DB returned
+    console.log(`[getMissionByIdFromDB] Raw mission data from DB:`, {
+      id: mission.id,
+      hasMissionSkills: !!mission.mission_skills,
+      missionSkillsCount: mission.mission_skills?.length || 0,
+      hasMissionTasks: !!mission.mission_tasks,
+      missionTasksCount: mission.mission_tasks?.length || 0,
+      missionTasksData: mission.mission_tasks,
+      hasDifficulty: !!mission.difficulty,
+      hasTimeEstimate: !!mission.time_estimate,
+      hasCompany: !!mission.company,
+      hasContext: !!mission.context,
+    });
 
     // Transform database format to StaticMission format
     return {
@@ -863,46 +1517,103 @@ export async function getMissionByIdFromDB(id: string): Promise<StaticMission | 
       context: mission.context,
       status: "suggested",
       skills: mission.mission_skills?.map((ms: any) => ms.skills.name) || [],
-      industries: mission.mission_industries?.map((mi: any) => mi.industries.name) || [],
-      tasks: mission.mission_tasks
-        ?.sort((a: any, b: any) => a.task_order - b.task_order)
-        ?.map((t: any) => t.task_description) || [],
-      objectives: mission.mission_objectives
-        ?.sort((a: any, b: any) => a.objective_order - b.objective_order)
-        ?.map((o: any) => o.objective_description) || [],
-      resources: mission.mission_resources
-        ?.sort((a: any, b: any) => a.resource_order - b.resource_order)
-        ?.map((r: any) => r.resource_description) || [],
-      evaluationMetrics: mission.mission_evaluation_metrics
-        ?.sort((a: any, b: any) => a.metric_order - b.metric_order)
-        ?.map((m: any) => m.metric_description) || []
+      industries:
+        mission.mission_industries?.map((mi: any) => mi.industries.name) || [],
+      tasks:
+        mission.mission_tasks
+          ?.sort((a: any, b: any) => a.task_order - b.task_order)
+          ?.map((t: any) => {
+            const desc = t.task_description;
+            // If task_description is a JSON string, parse it
+            if (typeof desc === "string" && desc.startsWith("{")) {
+              try {
+                const parsed = JSON.parse(desc);
+                return parsed.task || desc;
+              } catch {
+                return desc;
+              }
+            }
+            // If it's already an object, extract task property
+            if (typeof desc === "object" && desc.task) {
+              return desc.task;
+            }
+            return desc;
+          }) || [],
+      objectives:
+        mission.mission_objectives
+          ?.sort((a: any, b: any) => a.objective_order - b.objective_order)
+          ?.map((o: any) => o.objective_description) || [],
+      resources:
+        mission.mission_resources
+          ?.sort((a: any, b: any) => a.resource_order - b.resource_order)
+          ?.map((r: any) => r.resource_description) || [],
+      evaluationMetrics:
+        mission.mission_evaluation_metrics
+          ?.sort((a: any, b: any) => a.metric_order - b.metric_order)
+          ?.map((m: any) => m.metric_description) || [],
     };
   } catch (error) {
-    console.error('Error fetching mission by ID from database:', error);
+    console.error("Error fetching mission by ID from database:", error);
     // Fallback to static mission
-    const { getMissionById } = await import('@/data/staticMissions');
-    return getMissionById(id);
+    const { getMissionById } = await import("@/data/staticMissions");
+    return getMissionById(id) || null;
   }
 }
 
 // Run database migration (for development/admin use)
-export async function runMissionMigration(): Promise<{ success: boolean; error?: string }> {
+export async function runMissionMigration(): Promise<{
+  success: boolean;
+  error?: string;
+}> {
   if (USE_DUMMY) {
-    console.log('Dummy mode - migration not executed');
+    console.log("Dummy mode - migration not executed");
     return { success: true };
   }
 
   try {
     // This would typically be done through Supabase dashboard or CLI
     // For now, we'll just test the connection
-    const { data, error } = await supabase.from('missions').select('count').limit(1);
-    
+    const { data, error } = await supabase
+      .from("missions")
+      .select("count")
+      .limit(1);
+
     if (error) {
       return { success: false, error: error.message };
     }
-    
+
     return { success: true };
   } catch (error) {
     return { success: false, error: (error as Error).message };
+  }
+}
+
+// Persist overall Velric score for a user
+export async function updateUserOverallVelricScore(
+  userId: string,
+  overallScore: number
+): Promise<void> {
+  if (USE_DUMMY) {
+    // No-op in dummy mode
+    await new Promise((r) => setTimeout(r, 20));
+    return;
+  }
+  try {
+    const { error } = await supabase.from("user_stats").upsert(
+      {
+        user_id: userId,
+        overall_velric_score: overallScore,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" }
+    );
+    if (error) throw error;
+  } catch (error: any) {
+    // Gracefully handle missing user_stats table
+    if (error?.code === "PGRST205" || error?.code === "42P01") {
+      console.warn("User stats table not found, skipping Velric score update");
+      return;
+    }
+    throw error;
   }
 }
