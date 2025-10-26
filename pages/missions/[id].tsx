@@ -464,22 +464,28 @@ const handleSubmit = async () => {
                          '0% Complete - Not Started'}
                       </p>
                     </div>
-                   
-                   <div className="mt-10">
-  <h3 className="text-xl font-semibold mb-2">Submit Your Mission</h3>
-  <textarea
-    className="w-full h-40 p-4 rounded bg-gray-800 text-white border border-gray-600"
-    placeholder="Write your answer here..."
-    value={submissionText}
-    onChange={(e) => setSubmissionText(e.target.value)}
-  />
-  <button
-    onClick={handleSubmit}
-    disabled={isSubmitting}
-    className="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded transition-all disabled:opacity-50"
-  >
-    {isSubmitting ? 'Submitting...' : 'Submit for Feedback'}
-  </button>
+
+                    {/* Submission Box */}
+
+<div className="flex justify-center mt-16 mb-16">
+  <div className="w-full max-w-2xl">
+    <h3 className="text-2xl font-semibold mb-4 text-center">Submit Your Mission</h3>
+    <textarea
+      className="w-full h-60 p-4 rounded bg-gray-800 text-white border border-gray-600"
+      placeholder="Write your answer here..."
+      value={submissionText}
+      onChange={(e) => setSubmissionText(e.target.value)}
+    />
+    <div className="flex justify-center mt-4">
+      <button
+        onClick={handleSubmit}
+        disabled={isSubmitting}
+        className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded transition-all disabled:opacity-50"
+      >
+        {isSubmitting ? 'Submitting...' : 'Submit for Feedback'}
+      </button>
+    </div>
+  </div>
 </div>
 
                     {/* Enhanced Action Buttons */}
