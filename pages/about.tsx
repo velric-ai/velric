@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TeamCard from "@/components/TeamCard";
 import ShaderBackground from "@/components/ui/shader-background";
+import OrbitingValues from "@/components/ui/orbiting-values";
 import { Workflow, Circle, Triangle, Hexagon } from "lucide-react";
 
 const About = () => {
@@ -90,46 +91,13 @@ const About = () => {
         </div>
       </section>
 
-      {/* Our Values - Edit 3: Hover Effects */}
+      {/* Our Values - Orbiting Animation */}
       <section className="bg-[#0D0D0D] py-28 px-4 md:px-8 lg:px-16 section-spacing relative z-10">
         <h2 className="text-3xl font-semibold text-center mb-12">
           Our <span className="text-purple-400 font-bold">Values</span>
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {[
-            {
-              title: "1. Proof Over Promises",
-              subtitle: "Show it. Don't say it."
-            },
-            {
-              title: "2. Merit Over Background", 
-              subtitle: "Earn it. Don't inherit it."
-            },
-            {
-              title: "3. Data Over Opinion",
-              subtitle: "Evidence speaks louder."
-            },
-            {
-              title: "4. Execution Defines Talent",
-              subtitle: "Doers win. Talkers fade."
-            },
-            {
-              title: "5. One Global Standard",
-              subtitle: "Talent measured equally."
-            },
-            {
-              title: "6. Built for Builders",
-              subtitle: "Ambition is our language."
-            }
-          ].map((value) => (
-            <div
-              key={value.title}
-              className="value-item bg-[#0D0D0D] rounded-2xl p-6 text-center shadow-md border border-[#E0E0DC]/10 min-h-[180px] flex flex-col items-center justify-center"
-            >
-              <h3 className="text-xl font-bold mb-2 text-purple-400">{value.title}</h3>
-              <p className="text-white/80 text-sm">{value.subtitle}</p>
-            </div>
-          ))}
+        <div className="flex items-center justify-center">
+          <OrbitingValues />
         </div>
       </section>
       {/* Contact section at bottom */}
