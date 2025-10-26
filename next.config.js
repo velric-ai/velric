@@ -10,7 +10,8 @@ const nextConfig = {
   // Ensure environment variables are available during build
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yzszgcnuxpkvxueivbyx.supabase.co',
-    USE_DUMMY_DATA: process.env.USE_DUMMY_DATA || 'true',
+    // Do not force a default here; allow .env.local to control this explicitly
+    USE_DUMMY_DATA: process.env.USE_DUMMY_DATA,
   },
 };
 

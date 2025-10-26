@@ -1,0 +1,367 @@
+/* Glassmorphic Design System for Velric Dashboard */
+
+:root {
+  /* Glassmorphic Color Palette */
+  --glass-bg-primary: rgba(255, 255, 255, 0.05);
+  --glass-bg-secondary: rgba(255, 255, 255, 0.08);
+  --glass-bg-tertiary: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border-hover: rgba(255, 255, 255, 0.2);
+  
+  /* Gradient Backgrounds */
+  --bg-gradient-primary: linear-gradient(135deg, #1a0b2e 0%, #16213e 50%, #0f3460 100%);
+  --bg-gradient-secondary: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
+  
+  /* Accent Colors */
+  --accent-cyan: #00F5FF;
+  --accent-green: #00FF87;
+  --accent-purple: #A78BFA;
+  --accent-pink: #F472B6;
+  --accent-blue: #3B82F6;
+  --accent-orange: #F59E0B;
+  
+  /* Text Colors */
+  --text-primary: #FFFFFF;
+  --text-secondary: #B0B0B0;
+  --text-tertiary: #808080;
+  
+  /* Status Colors */
+  --status-positive: #00FF87;
+  --status-negative: #FF6B6B;
+  --status-neutral: #B0B0B0;
+  
+  /* Shadow and Glow Effects */
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --shadow-glass-hover: 0 12px 40px rgba(0, 0, 0, 0.4);
+  --glow-cyan: 0 0 20px rgba(0, 245, 255, 0.3);
+  --glow-green: 0 0 20px rgba(0, 255, 135, 0.3);
+  --glow-purple: 0 0 20px rgba(167, 139, 250, 0.3);
+  --glow-pink: 0 0 20px rgba(244, 114, 182, 0.3);
+}
+
+/* Base Glassmorphic Card */
+.glass-card {
+  background: var(--glass-bg-primary);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: var(--shadow-glass);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: var(--glass-bg-secondary);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--shadow-glass-hover);
+  transform: translateY(-4px) scale(1.02);
+}
+
+/* Glass Card Variants */
+.glass-card-secondary {
+  background: var(--glass-bg-secondary);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-glass);
+}
+
+.glass-card-tertiary {
+  background: var(--glass-bg-tertiary);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Navigation Bar Glassmorphic */
+.glass-nav {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Tab Styling */
+.glass-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 12px 24px;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+}
+
+.glass-tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.glass-tab.active {
+  background: rgba(167, 139, 250, 0.3);
+  border-color: rgba(167, 139, 250, 0.5);
+  color: var(--text-primary);
+  box-shadow: 0 0 20px rgba(167, 139, 250, 0.2);
+}
+
+/* Gradient Buttons */
+.btn-gradient-primary {
+  background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 245, 255, 0.2);
+}
+
+.btn-gradient-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 245, 255, 0.3);
+  filter: brightness(1.1);
+}
+
+.btn-gradient-secondary {
+  background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-cyan) 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 255, 135, 0.2);
+}
+
+.btn-gradient-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 255, 135, 0.3);
+  filter: brightness(1.1);
+}
+
+/* Progress Bars */
+.progress-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: shimmer 2s infinite;
+}
+
+/* Progress Bar Variants */
+.progress-cyan {
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+  box-shadow: var(--glow-cyan);
+}
+
+.progress-green {
+  background: linear-gradient(90deg, var(--accent-green), #10B981);
+  box-shadow: var(--glow-green);
+}
+
+.progress-purple {
+  background: linear-gradient(90deg, var(--accent-purple), #8B5CF6);
+  box-shadow: var(--glow-purple);
+}
+
+.progress-pink {
+  background: linear-gradient(90deg, var(--accent-pink), #EC4899);
+  box-shadow: var(--glow-pink);
+}
+
+.progress-orange {
+  background: linear-gradient(90deg, var(--accent-orange), #D97706);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+/* Badges and Tags */
+.badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-public {
+  background: rgba(0, 255, 135, 0.2);
+  color: var(--accent-green);
+  border: 1px solid rgba(0, 255, 135, 0.3);
+}
+
+.badge-private {
+  background: rgba(167, 139, 250, 0.2);
+  color: var(--accent-purple);
+  border: 1px solid rgba(167, 139, 250, 0.3);
+}
+
+.badge-connect {
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.badge-connect:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+/* Skill Tags */
+.skill-tag {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Indicator Dots */
+.indicator-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.indicator-pink { background: var(--accent-pink); }
+.indicator-cyan { background: var(--accent-cyan); }
+.indicator-green { background: var(--accent-green); }
+.indicator-orange { background: var(--accent-orange); }
+.indicator-blue { background: var(--accent-blue); }
+.indicator-purple { background: var(--accent-purple); }
+
+/* Activity Bars */
+.activity-bar {
+  width: 12px;
+  height: 60px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.activity-bar.active {
+  background: linear-gradient(to top, var(--accent-green), var(--accent-cyan));
+  box-shadow: var(--glow-green);
+}
+
+.activity-bar.inactive {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.activity-bar:hover {
+  transform: scaleY(1.1);
+}
+
+/* Circular Progress Ring */
+.progress-ring {
+  transform: rotate(-90deg);
+}
+
+.progress-ring-circle {
+  stroke: url(#scoreGradient);
+  stroke-width: 8;
+  stroke-linecap: round;
+  fill: none;
+  filter: drop-shadow(0 0 10px rgba(0, 245, 255, 0.5));
+  transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animations */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 245, 255, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(0, 245, 255, 0.5); }
+}
+
+/* Utility Classes */
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+  .glass-card {
+    border-radius: 16px;
+    padding: 16px;
+  }
+  
+  .glass-nav {
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+  }
+  
+  .glass-tab {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not (backdrop-filter: blur(15px)) {
+  .glass-card {
+    background: rgba(28, 28, 30, 0.9);
+  }
+  
+  .glass-nav {
+    background: rgba(0, 0, 0, 0.8);
+  }
+  
+  .glass-card-secondary {
+    background: rgba(28, 28, 30, 0.8);
+  }
+  
+  .glass-card-tertiary {
+    background: rgba(28, 28, 30, 0.7);
+  }
+}

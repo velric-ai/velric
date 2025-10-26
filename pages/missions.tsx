@@ -13,21 +13,49 @@ export default function MissionsPage() {
   const [missions, setMissions] = useState<StaticMission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [source, setSource] = useState<'database' | 'static' | undefined>(undefined);
+  const [generating, setGenerating] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+  const [previewGenerating, setPreviewGenerating] = useState(false);
 
   useEffect(() => {
-    fetchMissions();
+    fetchAndGenerateMissions();
   }, []);
 
-  const fetchMissions = async () => {
+  const fetchAndGenerateMissions = async () => {
     try {
       setLoading(true);
       setError('');
       
+      // First, generate fresh AI missions
+      const generateResponse = await fetch('/api/missions/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userBackground: 'Motivated developer interested in web and AI, familiar with React/Next.js and Node.js.',
+          interests: ['AI', 'SaaS', 'Productivity', 'Web Development'],
+          industry: 'SaaS',
+          difficulty: 'Intermediate',
+          count: 5
+        })
+      });
+      
+      if (generateResponse.ok) {
+        const generateData = await generateResponse.json();
+        if (generateData.success && generateData.missions) {
+          setMissions(generateData.missions);
+          setSource('database');
+          return;
+        }
+      }
+      
+      // Fallback to regular missions if generation fails
       const response = await fetch('/api/missions');
       const data = await response.json();
       
       if (data.success) {
         setMissions(data.missions);
+        setSource(data.source);
       } else {
         setError('Failed to load missions');
       }
@@ -36,6 +64,106 @@ export default function MissionsPage() {
       setError('Failed to load missions');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMissions = async (forceDb?: boolean) => {
+    try {
+      setLoading(true);
+      setError('');
+      const response = await fetch(`/api/missions${forceDb ? '?source=database' : ''}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setMissions(data.missions);
+        setSource(data.source);
+      } else {
+        setError('Failed to load missions');
+      }
+    } catch (error) {
+      console.error('Error fetching missions:', error);
+      setError('Failed to load missions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateAIMissions = async () => {
+    try {
+      setGenerating(true);
+      setError('');
+      const payload = {
+        userBackground: 'Ambitious developer focused on web and AI. Comfortable with React/Next.js and Node.js.',
+        interests: ['AI','SaaS','Productivity'],
+        industry: 'SaaS',
+        difficulty: 'Intermediate',
+        count: 3,
+      };
+      const resp = await fetch('/api/admin/generate-missions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.success) {
+        throw new Error(data.error || 'Failed to generate missions');
+      }
+      await fetchMissions(true);
+    } catch (e: any) {
+      setError(e.message || 'Failed to generate missions');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // Generate missions and show immediately (also stores to DB when available)
+  const generateAndShowNow = async () => {
+    try {
+      setPreviewGenerating(true);
+      setError('');
+      const payload = {
+        userBackground: 'Ambitious developer focused on web and AI. Comfortable with React/Next.js and Node.js.',
+        interests: ['AI','SaaS','Productivity'],
+        industry: 'SaaS',
+        difficulty: 'Intermediate',
+        count: 3,
+      };
+      const resp = await fetch('/api/missions/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.success) {
+        throw new Error(data.error || 'Failed to generate missions');
+      }
+      // Prepend generated missions to the list for immediate UX
+      setMissions((prev: StaticMission[]) => [...data.missions, ...prev]);
+      // If DB was used, also refetch from DB to align IDs
+      if (data.usedDatabase) {
+        await fetchMissions(true);
+      }
+    } catch (e: any) {
+      setError(e.message || 'Failed to generate missions');
+    } finally {
+      setPreviewGenerating(false);
+    }
+  };
+
+  const seedStaticIntoDB = async () => {
+    try {
+      setSeeding(true);
+      setError('');
+      const resp = await fetch('/api/admin/seed-static-missions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ limit: 5 }) });
+      const data = await resp.json();
+      if (!resp.ok || !data.success) {
+        throw new Error(data.error || 'Failed to seed missions');
+      }
+      await fetchMissions(true);
+    } catch (e: any) {
+      setError(e.message || 'Failed to seed missions');
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -91,11 +219,15 @@ export default function MissionsPage() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center px-6 py-3 bg-[#1C1C1E] border border-[#6A0DAD]/30 rounded-full mb-8"
+                className="inline-flex items-center gap-3 px-6 py-3 bg-[#1C1C1E] border border-[#6A0DAD]/30 rounded-full mb-8"
               >
                 <div className="w-3 h-3 bg-[#00D9FF] rounded-full mr-3 animate-pulse"></div>
                 <span className="text-[#00D9FF] text-[14px] font-inter font-semibold uppercase tracking-wide">
-                  Personalized For You
+                  Fresh AI Missions Generated
+                </span>
+                {/* Refresh hint */}
+                <span className="ml-3 px-3 py-1.5 text-xs rounded-lg bg-[#00D9FF]/20 text-[#00D9FF]/70 border border-[#00D9FF]/30">
+                  Refresh page for new missions
                 </span>
               </motion.div>
 
@@ -120,6 +252,40 @@ export default function MissionsPage() {
               </motion.p>
             </div>
 
+            {/* Source notice */}
+            {source === 'static' && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 text-center mb-8 text-yellow-300"
+              >
+                Showing static example missions. To enable AI-generated missions stored in Supabase, set OPENAI_API_KEY and Supabase keys in .env.local, run the SQL in migrations/create_missions_schema.sql, set USE_DUMMY_DATA=false.
+                <div className="mt-3 flex gap-3 justify-center">
+                  <button
+                    onClick={seedStaticIntoDB}
+                    disabled={seeding}
+                    className="px-4 py-2 rounded-lg bg-[#1C1C1E] border border-yellow-500/30 text-yellow-200 hover:border-yellow-500/60 disabled:opacity-50"
+                  >
+                    {seeding ? 'Seeding…' : 'Seed static into DB'}
+                  </button>
+                  <button
+                    onClick={generateAIMissions}
+                    disabled={generating}
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] text-white disabled:opacity-50"
+                  >
+                    {generating ? 'Generating…' : 'Generate AI missions'}
+                  </button>
+                  <button
+                    onClick={generateAndShowNow}
+                    disabled={previewGenerating}
+                    className="px-4 py-2 rounded-lg bg-[#00D9FF]/20 text-[#00D9FF] border border-[#00D9FF]/40 hover:bg-[#00D9FF]/30 disabled:opacity-50"
+                  >
+                    {previewGenerating ? 'Generating…' : 'Generate & show now'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
             {/* Error State */}
             {error && (
               <motion.div
@@ -129,7 +295,7 @@ export default function MissionsPage() {
               >
                 <p className="text-red-400 text-lg">{error}</p>
                 <button
-                  onClick={fetchMissions}
+                  onClick={() => fetchMissions()}
                   className="mt-4 px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
                 >
                   Try Again

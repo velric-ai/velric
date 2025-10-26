@@ -1,0 +1,27 @@
+{
+  "name": "Velric - Global Benchmark for Hiring",
+  "short_name": "Velric",
+  "description": "AI-powered challenges built from actual work. Replace resumes with proof of work.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D0D0D",
+  "theme_color": "#9333EA",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "education"],
+  "lang": "en-US",
+  "dir": "ltr"
+}
