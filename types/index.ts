@@ -136,6 +136,7 @@ export interface Submission {
   rubric?: Record<string, string> | null; // criterion -> short descriptor
   positiveTemplates?: string[] | null; // short positive feedback templates
   improvementTemplates?: string[] | null; // short improvement templates
+  velricScore?: number | null; // 0-10 scale Velric score
   status: "draft" | "submitted" | "graded";
   created_at: string;
   updated_at: string;
