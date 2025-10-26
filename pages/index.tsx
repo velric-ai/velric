@@ -17,6 +17,7 @@ import { HoverTiltCard } from "@/components/ui/hover-tilt-card";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { Circle, Triangle } from "lucide-react";
+import FloatingPopupLink from "@/components/ui/FloatingPopupLink";
 import { AnimatedCircularProgress, AnimatedAIDashboard, AnimatedTalentCompanies } from "@/components/ui/animated-dashboard-components";
 
 export default function Home() {
@@ -225,7 +226,7 @@ export default function Home() {
               </motion.div>
             </div>
 
-           {/* Cards Row */}
+            {/* Cards Row */}
             <div className="grid grid-cols-3 gap-6 mt-16">
               {/* CARD 1: GLASSMORPHIC MISSIONS */}
               <motion.div
@@ -274,7 +275,7 @@ export default function Home() {
                 transition={{ duration: 0.8, delay: 0.3 }}
               >
                 <div className="w-full h-full rounded-2xl border border-white/10 shadow-xl bg-gradient-to-br from-purple-900/30 via-purple-800/20 to-purple-700/30 backdrop-blur-sm overflow-hidden flex flex-col">
-                  
+
                   {/* Title - Inside card at top */}
                   <div className="px-6 pt-4 pb-2 text-center border-b border-white/5">
                     <h3 className="text-lg font-bold text-white">
@@ -318,7 +319,7 @@ export default function Home() {
                       <div className="flex flex-col items-center gap-2">
                         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg">
                           <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                           </svg>
                         </div>
                         <p className="text-sm text-gray-300">Talent</p>
@@ -327,7 +328,7 @@ export default function Home() {
                       <div className="flex flex-col items-center gap-2">
                         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg">
                           <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                           </svg>
                         </div>
                         <p className="text-sm text-gray-300">Companies</p>
@@ -415,8 +416,8 @@ export default function Home() {
         </section>
 
 
-{/* 🚀 What Makes Us Different - ENHANCED ANIMATED VERSION */}
- <section className="px-4 md:px-8 lg:px-16 py-20 section-spacing relative z-10">
+        {/* 🚀 What Makes Us Different - ENHANCED ANIMATED VERSION */}
+        <section className="px-4 md:px-8 lg:px-16 py-20 section-spacing relative z-10">
           <motion.h2
             className="text-4xl md:text-5xl font-extrabold mb-16 text-center text-white"
             initial={{ opacity: 0, y: 30 }}
@@ -817,6 +818,11 @@ export default function Home() {
             </div>
           </div>
         </section>
+        <FloatingPopupLink
+          externalLink="https://mahir-s-site-699c.thinkific.com/products/courses/master-self-presentation-course"
+          title="Master Self-Presentation"
+          description="Learn how to present yourself with confidence and impact"
+        />
 
         {/* Footer */}
         {/* Auth buttons */}

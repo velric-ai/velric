@@ -27,16 +27,16 @@ interface GlowingOrbitPathProps {
   animationDelay?: number;
 }
 
-// --- Configuration for Velric Values ---
+// --- Configuration for Velric Values - INCREASED SIZES ---
 const valuesConfig: ValueConfig[] = [
-  // Inner Orbit (Cyan glow)
+  // Inner Orbit (Cyan glow) - SIZE INCREASED FROM 100 TO 160
   {
     id: 'proof',
     number: 1,
     title: 'Proof Over Promises',
     subtitle: 'Show it. Don\'t say it.',
-    orbitRadius: 120,
-    size: 100,
+    orbitRadius: 200, // INCREASED FROM 120 TO 200
+    size: 160, // INCREASED FROM 100 TO 160
     speed: 0.8,
     phaseShift: 0,
     glowColor: 'cyan'
@@ -46,8 +46,8 @@ const valuesConfig: ValueConfig[] = [
     number: 2,
     title: 'Merit Over Background',
     subtitle: 'Earn it. Don\'t inherit it.',
-    orbitRadius: 120,
-    size: 100,
+    orbitRadius: 200, // INCREASED FROM 120 TO 200
+    size: 160, // INCREASED FROM 100 TO 160
     speed: 0.8,
     phaseShift: (2 * Math.PI) / 3,
     glowColor: 'cyan'
@@ -57,20 +57,20 @@ const valuesConfig: ValueConfig[] = [
     number: 3,
     title: 'Data Over Opinion',
     subtitle: 'Evidence speaks louder.',
-    orbitRadius: 120,
-    size: 100,
+    orbitRadius: 200, // INCREASED FROM 120 TO 200
+    size: 160, // INCREASED FROM 100 TO 160
     speed: 0.8,
     phaseShift: (4 * Math.PI) / 3,
     glowColor: 'cyan'
   },
-  // Outer Orbit (Purple glow) - rotating opposite direction
+  // Outer Orbit (Purple glow) - rotating opposite direction - SIZE INCREASED FROM 100 TO 160
   {
     id: 'execution',
     number: 4,
     title: 'Execution Defines Talent',
     subtitle: 'Doers win. Talkers fade.',
-    orbitRadius: 200,
-    size: 100,
+    orbitRadius: 320, // INCREASED FROM 200 TO 320
+    size: 160, // INCREASED FROM 100 TO 160
     speed: -0.6,
     phaseShift: 0,
     glowColor: 'purple'
@@ -80,8 +80,8 @@ const valuesConfig: ValueConfig[] = [
     number: 5,
     title: 'One Global Standard',
     subtitle: 'Talent measured equally.',
-    orbitRadius: 200,
-    size: 100,
+    orbitRadius: 320, // INCREASED FROM 200 TO 320
+    size: 160, // INCREASED FROM 100 TO 160
     speed: -0.6,
     phaseShift: (2 * Math.PI) / 3,
     glowColor: 'purple'
@@ -91,8 +91,8 @@ const valuesConfig: ValueConfig[] = [
     number: 6,
     title: 'Built for Builders',
     subtitle: 'Ambition is our language.',
-    orbitRadius: 200,
-    size: 100,
+    orbitRadius: 320, // INCREASED FROM 200 TO 320
+    size: 160, // INCREASED FROM 100 TO 160
     speed: -0.6,
     phaseShift: (4 * Math.PI) / 3,
     glowColor: 'purple'
@@ -128,7 +128,7 @@ const OrbitingValue = memo(({ config, angle }: OrbitingValueProps) => {
     >
       <div
         className={`
-          relative w-full h-full p-4 bg-gray-900/70 backdrop-blur-md
+          relative w-full h-full p-5 bg-gray-900/70 backdrop-blur-md
           rounded-full flex flex-col items-center justify-center
           transition-all duration-300 cursor-pointer border border-gray-700/50
           ${isHovered ? 'scale-110 shadow-2xl' : 'shadow-lg hover:shadow-xl'}
@@ -139,9 +139,9 @@ const OrbitingValue = memo(({ config, angle }: OrbitingValueProps) => {
             : `0 0 15px ${glowColor_}20`,
         }}
       >
-        {/* Value Number Badge */}
+        {/* Value Number Badge - SLIGHTLY LARGER */}
         <div
-          className="text-xs font-bold mb-1 px-2 py-0.5 rounded-full"
+          className="text-sm font-bold mb-2 px-2.5 py-1 rounded-full"
           style={{
             color: glowColor_,
             backgroundColor: `${glowColor_}15`,
@@ -151,13 +151,13 @@ const OrbitingValue = memo(({ config, angle }: OrbitingValueProps) => {
           #{number}
         </div>
 
-        {/* Value Title */}
+        {/* Value Title - LARGER TEXT */}
         <div className="text-center">
-          <h3 className="text-sm font-bold text-white leading-tight mb-1 px-2">
+          <h3 className="text-base font-bold text-white leading-tight mb-1.5 px-2">
             {title}
           </h3>
-          {/* Value Subtitle */}
-          <p className="text-xs text-gray-300 px-2 leading-snug">
+          {/* Value Subtitle - LARGER TEXT */}
+          <p className="text-sm text-gray-300 px-2 leading-snug">
             {subtitle}
           </p>
         </div>
@@ -240,9 +240,10 @@ export default function OrbitingValues() {
     return () => cancelAnimationFrame(animationFrameId);
   }, [isPaused]);
 
+  // INCREASED ORBIT SIZES - FROM 120/200 TO 200/320
   const orbitConfigs: Array<{ radius: number; glowColor: GlowColor; delay: number }> = [
-    { radius: 120, glowColor: 'cyan', delay: 0 },
-    { radius: 200, glowColor: 'purple', delay: 1.5 }
+    { radius: 200, glowColor: 'cyan', delay: 0 }, // INCREASED FROM 120
+    { radius: 320, glowColor: 'purple', delay: 1.5 } // INCREASED FROM 200
   ];
 
   return (
@@ -259,17 +260,17 @@ export default function OrbitingValues() {
       </div>
 
       <div 
-        className="relative w-[calc(100vw-40px)] h-[calc(100vw-40px)] md:w-[550px] md:h-[550px] flex items-center justify-center"
+        className="relative w-[calc(100vw-40px)] h-[calc(100vw-40px)] md:w-[750px] md:h-[750px] flex items-center justify-center"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
         
-        {/* Central "V" Icon with enhanced glow */}
-        <div className="w-24 h-24 bg-gradient-to-br from-purple-900/50 to-cyan-900/30 rounded-full flex items-center justify-center z-10 relative shadow-2xl border border-purple-500/30">
+        {/* Central "V" Icon with enhanced glow - SLIGHTLY LARGER */}
+        <div className="w-28 h-28 bg-gradient-to-br from-purple-900/50 to-cyan-900/30 rounded-full flex items-center justify-center z-10 relative shadow-2xl border border-purple-500/30">
           <div className="absolute inset-0 rounded-full bg-cyan-500/30 blur-xl animate-pulse"></div>
           <div className="absolute inset-0 rounded-full bg-purple-500/30 blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
           <div className="relative z-10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="url(#valuesGradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="url(#valuesGradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <defs>
                 <linearGradient id="valuesGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#06B6D4" />
