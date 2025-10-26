@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { ArrowLeft } from "lucide-react";
 
 const FeedbackPage: React.FC = () => {
   const router = useRouter();
@@ -46,6 +47,17 @@ const FeedbackPage: React.FC = () => {
 
         {/* Content */}
         <div className="relative max-w-7xl mx-auto px-4 md:px-8 lg:px-16 py-16 md:py-24">
+          {/* Back Button */}
+          {submission?.mission_id && (
+            <button
+              onClick={() => router.push(`/missions/${submission.mission_id}`)}
+              className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8 group"
+            >
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+              <span>Back to Mission</span>
+            </button>
+          )}
+
           <div className="text-center mb-16">
             {/* Mission Badge */}
             <div className="inline-flex items-center px-6 py-3 bg-[#1C1C1E] border border-[#6A0DAD]/30 rounded-full mb-8 hover:scale-105 transition-all duration-300">
@@ -94,6 +106,63 @@ const FeedbackPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Velric Score Section - PROMINENT DISPLAY */}
+                {submission?.velricScore !== undefined &&
+                  submission?.velricScore !== null && (
+                    <div className="mb-12">
+                      <h2 className="text-[25px] font-bold font-sora text-white mb-4 antialiased">
+                        Velric Score
+                      </h2>
+                      <div className="bg-gradient-to-br from-[#6A0DAD]/20 to-[#00D9FF]/20 border-2 border-[#6A0DAD]/40 rounded-2xl p-8">
+                        <div className="text-center">
+                          {/* Large Velric Score Display */}
+                          <div className="mb-4">
+                            <div className="inline-flex items-baseline gap-2">
+                              <span className="text-[72px] font-bold font-sora bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] bg-clip-text text-transparent">
+                                {submission.velricScore.toFixed(1)}
+                              </span>
+                              <span className="text-[36px] font-semibold text-[#F5F5F5]/60 font-sora">
+                                / 10
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Score Label */}
+                          <p className="text-[20px] text-[#F5F5F5] font-inter font-medium mb-2">
+                            Mission Velric Score
+                          </p>
+
+                          {/* Score Description */}
+                          <p className="text-[14px] text-[#F5F5F5]/70 font-inter max-w-md mx-auto">
+                            {submission.velricScore >= 9.5
+                              ? "Outstanding! Exceptional work across all criteria."
+                              : submission.velricScore >= 8.5
+                              ? "Excellent work! Strong performance."
+                              : submission.velricScore >= 7.5
+                              ? "Great job! Good understanding demonstrated."
+                              : submission.velricScore >= 6.5
+                              ? "Good effort. Room for improvement."
+                              : "Keep working on it. Review the feedback carefully."}
+                          </p>
+
+                          {/* Visual Progress Bar */}
+                          <div className="mt-6 max-w-md mx-auto">
+                            <div className="h-3 bg-[#0D0D0D] rounded-full overflow-hidden border border-[#6A0DAD]/30">
+                              <div
+                                className="h-full bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] rounded-full transition-all duration-1000"
+                                style={{
+                                  width: `${
+                                    (submission.velricScore / 10) * 100
+                                  }%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                 {/* Feedback Section */}
                 <div className="mb-12">
@@ -283,10 +352,15 @@ const FeedbackPage: React.FC = () => {
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 pt-6">
                   <button
-                    onClick={() => router.push(`/submission/${missionId}`)}
+                    onClick={() => {
+                      const target = submission?.mission_id
+                        ? `/missions/${submission.mission_id}`
+                        : "/";
+                      router.push(target);
+                    }}
                     className="flex-1 bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] text-white font-bold text-[18px] py-4 px-8 rounded-2xl hover:scale-105 hover:shadow-[#6A0DAD]/30 hover:shadow-2xl transition-all duration-300 font-sora antialiased"
                   >
-                    View Submission
+                    Back to Mission
                   </button>
                   <button
                     onClick={() => router.push("/")}

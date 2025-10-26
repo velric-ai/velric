@@ -11,6 +11,16 @@ export default async function handler(
 
   try {
     const submission = await getSubmissionById(id);
+    console.log(`[Feedback ${id}] Retrieved submission:`, {
+      found: !!submission,
+      hasFeedback: !!submission?.feedback,
+      hasGrades: !!submission?.grades,
+      grades: submission?.grades,
+      velricScore: submission?.velricScore,
+      overall_score: submission?.overall_score,
+      letter_grade: submission?.letter_grade,
+      status: submission?.status,
+    });
     if (!submission)
       return res.status(404).json({ success: false, error: "Not found" });
     return res.status(200).json({ success: true, submission });
