@@ -664,7 +664,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-xl font-bold text-white">For Talent</h3>
                 </div>
-                <p className="text-gray-300 text-sm mb-4">Prove your skills through personalized AI built proof of work missions.</p>
+                <p className="text-gray-300 text-sm mb-4">Earn proof of work through personalized AI skill missions.</p>
                 <div className="space-y-2">
                   <div className="flex items-start space-x-2">
                     <span className="text-purple-400 text-xs mt-1">•</span>

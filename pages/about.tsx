@@ -3,6 +3,7 @@ import React, { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TeamCard from "@/components/TeamCard";
+import ShaderBackground from "@/components/ui/shader-background";
 import { Workflow, Circle, Triangle, Hexagon } from "lucide-react";
 
 const About = () => {
@@ -30,7 +31,9 @@ const About = () => {
 
 
   return (
-    <div className="bg-[#0D0D0D] text-white relative overflow-hidden">
+    <div className="relative overflow-hidden">
+      <ShaderBackground />
+      <div className="relative bg-[#0D0D0D] bg-opacity-90 text-white">
       {/* Floating decorative elements */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <Circle 
@@ -140,11 +143,11 @@ const About = () => {
 
         <div className="grid gap-6 sm:grid-cols-2">
           <a
-            href="mailto:contact@velric.com"
+            href="mailto:mahir@velric.ai"
             className="border border-white/10 rounded-xl p-5 hover:border-purple-400/40 transition"
           >
             <h3 className="text-sm text-white/60 mb-1">Email</h3>
-            <p className="font-medium">contact@velric.com</p>
+            <p className="font-medium">mahir@velric.ai</p>
           </a>
 
           <a
@@ -179,6 +182,7 @@ const About = () => {
         </div>
       <Footer />
       </section>
+      </div>
     </div>
   );
 };
