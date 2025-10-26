@@ -12,6 +12,8 @@ import MissionFlow from "@/components/MissionFlow";
 import CircularProgressRing from "@/components/CircularProgressRing";
 import AnimatedDashboard from "@/components/AnimatedDashboard";
 import ConnectionAnimation from "@/components/ConnectionAnimation";
+import { Compare } from "@/components/ui/compare";
+import { HoverTiltCard } from "@/components/ui/hover-tilt-card";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { Circle, Triangle } from "lucide-react";
@@ -222,60 +224,121 @@ export default function Home() {
               </motion.div>
             </div>
 
-            {/* Cards Row */}
-            <div className="grid grid-cols-3 gap-8">
-              {/* Card 1 */}
+           {/* Cards Row */}
+            <div className="grid grid-cols-3 gap-6 mt-16">
+              {/* CARD 1: GLASSMORPHIC MISSIONS */}
               <motion.div
-                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-purple-500/20 text-center"
+                className="h-[380px] w-full"
                 initial={{ opacity: 0, y: 60 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8, delay: 0.1 }}
-                whileHover={{ y: -8, scale: 1.02 }}
               >
-                <div className="mb-6">
-                  <CircularProgressRing />
+                <div className="relative group w-full h-full rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-2xl">
+                  {/* Background Image */}
+                  <img
+                    src="/assets/missions.jpg"
+                    alt="Take Real-World Missions"
+                    className="w-full h-full object-cover"
+                  />
+
+                  {/* Glassmorphic Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-purple-400/10 to-transparent backdrop-blur-md border border-white/20 shadow-xl"></div>
+
+                  {/* Content Overlay */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <h3 className="text-3xl font-bold text-white text-center mb-2 drop-shadow-lg">
+                      Take Real-World
+                    </h3>
+                    <h3 className="text-3xl font-bold bg-gradient-to-r from-cyan-300 to-purple-400 bg-clip-text text-transparent text-center drop-shadow-lg">
+                      Missions
+                    </h3>
+
+                    <p className="text-sm text-white/80 text-center mt-4 max-w-xs drop-shadow-md px-4">
+                      Convert professional deliverables into interactive missions to gain hands-on experience
+                    </p>
+                  </div>
+
+                  {/* Hover Glow Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 via-purple-400/0 to-transparent opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-2xl"></div>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-4">Take Real-World Missions</h3>
-                <p className="text-gray-300 text-sm leading-relaxed">
-                  Convert professional deliverables into interactive missions to gain hands-on experience with actual industry work.
-                </p>
               </motion.div>
 
-              {/* Card 2 */}
+              {/* CARD 2: COMPARE SLIDER */}
               <motion.div
-                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-blue-500/20 text-center"
+                className="h-[380px] w-full"
                 initial={{ opacity: 0, y: 60 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8, delay: 0.3 }}
-                whileHover={{ y: -8, scale: 1.02 }}
               >
-                <div className="mb-6">
-                  <AnimatedDashboard />
+                <div className="w-full h-full rounded-2xl border border-white/10 shadow-xl bg-gradient-to-br from-purple-900/30 via-purple-800/20 to-purple-700/30 backdrop-blur-sm overflow-hidden flex flex-col">
+                  
+                  {/* Title - Inside card at top */}
+                  <div className="px-6 pt-4 pb-2 text-center border-b border-white/5">
+                    <h3 className="text-lg font-bold text-white">
+                      Get Your Velric Score
+                    </h3>
+                  </div>
+
+                  {/* Compare Slider - Full height */}
+                  <div className="flex-1 flex items-center justify-center p-4">
+                    <Compare
+                      firstImage="/assets/resume-template.jpg"
+                      secondImage="/assets/velric-score.jpg"
+                      className="w-full h-full rounded-lg"
+                      firstImageClassName="object-contain"
+                      secondImageClassname="object-contain"
+                      initialSliderPercentage={50}
+                      slideMode="hover"
+                      showHandlebar={true}
+                    />
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-4">Get Your Velric Score</h3>
-                <p className="text-gray-300 text-sm leading-relaxed">
-                  Our AI engine evaluates your work in real-time, providing comprehensive feedback and a detailed performance score.
-                </p>
               </motion.div>
 
-              {/* Card 3 */}
+              {/* CARD 3: HOVER TILT CARD */}
               <motion.div
-                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-green-500/20 text-center"
+                className="h-[380px] w-full"
                 initial={{ opacity: 0, y: 60 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8, delay: 0.5 }}
-                whileHover={{ y: -8, scale: 1.02 }}
               >
-                <div className="mb-6">
-                  <ConnectionAnimation />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-4">Unlock Career Opportunities</h3>
-                <p className="text-gray-300 text-sm leading-relaxed">
-                  Showcase your skills and portfolio to top employers. Let your real work speak louder than your resume.
-                </p>
+                <HoverTiltCard className="w-full h-full">
+                  <div className="flex flex-col items-center justify-center text-center gap-6 h-full">
+                    {/* Title */}
+                    <h3 className="text-2xl font-bold text-white">
+                      Unlock Career<br />Opportunities
+                    </h3>
+
+                    {/* Icons */}
+                    <div className="flex gap-12 items-center justify-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg">
+                          <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-300">Talent</p>
+                      </div>
+
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg">
+                          <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                          </svg>
+                        </div>
+                        <p className="text-sm text-gray-300">Companies</p>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-sm text-gray-300 max-w-xs">
+                      Showcase your skills and portfolio to top employers. Let your real work speak louder than your resume.
+                    </p>
+                  </div>
+                </HoverTiltCard>
               </motion.div>
             </div>
           </div>
