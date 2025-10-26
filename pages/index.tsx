@@ -17,6 +17,7 @@ import { HoverTiltCard } from "@/components/ui/hover-tilt-card";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { Circle, Triangle } from "lucide-react";
+import { AnimatedCircularProgress, AnimatedAIDashboard, AnimatedTalentCompanies } from "@/components/ui/animated-dashboard-components";
 
 export default function Home() {
   // Custom cursor glow effect
@@ -413,8 +414,9 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 🚀 What Makes Us Different - NEW DESIGN */}
-        <section className="px-4 md:px-8 lg:px-16 py-20 section-spacing relative z-10">
+
+{/* 🚀 What Makes Us Different - ENHANCED ANIMATED VERSION */}
+ <section className="px-4 md:px-8 lg:px-16 py-20 section-spacing relative z-10">
           <motion.h2
             className="text-4xl md:text-5xl font-extrabold mb-16 text-center text-white"
             initial={{ opacity: 0, y: 30 }}
@@ -449,8 +451,9 @@ export default function Home() {
                     <p className="text-gray-300 text-sm leading-relaxed mb-6">
                       Resumes were invented in the 1930s and haven&apos;t evolved since. Velric replaces them with personalized proof of work missions that reveal how candidates actually think, build, and perform.
                     </p>
-                    <div className="bg-[#2A2A2E] rounded-xl p-4 h-32 flex items-center justify-center">
-                      <MissionFlow width={280} height={120} text="No Resumes" className="w-full h-full" />
+                    {/* ANIMATED: Circular Progress with thick outer ring */}
+                    <div className="rounded-xl p-4 h-48 flex items-center justify-center">
+                      <AnimatedCircularProgress width={280} height={180} />
                     </div>
                   </div>
                 </motion.div>
@@ -474,8 +477,9 @@ export default function Home() {
                     <p className="text-gray-300 text-sm leading-relaxed mb-6">
                       Recruiters waste hours screening candidates based on buzzwords. Velric&apos;s AI evaluates real work, generating a Velric Score that quantifies skill, consistency, and problem solving ability.
                     </p>
-                    <div className="bg-[#2A2A2E] rounded-xl p-4 h-32 flex items-center justify-center">
-                      <HumanAIConnection width={280} height={120} text="No Guesswork" className="w-full h-full" />
+                    {/* ANIMATED: Talent/Companies Horizontal Connection */}
+                    <div className="rounded-xl p-4 h-48 flex items-center justify-center">
+                      <AnimatedTalentCompanies width={280} height={180} compact={false} />
                     </div>
                   </div>
                 </motion.div>
@@ -504,8 +508,9 @@ export default function Home() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex-1 bg-[#2A2A2E] rounded-xl p-6 h-48 flex items-center justify-center">
-                    <InteractiveDashboard width={400} height={180} text="AI Dashboard" className="w-full h-full" />
+                  {/* ANIMATED: AI Dashboard Charts Full Width */}
+                  <div className="flex-1 rounded-xl p-6 h-56 flex items-center justify-center">
+                    <AnimatedAIDashboard width={400} height={220} compact={false} />
                   </div>
                 </div>
               </motion.div>
@@ -532,8 +537,9 @@ export default function Home() {
                 <p className="text-gray-300 text-sm mb-4">
                   Resumes were invented in the 1930s and haven&apos;t evolved since. Velric replaces them with personalized proof of work missions.
                 </p>
-                <div className="bg-[#2A2A2E] rounded-xl p-4 h-24">
-                  <MissionFlow width={240} height={80} text="No Resumes" className="w-full h-full" />
+                {/* ANIMATED: Circular Progress Mobile */}
+                <div className="rounded-xl p-4 h-40 flex items-center justify-center">
+                  <AnimatedCircularProgress width={240} height={140} />
                 </div>
               </motion.div>
 
@@ -556,8 +562,9 @@ export default function Home() {
                 <p className="text-gray-300 text-sm mb-4">
                   Velric&apos;s AI evaluates real work, generating a Velric Score that quantifies skill, consistency, and problem solving ability.
                 </p>
-                <div className="bg-[#2A2A2E] rounded-xl p-4 h-24">
-                  <HumanAIConnection width={240} height={80} text="No Guesswork" className="w-full h-full" />
+                {/* ANIMATED: Talent/Companies Mobile (Vertical) */}
+                <div className="rounded-xl p-4 h-40 flex items-center justify-center">
+                  <AnimatedTalentCompanies width={240} height={140} compact={true} />
                 </div>
               </motion.div>
 
@@ -580,16 +587,14 @@ export default function Home() {
                 <p className="text-gray-300 text-sm mb-4">
                   The Velric Score levels the playing field, removing subjective judgment and giving companies data backed confidence.
                 </p>
-                <div className="bg-[#2A2A2E] rounded-xl p-4 h-24">
-                  <InteractiveDashboard width={240} height={80} text="AI Dashboard" className="w-full h-full" />
+                {/* ANIMATED: AI Dashboard Mobile */}
+                <div className="rounded-xl p-4 h-44 flex items-center justify-center">
+                  <AnimatedAIDashboard width={240} height={160} compact={true} />
                 </div>
               </motion.div>
             </div>
           </div>
         </section>
-
-
-
         {/* 🌍 A Platform for Everyone - NEW DESIGN */}
         <section className="px-4 md:px-8 lg:px-16 py-20 text-center section-spacing relative z-10">
           <motion.h2
