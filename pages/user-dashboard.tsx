@@ -221,7 +221,13 @@ quickStats: [
                 return (
                   <motion.button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => {
+                      if (tab.id === 'missions') {
+                        router.push('/missions');
+                      } else {
+                        setActiveTab(tab.id);
+                      }
+                    }}
                     className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
                       isActive 
                         ? 'bg-purple-500/30 text-white border border-purple-500/50' 
@@ -355,78 +361,55 @@ quickStats: [
                               fill="none"
                               strokeLinecap="round"
                               strokeDasharray={`${2 * Math.PI * 88}`}
-                              strokeDashoffset={`${2 * Math.PI * 88 * (1 - dashboardData.velricScore / 100)}`}
                               initial={{ strokeDashoffset: 2 * Math.PI * 88 }}
-                              animate={{ strokeDashoffset: 2 * Math.PI * 88 * (1 - dashboardData.velricScore / 100) }}
-                              transition={{ duration: 1.5, delay: 0.5, ease: "easeOut" }}
-                              style={{
-                                filter: 'drop-shadow(0 0 10px rgba(0, 245, 255, 0.5))'
+                              animate={{ 
+                                strokeDashoffset: 2 * Math.PI * 88 * (1 - dashboardData.velricScore / 100)
                               }}
+                              transition={{ duration: 2, ease: "easeOut" }}
                             />
                           </svg>
-                          <div className="absolute inset-0 flex items-center justify-center">
+                          
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
                             <motion.div
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
                               transition={{ delay: 0.5, duration: 0.5, type: "spring" }}
-                              className="text-5xl font-bold text-white"
+                              className="text-6xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent"
                             >
                               {dashboardData.velricScore}
                             </motion.div>
+                            <div className="text-white/60 text-sm font-medium mt-1">Velric Score</div>
                           </div>
                         </div>
-                      </div>           
-           <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.8, duration: 0.5 }}
-                        className="space-y-2 mb-6"
-                      >
-                        <h3 className="text-lg font-semibold text-white tracking-wide">
-                          YOUR VELRIC SCORE
-                        </h3>
-                        <p className="text-cyan-400 font-medium">
-                          {dashboardData.percentile}th Percentile Globally
-                        </p>
-                        <p className="text-green-400 text-sm font-medium">
-                          Top 5% of Candidates
-                        </p>
-                      </motion.div>
+                      </div>
 
-                      <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 1, duration: 0.5 }}
-                        className="text-white/60 text-sm mb-6"
-                      >
-                        Updated {dashboardData.lastUpdated}
-                      </motion.p>
-
-                      <motion.button
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 1.2, duration: 0.5 }}
-                        className="w-full py-3 rounded-xl font-semibold transition-all"
+                      <div className="mb-4 p-4 rounded-2xl"
                         style={{
-                          background: 'linear-gradient(135deg, #00F5FF 0%, #3B82F6 100%)',
-                          boxShadow: '0 4px 15px rgba(0, 245, 255, 0.2)'
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          border: '1px solid rgba(255, 255, 255, 0.08)'
                         }}
-                        whileHover={{ 
-                          scale: 1.02,
-                          boxShadow: '0 8px 25px rgba(0, 245, 255, 0.3)'
-                        }}
-                        whileTap={{ scale: 0.98 }}
                       >
-                        View Score Breakdown
-                      </motion.button>
+                        <div className="flex items-center justify-center space-x-2 mb-2">
+                          <Trophy className="w-5 h-5 text-yellow-400" />
+                          <span className="text-2xl font-bold text-white">Top {100 - dashboardData.percentile}%</span>
+                        </div>
+                        <p className="text-white/60 text-sm">
+                          You&apos;re in the {dashboardData.percentile}th percentile
+                        </p>
+                      </div>
+
+                      <p className="text-white/60 text-sm">
+                        Last updated: {dashboardData.lastUpdated}
+                      </p>
                     </div>
-                  </motion.div>         
-         {/* Weekly Activity Card */}
+                  </motion.div>
+
+                  {/* Weekly Activity */}
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.2 }}
-                    className="p-6 rounded-3xl"
+                    className="p-6 rounded-2xl relative overflow-hidden"
                     style={{
                       background: 'rgba(255, 255, 255, 0.05)',
                       backdropFilter: 'blur(15px)',
@@ -434,166 +417,145 @@ quickStats: [
                       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
                     }}
                   >
-                    <div className="space-y-6">
-                      <h3 className="text-xl font-semibold text-white">This Week's Activity</h3>
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-yellow-500/5 rounded-2xl" />
+                    
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-between mb-6">
+                        <div>
+                          <h3 className="text-xl font-semibold text-white mb-1">Weekly Activity</h3>
+                          <p className="text-white/60 text-sm">Keep the momentum going!</p>
+                        </div>
+                        <div className="flex items-center space-x-2 px-4 py-2 rounded-full"
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(251, 146, 60, 0.2), rgba(249, 115, 22, 0.2))',
+                            border: '1px solid rgba(251, 146, 60, 0.3)'
+                          }}
+                        >
+                          <Flame className="w-5 h-5 text-orange-400" />
+                          <span className="text-orange-400 font-bold text-lg">{dashboardData.streakCount}</span>
+                        </div>
+                      </div>
 
-                      <div className="flex justify-between items-end space-x-2">
+                      <div className="flex justify-between gap-3">
                         {dashboardData.weeklyActivity.map((day, index) => (
                           <motion.div
                             key={day.day}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 + index * 0.1, duration: 0.5 }}
-                            className="flex flex-col items-center space-y-2"
+                            transition={{ delay: 0.3 + index * 0.1, duration: 0.3 }}
+                            className="flex-1"
                           >
-                            <motion.div
-                              className={`w-3 h-16 rounded-lg transition-all ${
+                            <div 
+                              className={`h-32 rounded-xl mb-2 transition-all duration-300 ${
                                 day.active 
-                                  ? 'bg-gradient-to-t from-green-400 to-cyan-400' 
-                                  : 'bg-white/10'
+                                  ? 'bg-gradient-to-t from-orange-500 to-yellow-400 shadow-lg shadow-orange-500/30' 
+                                  : 'bg-white/5 border border-white/10'
                               }`}
-                              style={{
-                                boxShadow: day.active ? '0 0 10px rgba(0, 255, 135, 0.5)' : 'none'
-                              }}
-                              whileHover={{ scaleY: 1.1 }}
-                              transition={{ duration: 0.2 }}
                             />
-                            <span className="text-xs text-white/60 font-medium">{day.day}</span>
+                            <p className="text-center text-xs text-white/70 font-medium">{day.day}</p>
                           </motion.div>
                         ))}
                       </div>
-
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.8, duration: 0.5 }}
-                        className="rounded-xl p-4"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%)',
-                          border: '1px solid rgba(245, 158, 11, 0.3)'
-                        }}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                            style={{
-                              background: 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)'
-                            }}
-                          >
-                            <Flame className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-lg font-bold text-white">{dashboardData.streakCount}-Day Streak</span>
-                              <span className="text-orange-400">🔥</span>
-                            </div>
-                            <p className="text-white/70 text-sm">Keep your streak alive!</p>
-                          </div>
-                        </div>
-                      </motion.div>    
-                  <div className="space-y-4">
-                        <h4 className="text-lg font-medium text-white">Recent Activity</h4>
-                        <div className="space-y-3">
-                          {dashboardData.recentActivities.map((activity, index) => (
-                            <motion.div
-                              key={index}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 1 + index * 0.1, duration: 0.5 }}
-                              className="flex items-center justify-between p-3 rounded-lg"
-                              style={{
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)'
-                              }}
-                            >
-                              <div className="flex-1">
-                                <p className="text-white font-medium text-sm">{activity.name}</p>
-                                <p className="text-white/60 text-xs">{activity.timeAgo}</p>
-                              </div>
-                              {activity.score && (
-                                <div className="text-right">
-                                  <span className="text-green-400 font-bold text-sm">
-                                    {activity.score}/100
-                                  </span>
-                                </div>
-                              )}
-                            </motion.div>
-                          ))}
-                        </div>
-                      </div>
                     </div>
                   </motion.div>
-                </div>     
-           {/* Right Column */}
+
+                  {/* Recent Activities */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="p-6 rounded-2xl"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      backdropFilter: 'blur(15px)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+                    }}
+                  >
+                    <h3 className="text-xl font-semibold text-white mb-4">Recent Activity</h3>
+                    <div className="space-y-3">
+                      {dashboardData.recentActivities.map((activity, index) => (
+                        <motion.div
+                          key={activity.name}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.4 + index * 0.1, duration: 0.3 }}
+                          className="p-4 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
+                          }}
+                          whileHover={{ x: 5 }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h4 className="text-white font-medium text-sm mb-1">{activity.name}</h4>
+                              <p className="text-white/60 text-xs">{activity.timeAgo}</p>
+                            </div>
+                            {activity.score && (
+                              <div className="ml-4 px-3 py-1 rounded-full text-sm font-bold"
+                                style={{
+                                  background: 'linear-gradient(135deg, rgba(0, 245, 255, 0.2), rgba(59, 130, 246, 0.2))',
+                                  border: '1px solid rgba(0, 245, 255, 0.3)',
+                                  color: '#00F5FF'
+                                }}
+                              >
+                                {activity.score}
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Right Column */}
                 <div className="lg:col-span-7 space-y-6">
-                  {/* Domain Breakdown */}
+                  {/* Domain Performance */}
                   <div className="space-y-6">
-                    <h3 className="text-2xl font-semibold text-white">Domain Breakdown</h3>
+                    <h3 className="text-2xl font-semibold text-white">Domain Performance</h3>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {dashboardData.domains.map((domain, index) => {
-                        const changeColor = domain.change > 0 ? '#00FF87' : domain.change < 0 ? '#EF4444' : '#9CA3AF';
-                        const ChangeIcon = domain.change > 0 ? TrendingUp : domain.change < 0 ? TrendingDown : null;
+                        const isPositive = domain.change >= 0;
+                        const ChangeIcon = isPositive ? TrendingUp : TrendingDown;
                         
                         return (
                           <motion.div
                             key={domain.name}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 + index * 0.1, duration: 0.5 }}
-                            className="p-5 relative min-h-[220px] rounded-2xl"
+                            transition={{ delay: 0.4 + index * 0.1, duration: 0.5 }}
+                            whileHover={{ y: -5, scale: 1.02 }}
+                            className="p-6 rounded-2xl relative overflow-hidden group cursor-pointer"
                             style={{
                               background: 'rgba(255, 255, 255, 0.05)',
                               backdropFilter: 'blur(15px)',
                               border: '1px solid rgba(255, 255, 255, 0.1)',
                               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
                             }}
-                            whileHover={{
-                              y: -4,
-                              scale: 1.02,
-                              boxShadow: `0 12px 40px rgba(0, 0, 0, 0.4)`
-                            }}
                           >
-                            {/* Indicator Dot */}
                             <div 
-                              className="absolute top-4 right-4 w-3 h-3 rounded-full"
+                              className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-300"
                               style={{
-                                backgroundColor: domain.color,
-                                boxShadow: `0 0 10px ${domain.color}`
+                                background: `linear-gradient(135deg, ${domain.color}, ${domain.color}80)`
                               }}
                             />
                             
-                            <div className="h-full flex flex-col justify-between">
-                              <div className="space-y-3">
-                                <h4 className="text-base font-semibold text-white leading-tight pr-6">
-                                  {domain.name}
-                                </h4>
-                                
-                                <div className="text-2xl font-bold text-white">
-                                  {domain.score}
-                                </div>
-                                
-                                <div className="flex items-center space-x-1 text-xs" style={{ color: changeColor }}>
-                                  {ChangeIcon && <ChangeIcon className="w-3 h-3" />}
-                                  <span className="font-medium">
-                                    {domain.change === 0 ? 'No change' : `${domain.change > 0 ? '+' : ''}${domain.change}% from last week`}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              <div className="space-y-3">
-                                <div>
-                                  <p className="text-white/60 text-xs font-medium mb-2 uppercase tracking-wide">
-                                    Skills
-                                  </p>
-                                  <div className="flex flex-wrap gap-1">
+                            <div className="relative z-10">
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="flex-1">
+                                  <h4 className="text-white font-semibold mb-2">{domain.name}</h4>
+                                  <div className="flex flex-wrap gap-1 mb-3">
                                     {domain.skills.map((skill, skillIndex) => (
                                       <span
                                         key={skillIndex}
-                                        className="px-2 py-1 rounded text-xs font-medium"
+                                        className="px-2 py-1 rounded-md text-xs font-medium"
                                         style={{
-                                          background: 'rgba(255, 255, 255, 0.1)',
-                                          color: 'rgba(255, 255, 255, 0.8)',
-                                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                                          background: `${domain.color}20`,
+                                          color: domain.color,
+                                          border: `1px solid ${domain.color}30`
                                         }}
                                       >
                                         {skill}
@@ -602,21 +564,45 @@ quickStats: [
                                   </div>
                                 </div>
                                 
-                                <div>
-                                  <div className="h-2 rounded-full overflow-hidden"
-                                    style={{ background: 'rgba(255, 255, 255, 0.1)' }}
+                                <div className="flex items-center space-x-2 ml-4">
+                                  <span 
+                                    className="text-2xl font-bold"
+                                    style={{ color: domain.color }}
                                   >
-                                    <motion.div
-                                      className="h-full rounded-full"
-                                      style={{ 
-                                        background: `linear-gradient(90deg, ${domain.color}, ${domain.color}dd)`,
-                                        boxShadow: `0 0 10px ${domain.color}50`
-                                      }}
-                                      initial={{ width: 0 }}
-                                      animate={{ width: `${domain.score}%` }}
-                                      transition={{ duration: 1.5, delay: 0.5 + index * 0.1, ease: "easeOut" }}
-                                    />
+                                    {domain.score}
+                                  </span>
+                                  <div 
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-bold ${
+                                      isPositive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                                    }`}
+                                  >
+                                    <ChangeIcon className="w-3 h-3" />
+                                    <span>{Math.abs(domain.change)}</span>
                                   </div>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-white/60">Progress</span>
+                                  <span className="text-white/80 font-medium">{domain.score}%</span>
+                                </div>
+                                <div 
+                                  className="h-2 rounded-full overflow-hidden"
+                                  style={{
+                                    background: 'rgba(255, 255, 255, 0.1)'
+                                  }}
+                                >
+                                  <motion.div
+                                    className="h-full rounded-full"
+                                    style={{ 
+                                      background: `linear-gradient(90deg, ${domain.color}, ${domain.color}dd)`,
+                                      boxShadow: `0 0 10px ${domain.color}50`
+                                    }}
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${domain.score}%` }}
+                                    transition={{ duration: 1.5, delay: 0.5 + index * 0.1, ease: "easeOut" }}
+                                  />
                                 </div>
                               </div>
                             </div>
