@@ -82,13 +82,110 @@ export default function Signup() {
 
       // For demo purposes, always succeed
       // In real app, this would call your backend API
+      
+      // Mock successful signup response
+      const mockResponse = {
+        token: `demo_token_${Date.now()}`,
+        user: {
+          id: `user_${Date.now()}`,
+          email: formData.email,
+          name: formData.name,
+          onboarded: false // CRITICAL: Mark as NOT onboarded
+        }
+      };
 
-      // Show success message and redirect to login
-      router.push("/login?message=Account created successfully! Please sign in.");
+      // ✅ REDIRECT LOGIC: Store auth data and redirect to survey
+      handleSignupSuccess(mockResponse);
     } catch (error) {
       setErrors({ general: "Signup failed. Please try again." });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // ✅ FIXED: SignUp Success Handler with localStorage clearing
+  const handleSignupSuccess = async (response: any) => {
+    try {
+      console.log("=== STARTING SIGNUP SUCCESS HANDLER ===");
+      console.log("New user email:", response.user.email);
+      
+      // ✅ STEP 1: CLEAR ALL OLD USER DATA FIRST (Critical Fix!)
+      console.log("Clearing old user data from localStorage...");
+      
+      // Check what's there before clearing (for debugging)
+      const oldData = localStorage.getItem('velric_user');
+      if (oldData) {
+        console.log("Old user data found:", oldData);
+        const oldUser = JSON.parse(oldData);
+        console.log("Old user onboarded status:", oldUser.onboarded);
+      } else {
+        console.log("No old user data found");
+      }
+      
+      // Nuclear option - clear EVERYTHING
+      localStorage.clear();
+      console.log("✅ localStorage cleared");
+      
+      // Verify it's actually cleared
+      const verifyCleared = localStorage.getItem('velric_user');
+      if (verifyCleared === null) {
+        console.log("✅ Verification passed - localStorage is empty");
+      } else {
+        console.error("❌ Warning: localStorage not fully cleared!");
+      }
+      
+      // ✅ STEP 2: Create FRESH user profile with onboarded: FALSE
+      console.log("Creating fresh user profile...");
+      
+      const newUserData = {
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        token: response.token,
+        onboarded: false, // ⚠️ CRITICAL: Must be FALSE for new users!
+        createdAt: new Date().toISOString(),
+        surveyCompletedAt: null,
+        profileComplete: false
+      };
+      
+      console.log("=== NEW USER PROFILE ===");
+      console.log("User data:", newUserData);
+      console.log("Onboarded status:", newUserData.onboarded); // Should be false
+      
+      // ✅ STEP 3: Save new user data to localStorage
+      localStorage.setItem('velric_user', JSON.stringify(newUserData));
+      console.log("✅ New user data saved to localStorage");
+      
+      // ✅ STEP 4: Verify the data was saved correctly
+      const verifyData = localStorage.getItem('velric_user');
+      if (verifyData) {
+        const verified = JSON.parse(verifyData);
+        console.log("=== VERIFICATION CHECK ===");
+        console.log("Saved user email:", verified.email);
+        console.log("Saved onboarded status:", verified.onboarded);
+        
+        if (verified.onboarded === false) {
+          console.log("✅ VERIFICATION PASSED - User correctly marked as NOT onboarded");
+        } else {
+          console.error("❌ VERIFICATION FAILED - onboarded is:", verified.onboarded);
+          console.error("This is a critical error - user will skip survey!");
+        }
+      }
+      
+      console.log("=== SIGNUP COMPLETE ===");
+      console.log("Redirecting to survey in 500ms...");
+      
+      // ✅ STEP 5: Redirect to survey (NOT dashboard)
+      // Small delay to ensure localStorage write is complete
+      setTimeout(() => {
+        console.log("🚀 Redirecting to /onboard/survey");
+        router.replace('/onboard/survey');
+      }, 500);
+      
+    } catch (error) {
+      console.error('❌ Signup success handler error:', error);
+      console.error('Error details:', error);
+      setErrors({ general: 'Something went wrong. Please try again.' });
     }
   };
 

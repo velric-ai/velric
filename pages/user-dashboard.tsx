@@ -2,12 +2,12 @@ import Head from "next/head";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
-import { 
-  LayoutDashboard, 
-  Target, 
-  GraduationCap, 
-  BarChart3, 
-  User, 
+import {
+  LayoutDashboard,
+  Target,
+  GraduationCap,
+  BarChart3,
+  User,
   Settings,
   Bell,
   TrendingUp,
@@ -24,8 +24,10 @@ import {
   LogOut,
   ChevronDown
 } from "lucide-react";
+import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
+import { WelcomeMessage } from "../components/dashboard/WelcomeMessage";
 
-export default function UserDashboard() {
+function UserDashboardContent() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [user, setUser] = useState<any>(null);
@@ -40,7 +42,7 @@ export default function UserDashboard() {
         router.push("/login");
         return;
       }
-      
+
       try {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
@@ -49,7 +51,7 @@ export default function UserDashboard() {
         router.push("/login");
         return;
       }
-      
+
       setIsLoading(false);
     };
 
@@ -107,8 +109,8 @@ export default function UserDashboard() {
       { name: "Completed: Backend Challenge", score: 92, timeAgo: "2 days ago" },
       { name: "Updated: Portfolio", timeAgo: "3 days ago" },
       { name: "Completed: Frontend Mission", score: 88, timeAgo: "5 days ago" }
-    ],   
- domains: [
+    ],
+    domains: [
       {
         name: "Backend Development",
         score: 92,
@@ -117,7 +119,7 @@ export default function UserDashboard() {
         color: "#F472B6"
       },
       {
-        name: "Frontend Development", 
+        name: "Frontend Development",
         score: 88,
         change: 3,
         skills: ["React", "TypeScript", "Tailwind CSS"],
@@ -151,8 +153,8 @@ export default function UserDashboard() {
         skills: ["TensorFlow", "PyTorch", "Scikit-learn"],
         color: "#A78BFA"
       }
-    ],    
-quickStats: [
+    ],
+    quickStats: [
       { title: "+12%", subtitle: "30-Day Score Growth", icon: TrendingUp, color: "#00FF87" },
       { title: "85%", subtitle: "Profile Completeness", subtext: "Add 3 more details", icon: User, color: "#3B82F6" },
       { title: "24", subtitle: "Profile Views This Month", icon: Eye, color: "#A78BFA" }
@@ -190,11 +192,14 @@ quickStats: [
       <div className="min-h-screen text-white" style={{
         background: 'linear-gradient(135deg, #1a0b2e 0%, #16213e 50%, #0f3460 100%)'
       }}>
+        {/* Welcome Message for Survey Completion */}
+        <WelcomeMessage />
+        
         {/* Background Effects */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-l from-cyan-500/10 to-green-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-          <div 
+          <div
             className="absolute inset-0 opacity-20"
             style={{
               backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)`,
@@ -212,12 +217,12 @@ quickStats: [
           <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <img src="/assets/logo.png" alt="Velric Logo" className="h-8 brightness-110" />
-            </div>  
-          <div className="flex items-center space-x-2">
+            </div>
+            <div className="flex items-center space-x-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
-                
+
                 return (
                   <motion.button
                     key={tab.id}
@@ -228,11 +233,10 @@ quickStats: [
                         setActiveTab(tab.id);
                       }
                     }}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
-                      isActive 
-                        ? 'bg-purple-500/30 text-white border border-purple-500/50' 
-                        : 'text-white/70 hover:text-white hover:bg-white/5'
-                    }`}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${isActive
+                      ? 'bg-purple-500/30 text-white border border-purple-500/50'
+                      : 'text-white/70 hover:text-white hover:bg-white/5'
+                      }`}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -305,8 +309,8 @@ quickStats: [
               </div>
             </div>
           </div>
-        </nav>  
-      {/* Main Content */}
+        </nav>
+        {/* Main Content */}
         <div className="relative z-10 pt-16">
           {activeTab === 'dashboard' ? (
             <motion.div
@@ -332,7 +336,7 @@ quickStats: [
                     }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 rounded-3xl" />
-                    
+
                     <div className="relative z-10">
                       <div className="mb-6">
                         <div className="relative inline-flex items-center justify-center">
@@ -362,13 +366,13 @@ quickStats: [
                               strokeLinecap="round"
                               strokeDasharray={`${2 * Math.PI * 88}`}
                               initial={{ strokeDashoffset: 2 * Math.PI * 88 }}
-                              animate={{ 
+                              animate={{
                                 strokeDashoffset: 2 * Math.PI * 88 * (1 - dashboardData.velricScore / 100)
                               }}
                               transition={{ duration: 2, ease: "easeOut" }}
                             />
                           </svg>
-                          
+
                           <div className="absolute inset-0 flex flex-col items-center justify-center">
                             <motion.div
                               initial={{ scale: 0 }}
@@ -418,7 +422,7 @@ quickStats: [
                     }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-yellow-500/5 rounded-2xl" />
-                    
+
                     <div className="relative z-10">
                       <div className="flex items-center justify-between mb-6">
                         <div>
@@ -445,12 +449,11 @@ quickStats: [
                             transition={{ delay: 0.3 + index * 0.1, duration: 0.3 }}
                             className="flex-1"
                           >
-                            <div 
-                              className={`h-32 rounded-xl mb-2 transition-all duration-300 ${
-                                day.active 
-                                  ? 'bg-gradient-to-t from-orange-500 to-yellow-400 shadow-lg shadow-orange-500/30' 
-                                  : 'bg-white/5 border border-white/10'
-                              }`}
+                            <div
+                              className={`h-32 rounded-xl mb-2 transition-all duration-300 ${day.active
+                                ? 'bg-gradient-to-t from-orange-500 to-yellow-400 shadow-lg shadow-orange-500/30'
+                                : 'bg-white/5 border border-white/10'
+                                }`}
                             />
                             <p className="text-center text-xs text-white/70 font-medium">{day.day}</p>
                           </motion.div>
@@ -515,12 +518,12 @@ quickStats: [
                   {/* Domain Performance */}
                   <div className="space-y-6">
                     <h3 className="text-2xl font-semibold text-white">Domain Performance</h3>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {dashboardData.domains.map((domain, index) => {
                         const isPositive = domain.change >= 0;
                         const ChangeIcon = isPositive ? TrendingUp : TrendingDown;
-                        
+
                         return (
                           <motion.div
                             key={domain.name}
@@ -536,13 +539,13 @@ quickStats: [
                               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
                             }}
                           >
-                            <div 
+                            <div
                               className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-300"
                               style={{
                                 background: `linear-gradient(135deg, ${domain.color}, ${domain.color}80)`
                               }}
                             />
-                            
+
                             <div className="relative z-10">
                               <div className="flex items-start justify-between mb-4">
                                 <div className="flex-1">
@@ -563,18 +566,17 @@ quickStats: [
                                     ))}
                                   </div>
                                 </div>
-                                
+
                                 <div className="flex items-center space-x-2 ml-4">
-                                  <span 
+                                  <span
                                     className="text-2xl font-bold"
                                     style={{ color: domain.color }}
                                   >
                                     {domain.score}
                                   </span>
-                                  <div 
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-bold ${
-                                      isPositive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-                                    }`}
+                                  <div
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-bold ${isPositive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                                      }`}
                                   >
                                     <ChangeIcon className="w-3 h-3" />
                                     <span>{Math.abs(domain.change)}</span>
@@ -587,7 +589,7 @@ quickStats: [
                                   <span className="text-white/60">Progress</span>
                                   <span className="text-white/80 font-medium">{domain.score}%</span>
                                 </div>
-                                <div 
+                                <div
                                   className="h-2 rounded-full overflow-hidden"
                                   style={{
                                     background: 'rgba(255, 255, 255, 0.1)'
@@ -595,7 +597,7 @@ quickStats: [
                                 >
                                   <motion.div
                                     className="h-full rounded-full"
-                                    style={{ 
+                                    style={{
                                       background: `linear-gradient(90deg, ${domain.color}, ${domain.color}dd)`,
                                       boxShadow: `0 0 10px ${domain.color}50`
                                     }}
@@ -615,11 +617,11 @@ quickStats: [
                   {/* Quick Stats */}
                   <div className="space-y-6 mt-12">
                     <h3 className="text-2xl font-semibold text-white">Quick Stats</h3>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       {dashboardData.quickStats.map((stat, index) => {
                         const Icon = stat.icon;
-                        
+
                         return (
                           <motion.div
                             key={stat.title}
@@ -634,15 +636,15 @@ quickStats: [
                               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
                             }}
                           >
-                            <div 
+                            <div
                               className="absolute inset-0 opacity-10 rounded-2xl"
                               style={{
                                 background: `linear-gradient(135deg, ${stat.color}, ${stat.color}80)`
                               }}
                             />
-                            
+
                             <div className="relative z-10 flex items-center space-x-4">
-                              <div 
+                              <div
                                 className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
                                 style={{
                                   background: `linear-gradient(135deg, ${stat.color}, ${stat.color}cc)`
@@ -650,7 +652,7 @@ quickStats: [
                               >
                                 <Icon className="w-6 h-6 text-white" />
                               </div>
-                              
+
                               <div className="flex-1">
                                 <div className="text-2xl font-bold text-white mb-1">
                                   {stat.title}
@@ -669,11 +671,11 @@ quickStats: [
                         );
                       })}
                     </div>
-                  </div> 
-                 {/* Connected Platforms */}
+                  </div>
+                  {/* Connected Platforms */}
                   <div className="space-y-6">
                     <h3 className="text-2xl font-semibold text-white">Connected Platforms</h3>
-                    
+
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -689,7 +691,7 @@ quickStats: [
                       <div className="space-y-4">
                         {dashboardData.platforms.map((platform, index) => {
                           const Icon = platform.icon;
-                          
+
                           return (
                             <motion.div
                               key={platform.name}
@@ -717,14 +719,13 @@ quickStats: [
                               <div className="flex items-center space-x-3">
                                 {platform.connected ? (
                                   <>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                      platform.status === 'Public' 
-                                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                        : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                                    }`}>
+                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${platform.status === 'Public'
+                                      ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                      : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                                      }`}>
                                       {platform.status}
                                     </span>
-                                    
+
                                     <motion.button
                                       className="w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 flex items-center justify-center text-red-400 hover:text-red-300 transition-colors"
                                       whileHover={{ scale: 1.1 }}
@@ -781,5 +782,14 @@ quickStats: [
         </div>
       </div>
     </>
+  );
+}
+
+// ✅ LOCATION 4: Dashboard Route Guard - Only allow access if logged in AND onboarded
+export default function UserDashboard() {
+  return (
+    <ProtectedDashboardRoute>
+      <UserDashboardContent />
+    </ProtectedDashboardRoute>
   );
 }
