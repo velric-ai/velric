@@ -1,12 +1,18 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
+import { Eye, EyeOff, User, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { useAuth } from '../contexts/AuthContext';
+import { SignupData, ValidationError } from '../types/auth';
+import { validateName, validateEmail, validatePassword } from '../services/authService';
 
 export default function Signup() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
+  const { signup, isAuthenticated, isLoading: authLoading } = useAuth();
+  
+  const [formData, setFormData] = useState<SignupData>({
     name: "",
     email: "",
     password: "",
@@ -14,56 +20,77 @@ export default function Signup() {
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [touched, setTouched] = useState<{[key: string]: boolean}>({});
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ""
-      }));
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      router.replace('/user-dashboard');
+    }
+  }, [isAuthenticated, authLoading, router]);
+
+  // Real-time validation
+  useEffect(() => {
+    const newErrors: {[key: string]: string} = {};
+    
+    if (touched.name && formData.name) {
+      const nameError = validateName(formData.name);
+      if (nameError) newErrors.name = nameError;
+    }
+    
+    if (touched.email && formData.email) {
+      const emailError = validateEmail(formData.email);
+      if (emailError) newErrors.email = emailError;
+    }
+    
+    if (touched.password && formData.password) {
+      const passwordError = validatePassword(formData.password);
+      if (passwordError) newErrors.password = passwordError;
+    }
+    
+    if (touched.confirmPassword && formData.confirmPassword) {
+      if (formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = "Passwords do not match";
+      }
+    }
+    
+    setErrors(prev => ({ ...prev, ...newErrors, general: prev.general }));
+  }, [formData, touched]);
+
+  const handleInputChange = (field: keyof SignupData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear field-specific error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
 
+  const handleBlur = (field: string) => () => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+  };
+
   const validateForm = () => {
-    const newErrors: { [key: string]: string } = {};
+    const newErrors: {[key: string]: string} = {};
 
-    // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = "Full name is required";
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = "Name must be at least 2 characters";
-    }
+    const nameError = validateName(formData.name);
+    if (nameError) newErrors.name = nameError;
 
-    // Email validation
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
+    const emailError = validateEmail(formData.email);
+    if (emailError) newErrors.email = emailError;
 
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = "Password must contain at least one uppercase letter, one lowercase letter, and one number";
-    }
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) newErrors.password = passwordError;
 
-    // Confirm password validation
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password";
-    } else if (formData.password !== formData.confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
 
     setErrors(newErrors);
+    setTouched({ name: true, email: true, password: true, confirmPassword: true });
     return Object.keys(newErrors).length === 0;
   };
 

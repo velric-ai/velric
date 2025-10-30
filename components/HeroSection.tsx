@@ -37,15 +37,15 @@ export default function HeroSection() {
       
       {/* Main Content */}
       <div className="relative z-10 flex items-center justify-center text-white text-center px-6 min-h-screen">
-        <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col items-center text-center">
+        <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col items-center text-center px-4">
           <motion.h1
-            className="hero-title"
+            className="hero-title w-full max-w-full overflow-hidden px-2"
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
             <motion.span
-              className="word"
+              className="word inline-block break-words"
               data-word="1"
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
@@ -54,7 +54,7 @@ export default function HeroSection() {
               Global
             </motion.span>{" "}
             <motion.span
-              className="word"
+              className="word inline-block break-words"
               data-word="2"
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -64,7 +64,7 @@ export default function HeroSection() {
             </motion.span>
             <br />
             <motion.span
-              className="word"
+              className="word inline-block break-words"
               data-word="3"
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
@@ -73,7 +73,7 @@ export default function HeroSection() {
               For
             </motion.span>{" "}
             <motion.span
-              className="word highlight-results"
+              className="word highlight-results inline-block break-words"
               data-word="4"
               data-text="Hiring."
               initial={{ opacity: 0, x: 30 }}

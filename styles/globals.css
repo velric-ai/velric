@@ -275,12 +275,17 @@ img {
 }
 
 .hero-title {
-  font-size: clamp(56px, 10vw, 110px);
+  font-size: clamp(28px, 7vw, 110px);
   font-weight: 900;
-  line-height: 1.2;
+  line-height: 1.1;
   text-align: center;
   color: #FFFFFF;
   letter-spacing: -0.02em;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .hero-title .word {
@@ -501,6 +506,8 @@ img {
   .hero-section {
     padding-top: 100px;
     padding-bottom: 40px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
   
   .university-ticker-container {
@@ -513,6 +520,68 @@ img {
     max-width: 90% !important;
     padding: 0 15px !important;
     margin: 20px auto 30px auto !important;
+  }
+  
+  .hero-title {
+    font-size: clamp(24px, 6.5vw, 48px) !important;
+    line-height: 1.05 !important;
+    padding: 0 8px;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+  
+  .hero-title .word {
+    padding: 0 2px;
+    display: inline-block;
+    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+}
+
+/* Extra small mobile devices (320px and below) */
+@media (max-width: 375px) {
+  .hero-title {
+    font-size: clamp(20px, 5.5vw, 40px) !important;
+    line-height: 1.0 !important;
+    letter-spacing: -0.01em !important;
+    padding: 0 4px !important;
+  }
+  
+  .hero-title .word {
+    padding: 0 1px !important;
+    font-size: inherit !important;
+  }
+  
+  .hero-section {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  
+  .hero-description {
+    font-size: 14px !important;
+    padding: 0 12px !important;
+  }
+}
+
+/* Very small screens (320px) */
+@media (max-width: 320px) {
+  .hero-title {
+    font-size: clamp(18px, 5vw, 32px) !important;
+    line-height: 0.95 !important;
+    padding: 0 2px !important;
+  }
+  
+  .hero-title .word {
+    padding: 0 !important;
+    margin: 0 1px !important;
+  }
+  
+  .hero-section {
+    padding-left: 8px;
+    padding-right: 8px;
   }
 }
 
@@ -1225,4 +1294,202 @@ x for white floating hexagon bug */
 /* Specific fix for Hexagon component */
 .floating-element[size="100"] {
   opacity: 0.05 !important;
+}
+/* Enh
+anced mobile responsiveness for cards and text */
+@media (max-width: 768px) {
+  /* Ensure card text doesn't overflow */
+  .velric-card h3,
+  .feature-card h3,
+  .diff-card h3 {
+    font-size: 1.25rem !important;
+    line-height: 1.3 !important;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+  
+  /* Better text wrapping for all card content */
+  .velric-card p,
+  .feature-card p,
+  .diff-card p {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+  
+  /* Ensure animated dashboard components fit properly */
+  .animated-dashboard-card {
+    min-height: 120px;
+    padding: 12px;
+  }
+  
+  /* Better spacing for small text elements */
+  .text-xs, .text-sm {
+    word-spacing: normal;
+    letter-spacing: 0;
+  }
+}
+
+/* Additional mobile fixes for very small screens */
+@media (max-width: 414px) {
+  /* Reduce card padding on small screens */
+  .velric-card,
+  .feature-card,
+  .diff-card {
+    padding: 20px 16px !important;
+  }
+  
+  /* Ensure section titles are readable */
+  .section-title,
+  .section-heading {
+    font-size: clamp(24px, 6vw, 48px) !important;
+    line-height: 1.2 !important;
+    padding: 0 16px;
+    text-align: center;
+    word-wrap: break-word;
+  }
+}
+
+/* Ultra-small screen fixes (320px) */
+@media (max-width: 320px) {
+  .velric-card,
+  .feature-card,
+  .diff-card {
+    padding: 16px 12px !important;
+    margin: 0 8px;
+  }
+  
+  .section-title,
+  .section-heading {
+    font-size: clamp(20px, 5vw, 36px) !important;
+    padding: 0 12px;
+  }
+  
+  /* Ensure all text elements have proper spacing */
+  * {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+}
+/* Enhan
+ced mobile responsiveness for text overflow fixes */
+@media (max-width: 768px) {
+  /* Ensure card text doesn't overflow */
+  .velric-card h3,
+  .feature-card h3,
+  .diff-card h3 {
+    font-size: 1.25rem !important;
+    line-height: 1.3 !important;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+  
+  /* Better text wrapping for all card content */
+  .velric-card p,
+  .feature-card p,
+  .diff-card p {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+  
+  /* Ensure animated dashboard components fit properly */
+  .animated-dashboard-card {
+    min-height: 120px;
+    padding: 12px;
+  }
+  
+  /* Better spacing for small text elements */
+  .text-xs, .text-sm {
+    word-spacing: normal;
+    letter-spacing: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  /* Fix for Companies/Talent text in animated components */
+  .text-purple-400, .text-emerald-400 {
+    font-size: 0.75rem !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+}
+
+/* Additional mobile fixes for very small screens */
+@media (max-width: 414px) {
+  /* Ensure all text elements are properly sized */
+  .text-2xl {
+    font-size: 1.25rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  .text-xl {
+    font-size: 1.125rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  .text-lg {
+    font-size: 1rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Ensure cards have proper padding */
+  .p-6 {
+    padding: 1rem !important;
+  }
+  
+  .px-8 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+}
+
+/* Ultra-small screen fixes (320px) */
+@media (max-width: 320px) {
+  /* Make all text smaller on very small screens */
+  .text-2xl {
+    font-size: 1.125rem !important;
+    line-height: 1.25 !important;
+  }
+  
+  .text-xl {
+    font-size: 1rem !important;
+    line-height: 1.25 !important;
+  }
+  
+  .text-lg {
+    font-size: 0.875rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  .text-sm {
+    font-size: 0.75rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  .text-xs {
+    font-size: 0.625rem !important;
+    line-height: 1.1 !important;
+  }
+  
+  /* Reduce padding on very small screens */
+  .p-6 {
+    padding: 0.75rem !important;
+  }
+  
+  .px-8 {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  
+  .gap-6 {
+    gap: 1rem !important;
+  }
+  
+  .gap-12 {
+    gap: 1.5rem !important;
+  }
 }
