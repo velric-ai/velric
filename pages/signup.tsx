@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, User, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
-import { useAuth } from '../contexts/AuthContext';
-import { SignupData, ValidationError } from '../types/auth';
-import { validateName, validateEmail, validatePassword } from '../services/authService';
+import { useAuth } from '@/contexts/AuthContext';
+import { SignupData, ValidationError } from '@/types/auth';
+import { validateName, validateEmail, validatePassword } from '@/services/authService';
 
 export default function Signup() {
   const router = useRouter();
   const { signup, isAuthenticated, isLoading: authLoading } = useAuth();
-  
+
   const [formData, setFormData] = useState<SignupData>({
     name: "",
     email: "",
@@ -22,50 +22,69 @@ export default function Signup() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [touched, setTouched] = useState<{[key: string]: boolean}>({});
+  const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated and onboarded
   useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      router.replace('/user-dashboard');
+    // Only redirect if user is authenticated, auth loading is complete,
+    // user is already onboarded, and we're not in the middle of a signup process
+    if (isAuthenticated && !authLoading && !isLoading) {
+      // Check if user is already onboarded
+      const userData = localStorage.getItem('velric_user');
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          // Only redirect if user is already onboarded (existing user)
+          if (user.onboarded === true) {
+            router.replace('/user-dashboard');
+          }
+          // If user is not onboarded, let them stay on signup page
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+        }
+      }
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, router, isLoading]);
 
   // Real-time validation
   useEffect(() => {
-    const newErrors: {[key: string]: string} = {};
-    
+    const newErrors: { [key: string]: string } = {};
+
     if (touched.name && formData.name) {
       const nameError = validateName(formData.name);
       if (nameError) newErrors.name = nameError;
     }
-    
+
     if (touched.email && formData.email) {
       const emailError = validateEmail(formData.email);
       if (emailError) newErrors.email = emailError;
     }
-    
+
     if (touched.password && formData.password) {
       const passwordError = validatePassword(formData.password);
       if (passwordError) newErrors.password = passwordError;
     }
-    
+
     if (touched.confirmPassword && formData.confirmPassword) {
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = "Passwords do not match";
       }
     }
-    
+
     setErrors(prev => ({ ...prev, ...newErrors, general: prev.general }));
   }, [formData, touched]);
 
   const handleInputChange = (field: keyof SignupData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear field-specific error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+    if (errors[field as string]) {
+      setErrors((prev: { [key: string]: string }) => {
+        const newErrors = { ...prev };
+        delete newErrors[field as string];
+        return newErrors;
+      });
     }
   };
 
@@ -74,7 +93,7 @@ export default function Signup() {
   };
 
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
+    const newErrors: { [key: string]: string } = {};
 
     const nameError = validateName(formData.name);
     if (nameError) newErrors.name = nameError;
@@ -104,25 +123,9 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // For demo purposes, always succeed
-      // In real app, this would call your backend API
-      
-      // Mock successful signup response
-      const mockResponse = {
-        token: `demo_token_${Date.now()}`,
-        user: {
-          id: `user_${Date.now()}`,
-          email: formData.email,
-          name: formData.name,
-          onboarded: false // CRITICAL: Mark as NOT onboarded
-        }
-      };
-
-      // ✅ REDIRECT LOGIC: Store auth data and redirect to survey
-      handleSignupSuccess(mockResponse);
+      await signup(formData);
+      // Redirect to survey for new users
+      router.replace('/onboard/survey');
     } catch (error) {
       setErrors({ general: "Signup failed. Please try again." });
     } finally {
@@ -130,91 +133,7 @@ export default function Signup() {
     }
   };
 
-  // ✅ FIXED: SignUp Success Handler with localStorage clearing
-  const handleSignupSuccess = async (response: any) => {
-    try {
-      console.log("=== STARTING SIGNUP SUCCESS HANDLER ===");
-      console.log("New user email:", response.user.email);
-      
-      // ✅ STEP 1: CLEAR ALL OLD USER DATA FIRST (Critical Fix!)
-      console.log("Clearing old user data from localStorage...");
-      
-      // Check what's there before clearing (for debugging)
-      const oldData = localStorage.getItem('velric_user');
-      if (oldData) {
-        console.log("Old user data found:", oldData);
-        const oldUser = JSON.parse(oldData);
-        console.log("Old user onboarded status:", oldUser.onboarded);
-      } else {
-        console.log("No old user data found");
-      }
-      
-      // Nuclear option - clear EVERYTHING
-      localStorage.clear();
-      console.log("✅ localStorage cleared");
-      
-      // Verify it's actually cleared
-      const verifyCleared = localStorage.getItem('velric_user');
-      if (verifyCleared === null) {
-        console.log("✅ Verification passed - localStorage is empty");
-      } else {
-        console.error("❌ Warning: localStorage not fully cleared!");
-      }
-      
-      // ✅ STEP 2: Create FRESH user profile with onboarded: FALSE
-      console.log("Creating fresh user profile...");
-      
-      const newUserData = {
-        id: response.user.id,
-        email: response.user.email,
-        name: response.user.name,
-        token: response.token,
-        onboarded: false, // ⚠️ CRITICAL: Must be FALSE for new users!
-        createdAt: new Date().toISOString(),
-        surveyCompletedAt: null,
-        profileComplete: false
-      };
-      
-      console.log("=== NEW USER PROFILE ===");
-      console.log("User data:", newUserData);
-      console.log("Onboarded status:", newUserData.onboarded); // Should be false
-      
-      // ✅ STEP 3: Save new user data to localStorage
-      localStorage.setItem('velric_user', JSON.stringify(newUserData));
-      console.log("✅ New user data saved to localStorage");
-      
-      // ✅ STEP 4: Verify the data was saved correctly
-      const verifyData = localStorage.getItem('velric_user');
-      if (verifyData) {
-        const verified = JSON.parse(verifyData);
-        console.log("=== VERIFICATION CHECK ===");
-        console.log("Saved user email:", verified.email);
-        console.log("Saved onboarded status:", verified.onboarded);
-        
-        if (verified.onboarded === false) {
-          console.log("✅ VERIFICATION PASSED - User correctly marked as NOT onboarded");
-        } else {
-          console.error("❌ VERIFICATION FAILED - onboarded is:", verified.onboarded);
-          console.error("This is a critical error - user will skip survey!");
-        }
-      }
-      
-      console.log("=== SIGNUP COMPLETE ===");
-      console.log("Redirecting to survey in 500ms...");
-      
-      // ✅ STEP 5: Redirect to survey (NOT dashboard)
-      // Small delay to ensure localStorage write is complete
-      setTimeout(() => {
-        console.log("🚀 Redirecting to /onboard/survey");
-        router.replace('/onboard/survey');
-      }, 500);
-      
-    } catch (error) {
-      console.error('❌ Signup success handler error:', error);
-      console.error('Error details:', error);
-      setErrors({ general: 'Something went wrong. Please try again.' });
-    }
-  };
+
 
   return (
     <>
@@ -264,7 +183,8 @@ export default function Signup() {
                   id="name"
                   name="name"
                   value={formData.name}
-                  onChange={handleInputChange}
+                  onChange={handleInputChange('name')}
+                  onBlur={handleBlur('name')}
                   className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.name ? 'border-red-500' : 'border-purple-500/20'
                     }`}
                   placeholder="Enter your full name"
@@ -284,7 +204,8 @@ export default function Signup() {
                   id="email"
                   name="email"
                   value={formData.email}
-                  onChange={handleInputChange}
+                  onChange={handleInputChange('email')}
+                  onBlur={handleBlur('email')}
                   className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.email ? 'border-red-500' : 'border-purple-500/20'
                     }`}
                   placeholder="Enter your email"
@@ -304,7 +225,8 @@ export default function Signup() {
                   id="password"
                   name="password"
                   value={formData.password}
-                  onChange={handleInputChange}
+                  onChange={handleInputChange('password')}
+                  onBlur={handleBlur('password')}
                   className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.password ? 'border-red-500' : 'border-purple-500/20'
                     }`}
                   placeholder="Create a strong password"
@@ -327,7 +249,8 @@ export default function Signup() {
                   id="confirmPassword"
                   name="confirmPassword"
                   value={formData.confirmPassword}
-                  onChange={handleInputChange}
+                  onChange={handleInputChange('confirmPassword')}
+                  onBlur={handleBlur('confirmPassword')}
                   className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.confirmPassword ? 'border-red-500' : 'border-purple-500/20'
                     }`}
                   placeholder="Confirm your password"
