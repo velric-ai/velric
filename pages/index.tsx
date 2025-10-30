@@ -721,7 +721,7 @@ export default function Home() {
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                   </svg>
                 </div>
-                <p className="text-sm text-gray-300">Talent</p>
+                <p className="text-sm text-gray-300 break-words text-center max-w-full overflow-hidden">Talent</p>
               </div>
 
               <div className="flex flex-col items-center gap-2">
@@ -730,7 +730,7 @@ export default function Home() {
                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                   </svg>
                 </div>
-                <p className="text-sm text-gray-300">Companies</p>
+                <p className="text-sm text-gray-300 break-words text-center max-w-full overflow-hidden">Companies</p>
               </div>
             </div>
 
@@ -846,7 +846,7 @@ export default function Home() {
       </div>
     </motion.div>
 
-    {/* Step 3 - Mobile - UNCHANGED */}
+    {/* Step 3 - Mobile - FIXED TO MATCH DESKTOP */}
     <motion.div
       className="flex items-start space-x-6"
       initial={{ opacity: 0, y: 60 }}
@@ -858,13 +858,40 @@ export default function Home() {
         3
       </div>
       <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-4 rounded-xl border border-green-500/20 flex-1">
-        <div className="mb-4">
-          <ConnectionAnimation />
-        </div>
-        <h3 className="text-lg font-bold text-white mb-3">Unlock Career Opportunities</h3>
-        <p className="text-gray-300 text-sm">
-          Showcase your skills and portfolio to top employers. Let your real work speak louder than your resume.
-        </p>
+        <HoverTiltCard className="w-full h-full">
+          <div className="flex flex-col items-center justify-center text-center gap-4 h-full py-4">
+            {/* Title */}
+            <h3 className="text-lg font-bold text-white">
+              Unlock Career<br />Opportunities
+            </h3>
+
+            {/* Icons - Same as desktop but smaller for mobile */}
+            <div className="flex gap-8 items-center justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                  </svg>
+                </div>
+                <p className="text-xs text-gray-300 break-words text-center max-w-full overflow-hidden">Talent</p>
+              </div>
+
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                  </svg>
+                </div>
+                <p className="text-xs text-gray-300 break-words text-center max-w-full overflow-hidden">Companies</p>
+              </div>
+            </div>
+
+            {/* Description */}
+            <p className="text-xs text-gray-300 max-w-xs text-center">
+              Showcase your skills and portfolio to top employers. Let your real work speak louder than your resume.
+            </p>
+          </div>
+        </HoverTiltCard>
       </div>
     </motion.div>
   </div>

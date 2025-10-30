@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Responsiveness Test - Velric AI</title>
+    <style>
+        /* Test styles to simulate the fixes */
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #0D0D0D;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        
+        .test-container {
+            max-width: 100%;
+            overflow: hidden;
+        }
+        
+        .hero-title {
+            font-size: clamp(28px, 7vw, 110px);
+            font-weight: 900;
+            line-height: 1.1;
+            text-align: center;
+            color: #FFFFFF;
+            letter-spacing: -0.02em;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            max-width: 100%;
+            overflow: hidden;
+            padding: 0 8px;
+        }
+        
+        .hero-title .word {
+            display: inline-block;
+            padding: 0 2px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        .companies-card {
+            background: #1C1C1E;
+            border: 1px solid rgba(147, 51, 234, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .companies-text {
+            font-size: 0.875rem;
+            color: #a855f7;
+            font-weight: bold;
+            break-words: break-word;
+            text-align: center;
+            max-width: 100%;
+            overflow: hidden;
+        }
+        
+        /* Mobile breakpoints */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: clamp(24px, 6.5vw, 48px) !important;
+                line-height: 1.05 !important;
+                padding: 0 8px;
+                max-width: 100% !important;
+                overflow: hidden !important;
+            }
+            
+            .hero-title .word {
+                padding: 0 2px;
+                word-break: break-word;
+                overflow-wrap: break-word;
+            }
+            
+            .companies-text {
+                font-size: 0.75rem !important;
+                max-width: 100% !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }
+        }
+        
+        @media (max-width: 375px) {
+            .hero-title {
+                font-size: clamp(20px, 5.5vw, 40px) !important;
+                line-height: 1.0 !important;
+                padding: 0 4px !important;
+            }
+            
+            .hero-title .word {
+                padding: 0 1px !important;
+            }
+        }
+        
+        @media (max-width: 320px) {
+            .hero-title {
+                font-size: clamp(18px, 5vw, 32px) !important;
+                line-height: 0.95 !important;
+                padding: 0 2px !important;
+            }
+            
+            .hero-title .word {
+                padding: 0 !important;
+                margin: 0 1px !important;
+            }
+        }
+        
+        .viewport-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(147, 51, 234, 0.8);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="viewport-info" id="viewport-info">
+        Viewport: <span id="viewport-size"></span>
+    </div>
+    
+    <div class="test-container">
+        <h1>Mobile Responsiveness Test</h1>
+        
+        <h2>1. Hero Text Overflow Fix</h2>
+        <div class="hero-title">
+            <span class="word">Global</span> 
+            <span class="word">Benchmark</span>
+            <br>
+            <span class="word">For</span> 
+            <span class="word">Hiring.</span>
+        </div>
+        
+        <h2>2. Companies Card Text Fix</h2>
+        <div class="companies-card">
+            <div style="display: flex; justify-content: space-around; align-items: center; margin-bottom: 10px;">
+                <div>
+                    <div style="width: 40px; height: 40px; background: linear-gradient(to bottom right, #10b981, #059669); border-radius: 50%; margin: 0 auto 8px;"></div>
+                    <p class="companies-text">Talent</p>
+                </div>
+                <div>
+                    <div style="width: 40px; height: 40px; background: linear-gradient(to bottom right, #a855f7, #9333ea); border-radius: 50%; margin: 0 auto 8px;"></div>
+                    <p class="companies-text">Companies</p>
+                </div>
+            </div>
+        </div>
+        
+        <h2>Test Instructions:</h2>
+        <ul>
+            <li>Resize your browser window to test different viewport sizes</li>
+            <li>Test at 320px, 375px, 414px, and 768px widths</li>
+            <li>Verify that "Global Benchmark For Hiring" text doesn't overflow</li>
+            <li>Verify that "Companies" text is fully visible in the card</li>
+            <li>Check that all text wraps properly and stays within containers</li>
+        </ul>
+        
+        <h2>Expected Results:</h2>
+        <ul>
+            <li>✅ No horizontal scrolling required</li>
+            <li>✅ All text visible and readable</li>
+            <li>✅ Proper text wrapping on all screen sizes</li>
+            <li>✅ No text cutoff or overflow</li>
+        </ul>
+    </div>
+    
+    <script>
+        function updateViewportInfo() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            document.getElementById('viewport-size').textContent = `${width}x${height}px`;
+        }
+        
+        updateViewportInfo();
+        window.addEventListener('resize', updateViewportInfo);
+    </script>
+</body>
+</html>
