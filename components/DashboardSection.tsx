@@ -1,24 +1,11 @@
 import { motion } from "framer-motion";
 import MissionCard from "./MissionCard";
-
-interface Mission {
-  id: string;
-  title: string;
-  description: string;
-  skills: string[];
-  industries: string[];
-  status: "suggested" | "starred" | "in_progress" | "submitted" | "completed";
-  grade?: number;
-  feedback?: string;
-  started_at?: string;
-  submitted_at?: string;
-  completed_at?: string;
-}
+import { StaticMission } from "@/data/staticMissions";
 
 interface DashboardSectionProps {
   title: string;
   description: string;
-  missions: Mission[];
+  missions: StaticMission[];
   emptyMessage: string;
   icon?: string;
   onStar?: (missionId: string) => void;

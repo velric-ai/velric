@@ -1,0 +1,170 @@
+/* RecentlyCompletedMissions.css */
+.recently-completed-missions {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+.recently-completed-missions h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+.mission-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 150ms ease;
+  cursor: pointer;
+}
+
+.mission-item:hover {
+  background-color: #f9fafb;
+}
+
+.mission-item:hover .mission-arrow {
+  color: #6b7280;
+  transform: translateX(2px);
+}
+
+.mission-icon {
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mission-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.mission-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mission-date {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.mission-score {
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+}
+
+.mission-score.green {
+  background-color: #10b981;
+}
+
+.mission-score.blue {
+  background-color: #3b82f6;
+}
+
+.mission-score.orange {
+  background-color: #f59e0b;
+}
+
+.mission-score.red {
+  background-color: #ef4444;
+}
+
+.mission-arrow {
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+  transition: all 150ms ease;
+}
+
+.loading-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.skeleton-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+}
+
+.skeleton-content {
+  flex: 1;
+}
+
+.skeleton-title {
+  height: 16px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  width: 75%;
+  margin-bottom: 4px;
+}
+
+.skeleton-date {
+  height: 12px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  width: 50%;
+}
+
+.skeleton-score {
+  width: 48px;
+  height: 24px;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+}
+
+.skeleton-arrow {
+  width: 16px;
+  height: 16px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px 0;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  color: #9ca3af;
+  margin-bottom: 12px;
+}
+
+.empty-state-title {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.empty-state-subtitle {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}

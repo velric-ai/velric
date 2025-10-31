@@ -1,22 +1,9 @@
 import { motion } from "framer-motion";
 import { Star, Clock, CheckCircle, TrendingUp, Play } from "lucide-react";
-
-interface Mission {
-  id: string;
-  title: string;
-  description: string;
-  skills?: string[];
-  industries?: string[];
-  status?: "suggested" | "starred" | "in_progress" | "submitted" | "completed";
-  grade?: number;
-  feedback?: string;
-  started_at?: string;
-  submitted_at?: string;
-  completed_at?: string;
-}
+import { StaticMission } from "@/data/staticMissions";
 
 interface MissionCardProps {
-  mission: Mission;
+  mission: StaticMission;
   onStar?: (missionId: string) => void;
   onStart?: (missionId: string) => void;
   onView?: (missionId: string) => void;

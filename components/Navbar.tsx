@@ -45,6 +45,10 @@ export default function Navbar() {
             About
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 transition-all duration-300 group-hover:w-full"></span>
           </Link>
+          <Link href="/faq" className="whitespace-nowrap hover:text-purple-400 transition-colors duration-300 relative group">
+            FAQ
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 transition-all duration-300 group-hover:w-full"></span>
+          </Link>
           <Link href="/join" className="whitespace-nowrap hover:text-purple-400 transition-colors duration-300 relative group">
             Join
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 transition-all duration-300 group-hover:w-full"></span>
@@ -59,12 +63,12 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Join button */}
+         {/* Join button */}
         <div className="w-full md:w-auto flex justify-center md:justify-end mt-3 md:mt-0">
           <Link href="/join">
             <button className="bg-gradient-to-r from-[#9333EA] to-[#06B6D4] text-white px-6 py-3 text-sm sm:text-base rounded-full font-semibold hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 whitespace-nowrap w-full max-w-xs md:w-auto">
               Join Early Access
-            </button>
+              </button>
           </Link>
         </div>
       </div>
