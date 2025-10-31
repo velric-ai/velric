@@ -3,10 +3,22 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, User, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
-import { useAuth } from '@/contexts/AuthContext';
-import { SignupData, ValidationError } from '@/types/auth';
-import { validateName, validateEmail, validatePassword } from '@/services/authService';
+import {
+  Eye,
+  EyeOff,
+  User,
+  Mail,
+  Lock,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { SignupData, ValidationError } from "@/types/auth";
+import {
+  validateName,
+  validateEmail,
+  validatePassword,
+} from "@/services/authService";
 
 export default function Signup() {
   const router = useRouter();
@@ -16,7 +28,7 @@ export default function Signup() {
     name: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -30,17 +42,17 @@ export default function Signup() {
     // user is already onboarded, and we're not in the middle of a signup process
     if (isAuthenticated && !authLoading && !isLoading) {
       // Check if user is already onboarded
-      const userData = localStorage.getItem('velric_user');
+      const userData = localStorage.getItem("velric_user");
       if (userData) {
         try {
           const user = JSON.parse(userData);
           // Only redirect if user is already onboarded (existing user)
           if (user.onboarded === true) {
-            router.replace('/user-dashboard');
+            router.replace("/user-dashboard");
           }
           // If user is not onboarded, let them stay on signup page
         } catch (error) {
-          console.error('Error parsing user data:', error);
+          console.error("Error parsing user data:", error);
         }
       }
     }
@@ -71,25 +83,26 @@ export default function Signup() {
       }
     }
 
-    setErrors(prev => ({ ...prev, ...newErrors, general: prev.general }));
+    setErrors((prev) => ({ ...prev, ...newErrors, general: prev.general }));
   }, [formData, touched]);
 
-  const handleInputChange = (field: keyof SignupData) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange =
+    (field: keyof SignupData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setFormData((prev) => ({ ...prev, [field]: value }));
 
-    // Clear field-specific error when user starts typing
-    if (errors[field as string]) {
-      setErrors((prev: { [key: string]: string }) => {
-        const newErrors = { ...prev };
-        delete newErrors[field as string];
-        return newErrors;
-      });
-    }
-  };
+      // Clear field-specific error when user starts typing
+      if (errors[field as string]) {
+        setErrors((prev: { [key: string]: string }) => {
+          const newErrors = { ...prev };
+          delete newErrors[field as string];
+          return newErrors;
+        });
+      }
+    };
 
   const handleBlur = (field: string) => () => {
-    setTouched(prev => ({ ...prev, [field]: true }));
+    setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
   const validateForm = () => {
@@ -109,7 +122,12 @@ export default function Signup() {
     }
 
     setErrors(newErrors);
-    setTouched({ name: true, email: true, password: true, confirmPassword: true });
+    setTouched({
+      name: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+    });
     return Object.keys(newErrors).length === 0;
   };
 
@@ -125,15 +143,13 @@ export default function Signup() {
     try {
       await signup(formData);
       // Redirect to survey for new users
-      router.replace('/onboard/survey');
+      router.replace("/onboard/survey");
     } catch (error) {
       setErrors({ general: "Signup failed. Please try again." });
     } finally {
       setIsLoading(false);
     }
   };
-
-
 
   return (
     <>
@@ -175,7 +191,10 @@ export default function Signup() {
 
               {/* Name Field */}
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
                   Full Name
                 </label>
                 <input
@@ -183,10 +202,11 @@ export default function Signup() {
                   id="name"
                   name="name"
                   value={formData.name}
-                  onChange={handleInputChange('name')}
-                  onBlur={handleBlur('name')}
-                  className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.name ? 'border-red-500' : 'border-purple-500/20'
-                    }`}
+                  onChange={handleInputChange("name")}
+                  onBlur={handleBlur("name")}
+                  className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${
+                    errors.name ? "border-red-500" : "border-purple-500/20"
+                  }`}
                   placeholder="Enter your full name"
                 />
                 {errors.name && (
@@ -196,7 +216,10 @@ export default function Signup() {
 
               {/* Email Field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
                   Email Address
                 </label>
                 <input
@@ -204,10 +227,11 @@ export default function Signup() {
                   id="email"
                   name="email"
                   value={formData.email}
-                  onChange={handleInputChange('email')}
-                  onBlur={handleBlur('email')}
-                  className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.email ? 'border-red-500' : 'border-purple-500/20'
-                    }`}
+                  onChange={handleInputChange("email")}
+                  onBlur={handleBlur("email")}
+                  className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${
+                    errors.email ? "border-red-500" : "border-purple-500/20"
+                  }`}
                   placeholder="Enter your email"
                 />
                 {errors.email && (
@@ -217,7 +241,10 @@ export default function Signup() {
 
               {/* Password Field */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
                   Password
                 </label>
                 <input
@@ -225,10 +252,11 @@ export default function Signup() {
                   id="password"
                   name="password"
                   value={formData.password}
-                  onChange={handleInputChange('password')}
-                  onBlur={handleBlur('password')}
-                  className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.password ? 'border-red-500' : 'border-purple-500/20'
-                    }`}
+                  onChange={handleInputChange("password")}
+                  onBlur={handleBlur("password")}
+                  className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${
+                    errors.password ? "border-red-500" : "border-purple-500/20"
+                  }`}
                   placeholder="Create a strong password"
                 />
                 {errors.password && (
@@ -241,7 +269,10 @@ export default function Signup() {
 
               {/* Confirm Password Field */}
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
                   Confirm Password
                 </label>
                 <input
@@ -249,14 +280,19 @@ export default function Signup() {
                   id="confirmPassword"
                   name="confirmPassword"
                   value={formData.confirmPassword}
-                  onChange={handleInputChange('confirmPassword')}
-                  onBlur={handleBlur('confirmPassword')}
-                  className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.confirmPassword ? 'border-red-500' : 'border-purple-500/20'
-                    }`}
+                  onChange={handleInputChange("confirmPassword")}
+                  onBlur={handleBlur("confirmPassword")}
+                  className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${
+                    errors.confirmPassword
+                      ? "border-red-500"
+                      : "border-purple-500/20"
+                  }`}
                   placeholder="Confirm your password"
                 />
                 {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>
+                  <p className="mt-1 text-sm text-red-400">
+                    {errors.confirmPassword}
+                  </p>
                 )}
               </div>
 
@@ -274,7 +310,10 @@ export default function Signup() {
             <div className="mt-6 text-center">
               <p className="text-gray-400">
                 Already have an account?{" "}
-                <Link href="/login" className="text-purple-400 hover:text-purple-300 transition-colors font-medium">
+                <Link
+                  href="/login"
+                  className="text-purple-400 hover:text-purple-300 transition-colors font-medium"
+                >
                   Sign in here
                 </Link>
               </p>
@@ -283,7 +322,10 @@ export default function Signup() {
 
           {/* Back to Home */}
           <div className="text-center mt-6">
-            <Link href="/" className="text-gray-400 hover:text-white transition-colors text-sm">
+            <Link
+              href="/"
+              className="text-gray-400 hover:text-white transition-colors text-sm"
+            >
               ← Back to Home
             </Link>
           </div>
