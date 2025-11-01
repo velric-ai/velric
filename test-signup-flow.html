@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Signup Flow Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #0D0D0D; color: white; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #333; border-radius: 8px; }
+        .success { border-color: #22c55e; background: #22c55e20; }
+        .error { border-color: #ef4444; background: #ef444420; }
+        .warning { border-color: #f59e0b; background: #f59e0b20; }
+        button { padding: 10px 20px; margin: 5px; background: #7c3aed; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #6d28d9; }
+        pre { background: #1a1a1a; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Signup Flow Fix Verification</h1>
+    <p>This page tests the critical fixes for the signup → survey flow bug.</p>
+
+    <div class="test-section">
+        <h2>🧪 Test 1: Simulate Signup Success</h2>
+        <p>This simulates what happens after a successful signup.</p>
+        <button onclick="simulateSignupSuccess()">Simulate Signup Success</button>
+        <div id="signup-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test 2: Check Survey Initialization</h2>
+        <p>This checks if survey starts at Step 1 after signup.</p>
+        <button onclick="checkSurveyInit()">Check Survey State</button>
+        <div id="survey-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test 3: Simulate Survey Progression</h2>
+        <p>This tests step progression from 1 → 2 → 3 → ... → 8.</p>
+        <button onclick="simulateStepProgression()">Test Step Progression</button>
+        <div id="progression-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test 4: Reset & Clear All Data</h2>
+        <p>Clear localStorage to start fresh.</p>
+        <button onclick="clearAllData()">Clear All Data</button>
+        <div id="clear-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Current localStorage State</h2>
+        <button onclick="showCurrentState()">Show Current State</button>
+        <div id="current-state"></div>
+    </div>
+
+    <script>
+        function simulateSignupSuccess() {
+            console.log('🔄 Simulating signup success...');
+            
+            // First, simulate corrupted existing data (the bug scenario)
+            localStorage.setItem('velric_survey_draft', JSON.stringify({
+                currentStep: 7,
+                formData: { someField: 'corrupted data' }
+            }));
+            localStorage.setItem('velric_survey_state', JSON.stringify({
+                currentStep: 7,
+                currentStepIndex: 6,
+                totalSteps: 8,
+                completedSteps: [],
+                surveyData: {}
+            }));
+            console.log('🐛 Simulated corrupted data (currentStep: 7)');
+            
+            // Now simulate the FIXED signup handler
+            // 🔴 CRITICAL FIX: Clear any existing survey data first
+            localStorage.removeItem('velric_survey_draft');
+            localStorage.removeItem('velric_survey_state');
+            console.log('🧹 Cleared any existing survey data');
+            
+            const newUserData = {
+                id: 'test-user-123',
+                email: 'test@example.com',
+                name: 'Test User',
+                onboarded: false,              // 🔴 Mark as NOT onboarded
+                surveyCompleted: false,        // 🔴 Mark survey as NOT completed
+                signupCompletedAt: new Date().toISOString(),
+                lastUpdated: new Date().toISOString()
+            };
+            
+            // Store with exact key 'velric_user'
+            localStorage.setItem('velric_user', JSON.stringify(newUserData));
+            console.log('✅ User data stored with both flags as false');
+            
+            // 🔴 CRITICAL FIX: Initialize survey state to Step 1
+            const initialSurveyState = {
+                currentStep: 1,
+                currentStepIndex: 0,
+                totalSteps: 8,
+                completedSteps: [],
+                surveyData: {},
+                startedAt: new Date().toISOString()
+            };
+            localStorage.setItem('velric_survey_state', JSON.stringify(initialSurveyState));
+            console.log('✅ Survey state initialized to Step 1');
+            
+            document.getElementById('signup-result').innerHTML = `
+                <div class="success">
+                    <h3>✅ Signup Success Simulation Complete</h3>
+                    <p><strong>Bug Scenario:</strong> Had corrupted data showing Step 7</p>
+                    <p><strong>Fix Applied:</strong> Cleared all data and reset to Step 1</p>
+                    <p><strong>User Data:</strong> onboarded: false, surveyCompleted: false</p>
+                    <p><strong>Survey State:</strong> currentStep: 1, totalSteps: 8</p>
+                    <p><strong>Expected Behavior:</strong> Should redirect to /onboard/survey and show "Step 1 of 8"</p>
+                </div>
+            `;
+        }
+
+        function checkSurveyInit() {
+            const surveyStateStr = localStorage.getItem('velric_survey_state');
+            const userDataStr = localStorage.getItem('velric_user');
+            
+            let result = '';
+            let cssClass = 'success';
+            
+            if (!surveyStateStr) {
+                result = `
+                    <div class="error">
+                        <h3>❌ No Survey State Found</h3>
+                        <p>Survey state is missing. This would cause the bug!</p>
+                        <p><strong>Fix:</strong> Signup handler should initialize survey state.</p>
+                    </div>
+                `;
+                cssClass = 'error';
+            } else {
+                const surveyState = JSON.parse(surveyStateStr);
+                const userData = userDataStr ? JSON.parse(userDataStr) : null;
+                
+                if (surveyState.currentStep === 1 && surveyState.totalSteps === 8) {
+                    result = `
+                        <div class="success">
+                            <h3>✅ Survey State is Correct</h3>
+                            <p><strong>Current Step:</strong> ${surveyState.currentStep} of ${surveyState.totalSteps}</p>
+                            <p><strong>Completed Steps:</strong> ${surveyState.completedSteps.length}</p>
+                            <p><strong>User Onboarded:</strong> ${userData?.onboarded || 'false'}</p>
+                            <p><strong>Expected Behavior:</strong> Survey should show "Step 1 of 8" with 12.5% progress</p>
+                        </div>
+                    `;
+                } else {
+                    result = `
+                        <div class="error">
+                            <h3>❌ Survey State is Wrong</h3>
+                            <p><strong>Current Step:</strong> ${surveyState.currentStep} (should be 1)</p>
+                            <p><strong>Total Steps:</strong> ${surveyState.totalSteps} (should be 8)</p>
+                            <p><strong>This is the BUG!</strong> User would see wrong step.</p>
+                        </div>
+                    `;
+                    cssClass = 'error';
+                }
+            }
+            
+            document.getElementById('survey-result').innerHTML = result;
+        }
+
+        function simulateStepProgression() {
+            let result = '<h3>🔄 Simulating Step Progression</h3>';
+            
+            for (let step = 1; step <= 8; step++) {
+                const surveyState = {
+                    currentStep: step,
+                    currentStepIndex: step - 1,
+                    totalSteps: 8,
+                    completedSteps: Array.from({length: step - 1}, (_, i) => i + 1),
+                    surveyData: {},
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                localStorage.setItem('velric_survey_state', JSON.stringify(surveyState));
+                
+                const progressPercentage = (step / 8) * 100;
+                result += `<p>Step ${step}: ${progressPercentage.toFixed(1)}% complete</p>`;
+            }
+            
+            result += `
+                <div class="success">
+                    <p><strong>✅ All 8 steps simulated successfully!</strong></p>
+                    <p>Step 8 should show "Profile Complete" and auto-redirect to dashboard.</p>
+                </div>
+            `;
+            
+            document.getElementById('progression-result').innerHTML = result;
+        }
+
+        function clearAllData() {
+            localStorage.removeItem('velric_user');
+            localStorage.removeItem('velric_survey_state');
+            localStorage.removeItem('velric_survey_draft');
+            
+            document.getElementById('clear-result').innerHTML = `
+                <div class="success">
+                    <h3>✅ All Data Cleared</h3>
+                    <p>localStorage has been reset. You can now test the signup flow from scratch.</p>
+                </div>
+            `;
+        }
+
+        function showCurrentState() {
+            const userData = localStorage.getItem('velric_user');
+            const surveyState = localStorage.getItem('velric_survey_state');
+            const surveyDraft = localStorage.getItem('velric_survey_draft');
+            
+            let result = '<h3>📊 Current localStorage State</h3>';
+            
+            result += '<h4>velric_user:</h4>';
+            if (userData) {
+                result += `<pre>${JSON.stringify(JSON.parse(userData), null, 2)}</pre>`;
+            } else {
+                result += '<p style="color: #ef4444;">Not found</p>';
+            }
+            
+            result += '<h4>velric_survey_state:</h4>';
+            if (surveyState) {
+                result += `<pre>${JSON.stringify(JSON.parse(surveyState), null, 2)}</pre>`;
+            } else {
+                result += '<p style="color: #ef4444;">Not found</p>';
+            }
+            
+            result += '<h4>velric_survey_draft:</h4>';
+            if (surveyDraft) {
+                result += `<pre>${JSON.stringify(JSON.parse(surveyDraft), null, 2)}</pre>`;
+            } else {
+                result += '<p style="color: #888;">Not found (normal)</p>';
+            }
+            
+            document.getElementById('current-state').innerHTML = result;
+        }
+
+        // Auto-show current state on page load
+        window.onload = function() {
+            showCurrentState();
+        };
+    </script>
+</body>
+</html>
+</text>

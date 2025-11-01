@@ -27,16 +27,16 @@ interface GlowingOrbitPathProps {
   animationDelay?: number;
 }
 
-// --- Configuration for Velric Values - INCREASED SIZES ---
-const valuesConfig: ValueConfig[] = [
-  // Inner Orbit (Cyan glow) - SIZE INCREASED FROM 100 TO 160
+// --- Configuration for Velric Values - RESPONSIVE SIZES ---
+const createValuesConfig = (innerRadius: number, outerRadius: number, cardSize: number): ValueConfig[] => [
+  // Inner Orbit (Cyan glow)
   {
     id: 'proof',
     number: 1,
     title: 'Proof Over Promises',
     subtitle: 'Show it. Don\'t say it.',
-    orbitRadius: 200, // INCREASED FROM 120 TO 200
-    size: 160, // INCREASED FROM 100 TO 160
+    orbitRadius: innerRadius,
+    size: cardSize,
     speed: 0.8,
     phaseShift: 0,
     glowColor: 'cyan'
@@ -46,8 +46,8 @@ const valuesConfig: ValueConfig[] = [
     number: 2,
     title: 'Merit Over Background',
     subtitle: 'Earn it. Don\'t inherit it.',
-    orbitRadius: 200, // INCREASED FROM 120 TO 200
-    size: 160, // INCREASED FROM 100 TO 160
+    orbitRadius: innerRadius,
+    size: cardSize,
     speed: 0.8,
     phaseShift: (2 * Math.PI) / 3,
     glowColor: 'cyan'
@@ -57,20 +57,20 @@ const valuesConfig: ValueConfig[] = [
     number: 3,
     title: 'Data Over Opinion',
     subtitle: 'Evidence speaks louder.',
-    orbitRadius: 200, // INCREASED FROM 120 TO 200
-    size: 160, // INCREASED FROM 100 TO 160
+    orbitRadius: innerRadius,
+    size: cardSize,
     speed: 0.8,
     phaseShift: (4 * Math.PI) / 3,
     glowColor: 'cyan'
   },
-  // Outer Orbit (Purple glow) - rotating opposite direction - SIZE INCREASED FROM 100 TO 160
+  // Outer Orbit (Purple glow) - rotating opposite direction
   {
     id: 'execution',
     number: 4,
     title: 'Execution Defines Talent',
     subtitle: 'Doers win. Talkers fade.',
-    orbitRadius: 320, // INCREASED FROM 200 TO 320
-    size: 160, // INCREASED FROM 100 TO 160
+    orbitRadius: outerRadius,
+    size: cardSize,
     speed: -0.6,
     phaseShift: 0,
     glowColor: 'purple'
@@ -80,8 +80,8 @@ const valuesConfig: ValueConfig[] = [
     number: 5,
     title: 'One Global Standard',
     subtitle: 'Talent measured equally.',
-    orbitRadius: 320, // INCREASED FROM 200 TO 320
-    size: 160, // INCREASED FROM 100 TO 160
+    orbitRadius: outerRadius,
+    size: cardSize,
     speed: -0.6,
     phaseShift: (2 * Math.PI) / 3,
     glowColor: 'purple'
@@ -91,8 +91,8 @@ const valuesConfig: ValueConfig[] = [
     number: 6,
     title: 'Built for Builders',
     subtitle: 'Ambition is our language.',
-    orbitRadius: 320, // INCREASED FROM 200 TO 320
-    size: 160, // INCREASED FROM 100 TO 160
+    orbitRadius: outerRadius,
+    size: cardSize,
     speed: -0.6,
     phaseShift: (4 * Math.PI) / 3,
     glowColor: 'purple'
@@ -100,7 +100,7 @@ const valuesConfig: ValueConfig[] = [
 ];
 
 // --- Memoized Orbiting Value Component ---
-const OrbitingValue = memo(({ config, angle }: OrbitingValueProps) => {
+const OrbitingValue = memo(({ config, angle, isMobile, isTablet }: OrbitingValueProps & { isMobile: boolean; isTablet: boolean }) => {
   const [isHovered, setIsHovered] = useState(false);
   const { orbitRadius, size, number, title, subtitle, glowColor } = config;
 
@@ -113,6 +113,25 @@ const OrbitingValue = memo(({ config, angle }: OrbitingValueProps) => {
   };
 
   const glowColor_ = glowColorMap[glowColor];
+
+  // Responsive text sizes
+  const getTitleSize = () => {
+    if (isMobile) return 'text-xs';
+    if (isTablet) return 'text-sm';
+    return 'text-base';
+  };
+
+  const getSubtitleSize = () => {
+    if (isMobile) return 'text-xs';
+    if (isTablet) return 'text-xs';
+    return 'text-sm';
+  };
+
+  const getPadding = () => {
+    if (isMobile) return 'p-2';
+    if (isTablet) return 'p-3';
+    return 'p-5';
+  };
 
   return (
     <div
@@ -128,7 +147,7 @@ const OrbitingValue = memo(({ config, angle }: OrbitingValueProps) => {
     >
       <div
         className={`
-          relative w-full h-full p-5 bg-gray-900/70 backdrop-blur-md
+          relative w-full h-full ${getPadding()} bg-gray-900/70 backdrop-blur-md
           rounded-full flex flex-col items-center justify-center
           transition-all duration-300 cursor-pointer border border-gray-700/50
           ${isHovered ? 'scale-110 shadow-2xl' : 'shadow-lg hover:shadow-xl'}
@@ -139,9 +158,9 @@ const OrbitingValue = memo(({ config, angle }: OrbitingValueProps) => {
             : `0 0 15px ${glowColor_}20`,
         }}
       >
-        {/* Value Number Badge - SLIGHTLY LARGER */}
+        {/* Value Number Badge */}
         <div
-          className="text-sm font-bold mb-2 px-2.5 py-1 rounded-full"
+          className={`${isMobile ? 'text-xs' : 'text-sm'} font-bold mb-1 px-2 py-0.5 rounded-full`}
           style={{
             color: glowColor_,
             backgroundColor: `${glowColor_}15`,
@@ -151,13 +170,12 @@ const OrbitingValue = memo(({ config, angle }: OrbitingValueProps) => {
           #{number}
         </div>
 
-        {/* Value Title - LARGER TEXT */}
+        {/* Value Title and Subtitle */}
         <div className="text-center">
-          <h3 className="text-base font-bold text-white leading-tight mb-1.5 px-2">
+          <h3 className={`${getTitleSize()} font-bold text-white leading-tight mb-1 px-1`}>
             {title}
           </h3>
-          {/* Value Subtitle - LARGER TEXT */}
-          <p className="text-sm text-gray-300 px-2 leading-snug">
+          <p className={`${getSubtitleSize()} text-gray-300 px-1 leading-snug`}>
             {subtitle}
           </p>
         </div>
@@ -220,11 +238,8 @@ GlowingOrbitPath.displayName = 'GlowingOrbitPath';
 // --- Main Orbiting Values Component ---
 export default function OrbitingValues() {
   const [time, setTime] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    if (isPaused) return;
-
     let animationFrameId: number;
     let lastTime = performance.now();
 
@@ -238,20 +253,84 @@ export default function OrbitingValues() {
 
     animationFrameId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [isPaused]);
+  }, []);
 
-  // INCREASED ORBIT SIZES - FROM 120/200 TO 200/320
+
+
+
+
+  // Use window width directly for more reliable responsive behavior
+  const [windowWidth, setWindowWidth] = useState(1024); // Default to desktop
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    if (typeof window !== 'undefined') {
+      setWindowWidth(window.innerWidth);
+      window.addEventListener('resize', handleResize);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', handleResize);
+      }
+    };
+  }, []);
+
+  // Calculate responsive values based on window width
+  const isCurrentlyMobile = windowWidth < 768;
+  const isCurrentlyTablet = windowWidth >= 768 && windowWidth < 1024;
+
+  // Responsive orbit sizes
+  const getOrbitRadii = () => {
+    if (isCurrentlyMobile) return { inner: 100, outer: 160 };
+    if (isCurrentlyTablet) return { inner: 140, outer: 220 };
+    return { inner: 200, outer: 320 };
+  };
+
+  const { inner, outer } = getOrbitRadii();
+  
   const orbitConfigs: Array<{ radius: number; glowColor: GlowColor; delay: number }> = [
-    { radius: 200, glowColor: 'cyan', delay: 0 }, // INCREASED FROM 120
-    { radius: 320, glowColor: 'purple', delay: 1.5 } // INCREASED FROM 200
+    { radius: inner, glowColor: 'cyan', delay: 0 },
+    { radius: outer, glowColor: 'purple', delay: 1.5 }
   ];
 
+  // Get responsive card size
+  const getCardSize = () => {
+    if (isCurrentlyMobile) return 110;
+    if (isCurrentlyTablet) return 130;
+    return 160;
+  };
+
+  // Get responsive container size
+  const getContainerSize = () => {
+    if (isCurrentlyMobile) return Math.max(350, Math.min(400, windowWidth - 40));
+    if (isCurrentlyTablet) return 550;
+    return 750;
+  };
+
+  // Get responsive center icon size
+  const getCenterIconSize = () => {
+    if (isCurrentlyMobile) return { container: 'w-16 h-16', icon: 32 };
+    if (isCurrentlyTablet) return { container: 'w-20 h-20', icon: 40 };
+    return { container: 'w-28 h-28', icon: 56 };
+  };
+
+  const cardSize = getCardSize();
+  const containerSize = getContainerSize();
+  const centerIcon = getCenterIconSize();
+  const valuesConfig = createValuesConfig(inner, outer, cardSize);
+
+
+
   return (
-    <div className="w-full flex items-center justify-center overflow-hidden py-12">
+    <div className="w-full flex items-center justify-center overflow-visible py-8 md:py-0 px-4 md:px-0 min-h-[400px] md:min-h-[600px]">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-5">
-        <div 
-          className="absolute inset-0" 
+        <div
+          className="absolute inset-0"
           style={{
             backgroundImage: `radial-gradient(circle at 25% 25%, #374151 0%, transparent 50%),
                              radial-gradient(circle at 75% 75%, #4B5563 0%, transparent 50%)`,
@@ -259,18 +338,21 @@ export default function OrbitingValues() {
         />
       </div>
 
-      <div 
-        className="relative w-[calc(100vw-40px)] h-[calc(100vw-40px)] md:w-[750px] md:h-[750px] flex items-center justify-center"
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
+      <div
+        className="relative flex items-center justify-center"
+        style={{
+          width: `${containerSize}px`,
+          height: `${containerSize}px`,
+          maxWidth: '95vw',
+          aspectRatio: '1',
+        }}
       >
-        
-        {/* Central "V" Icon with enhanced glow - SLIGHTLY LARGER */}
-        <div className="w-28 h-28 bg-gradient-to-br from-purple-900/50 to-cyan-900/30 rounded-full flex items-center justify-center z-10 relative shadow-2xl border border-purple-500/30">
+        {/* Central "V" Icon with enhanced glow */}
+        <div className={`${centerIcon.container} bg-gradient-to-br from-purple-900/50 to-cyan-900/30 rounded-full flex items-center justify-center z-10 relative shadow-2xl border border-purple-500/30`}>
           <div className="absolute inset-0 rounded-full bg-cyan-500/30 blur-xl animate-pulse"></div>
           <div className="absolute inset-0 rounded-full bg-purple-500/30 blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
           <div className="relative z-10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="url(#valuesGradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width={centerIcon.icon} height={centerIcon.icon} viewBox="0 0 24 24" fill="none" stroke="url(#valuesGradient)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <defs>
                 <linearGradient id="valuesGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#06B6D4" />
@@ -300,6 +382,8 @@ export default function OrbitingValues() {
               key={config.id}
               config={config}
               angle={angle}
+              isMobile={isCurrentlyMobile}
+              isTablet={isCurrentlyTablet}
             />
           );
         })}

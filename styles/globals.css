@@ -516,14 +516,14 @@ img {
   }
   
   .hero-description {
-    font-size: 16px !important;
+    font-size: clamp(14px, 4vw, 20px) !important;
     max-width: 90% !important;
     padding: 0 15px !important;
     margin: 20px auto 30px auto !important;
   }
   
   .hero-title {
-    font-size: clamp(24px, 6.5vw, 48px) !important;
+    font-size: clamp(28px, 8vw, 56px) !important;
     line-height: 1.05 !important;
     padding: 0 8px;
     word-break: break-word;
@@ -538,6 +538,12 @@ img {
     max-width: 100%;
     word-break: break-word;
     overflow-wrap: break-word;
+  }
+  
+  /* About page orbit visualization - REDUCE size on mobile to fit inside screen */
+  .relative[class*="w-[calc(100vw-40px)]"][class*="h-[calc(100vw-40px)]"] {
+    width: clamp(200px, 60vw, 350px) !important;
+    height: clamp(200px, 60vw, 350px) !important;
   }
 }
 
@@ -1491,5 +1497,29 @@ ced mobile responsiveness for text overflow fixes */
   
   .gap-12 {
     gap: 1.5rem !important;
+  }
+}
+/* M
+OBILE/TABLET FONT-SIZE FIXES FOR EMPHASIZED TEXT - ONLY APPLY TO SCREENS < 768px */
+@media (max-width: 768px) {
+  /* Fix for emphasized text elements that appear smaller than surrounding text */
+  strong.text-purple-400,
+  strong.text-purple-300,
+  strong.text-purple-500,
+  span.text-purple-400.font-bold,
+  .text-purple-400,
+  .text-purple-300,
+  .text-purple-500 {
+    font-size: inherit !important;
+  }
+  
+  /* Specific fixes for inline emphasized words */
+  strong {
+    font-size: inherit !important;
+  }
+  
+  /* Ensure all emphasized spans match parent text size */
+  span[class*="text-purple"] {
+    font-size: inherit !important;
   }
 }

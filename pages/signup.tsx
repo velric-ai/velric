@@ -123,8 +123,43 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      await signup(formData);
+      const response = await signup(formData);
+      console.log('✅ Signup successful - storing user data...');
+      
+      // 🔴 CRITICAL FIX: Store both flags as false for new users
+      const newUserData = {
+        id: response?.user?.id,
+        email: response?.user?.email,
+        name: response?.user?.name,
+        onboarded: false,              // 🔴 Mark as NOT onboarded
+        surveyCompleted: false,        // 🔴 Mark survey as NOT completed
+        signupCompletedAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString()
+      };
+      
+      // Store with exact key 'velric_user'
+      localStorage.setItem('velric_user', JSON.stringify(newUserData));
+      console.log('✅ User data stored with both flags as false');
+      
+      // 🔴 CRITICAL FIX: Clear any existing survey data first
+      localStorage.removeItem('velric_survey_draft');
+      localStorage.removeItem('velric_survey_state');
+      console.log('🧹 Cleared any existing survey data');
+      
+      // 🔴 CRITICAL FIX: Initialize survey state to Step 1
+      const initialSurveyState = {
+        currentStep: 1,
+        currentStepIndex: 0,
+        totalSteps: 8,
+        completedSteps: [],
+        surveyData: {},
+        startedAt: new Date().toISOString()
+      };
+      localStorage.setItem('velric_survey_state', JSON.stringify(initialSurveyState));
+      console.log('✅ Survey state initialized to Step 1');
+      
       // Redirect to survey for new users
+      console.log('🔄 Redirecting to survey...');
       router.replace('/onboard/survey');
     } catch (error) {
       setErrors({ general: "Signup failed. Please try again." });

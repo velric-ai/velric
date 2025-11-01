@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Target,
-  GraduationCap,
   BarChart3,
   User,
   Settings,
@@ -84,9 +83,7 @@ function UserDashboardContent() {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'missions', label: 'Missions', icon: Target },
-    { id: 'grading', label: 'Grading', icon: GraduationCap },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'profile', label: 'Profile', icon: User },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -229,6 +226,12 @@ function UserDashboardContent() {
                     onClick={() => {
                       if (tab.id === 'missions') {
                         router.push('/missions');
+                      } else if (tab.id === 'analytics') {
+                        router.push('/analytics');
+                      } else if (tab.id === 'profile') {
+                        router.push('/profile');
+                      } else if (tab.id === 'dashboard') {
+                        router.push('/user-dashboard');
                       } else {
                         setActiveTab(tab.id);
                       }
@@ -257,6 +260,17 @@ function UserDashboardContent() {
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-pink-500 to-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
                   3
                 </span>
+              </motion.button>
+
+              {/* Profile Icon */}
+              <motion.button
+                onClick={() => router.push('/profile')}
+                className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                title="Go to Profile"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <User className="w-5 h-5 text-white/70 hover:text-white" />
               </motion.button>
 
               <div className="relative user-dropdown-container">
@@ -515,104 +529,7 @@ function UserDashboardContent() {
 
                 {/* Right Column */}
                 <div className="lg:col-span-7 space-y-6">
-                  {/* Domain Performance */}
-                  <div className="space-y-6">
-                    <h3 className="text-2xl font-semibold text-white">Domain Performance</h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {dashboardData.domains.map((domain, index) => {
-                        const isPositive = domain.change >= 0;
-                        const ChangeIcon = isPositive ? TrendingUp : TrendingDown;
-
-                        return (
-                          <motion.div
-                            key={domain.name}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4 + index * 0.1, duration: 0.5 }}
-                            whileHover={{ y: -5, scale: 1.02 }}
-                            className="p-6 rounded-2xl relative overflow-hidden group cursor-pointer"
-                            style={{
-                              background: 'rgba(255, 255, 255, 0.05)',
-                              backdropFilter: 'blur(15px)',
-                              border: '1px solid rgba(255, 255, 255, 0.1)',
-                              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
-                            }}
-                          >
-                            <div
-                              className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-300"
-                              style={{
-                                background: `linear-gradient(135deg, ${domain.color}, ${domain.color}80)`
-                              }}
-                            />
-
-                            <div className="relative z-10">
-                              <div className="flex items-start justify-between mb-4">
-                                <div className="flex-1">
-                                  <h4 className="text-white font-semibold mb-2">{domain.name}</h4>
-                                  <div className="flex flex-wrap gap-1 mb-3">
-                                    {domain.skills.map((skill, skillIndex) => (
-                                      <span
-                                        key={skillIndex}
-                                        className="px-2 py-1 rounded-md text-xs font-medium"
-                                        style={{
-                                          background: `${domain.color}20`,
-                                          color: domain.color,
-                                          border: `1px solid ${domain.color}30`
-                                        }}
-                                      >
-                                        {skill}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center space-x-2 ml-4">
-                                  <span
-                                    className="text-2xl font-bold"
-                                    style={{ color: domain.color }}
-                                  >
-                                    {domain.score}
-                                  </span>
-                                  <div
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-bold ${isPositive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-                                      }`}
-                                  >
-                                    <ChangeIcon className="w-3 h-3" />
-                                    <span>{Math.abs(domain.change)}</span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className="text-white/60">Progress</span>
-                                  <span className="text-white/80 font-medium">{domain.score}%</span>
-                                </div>
-                                <div
-                                  className="h-2 rounded-full overflow-hidden"
-                                  style={{
-                                    background: 'rgba(255, 255, 255, 0.1)'
-                                  }}
-                                >
-                                  <motion.div
-                                    className="h-full rounded-full"
-                                    style={{
-                                      background: `linear-gradient(90deg, ${domain.color}, ${domain.color}dd)`,
-                                      boxShadow: `0 0 10px ${domain.color}50`
-                                    }}
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${domain.score}%` }}
-                                    transition={{ duration: 1.5, delay: 0.5 + index * 0.1, ease: "easeOut" }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-                  </div>
 
                   {/* Quick Stats */}
                   <div className="space-y-6 mt-12">
