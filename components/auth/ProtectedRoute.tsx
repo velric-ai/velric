@@ -60,17 +60,41 @@ export function ProtectedRoute({
             allKeys: Object.keys(userData)
           });
 
-          // ✅ DASHBOARD ACCESS - If user is trying to access dashboard
-          if (currentPath === '/user-dashboard') {
-            console.log('🎯 User accessing dashboard...');
+          // 🔴 FIX 1: Ensure both flags exist
+          if (!userData.hasOwnProperty('onboarded')) {
+            console.warn('⚠️ Missing onboarded flag - setting to false');
+            userData.onboarded = false;
+          }
+          if (!userData.hasOwnProperty('surveyCompleted')) {
+            console.warn('⚠️ Missing surveyCompleted flag - setting to false');
+            userData.surveyCompleted = false;
+          }
+
+          // ✅ DASHBOARD ACCESS - If user is trying to access dashboard or related pages
+          if (currentPath === '/user-dashboard' || currentPath === '/dashboard' || currentPath === '/analytics' || currentPath === '/profile') {
+            console.log('📊 DASHBOARD ROUTE CHECK:', {
+              onboarded: userData.onboarded,
+              surveyCompleted: userData.surveyCompleted
+            });
             
-            if (userData.onboarded === true) {
-              console.log('✅ User is onboarded - ALLOWING DASHBOARD ACCESS');
+            // 🔴 FIX 2: STRICT CHECK - Must have BOTH flags as true
+            if (userData.onboarded === true && userData.surveyCompleted === true) {
+              console.log('✅ User fully onboarded - ALLOWING DASHBOARD ACCESS');
               setIsAuthorized(true);
               setIsChecking(false);
               return;
-            } else {
-              console.log('❌ User NOT onboarded yet - redirecting to survey');
+            }
+            
+            // If onboarded but survey not done - edge case
+            if (userData.onboarded === true && userData.surveyCompleted !== true) {
+              console.log('⚠️ Onboarded but survey incomplete - forcing to survey');
+              router.replace('/onboard/survey');
+              return;
+            }
+            
+            // If not onboarded - go to survey
+            if (userData.onboarded === false) {
+              console.log('❌ Not onboarded - redirecting to survey');
               router.replace('/onboard/survey');
               return;
             }
@@ -78,16 +102,30 @@ export function ProtectedRoute({
 
           // ✅ SURVEY ACCESS - If user is trying to access survey
           if (currentPath === '/onboard/survey') {
-            console.log('📝 User accessing survey...');
+            console.log('📝 SURVEY ROUTE CHECK:', {
+              onboarded: userData.onboarded,
+              surveyCompleted: userData.surveyCompleted
+            });
             
-            if (userData.onboarded === true) {
-              console.log('⚠️ User already onboarded - redirecting to dashboard');
+            // 🔴 FIX 3: If BOTH flags are true - survey completed, go to dashboard
+            if (userData.onboarded === true && userData.surveyCompleted === true) {
+              console.log('⚠️ Survey already completed - redirecting to dashboard');
               router.replace('/user-dashboard');
               return;
-            } else {
-              console.log('✅ User NOT onboarded - ALLOWING SURVEY ACCESS');
+            }
+            
+            // If onboarded is false - allow survey access
+            if (userData.onboarded === false) {
+              console.log('✅ User not onboarded - ALLOWING SURVEY ACCESS');
               setIsAuthorized(true);
               setIsChecking(false);
+              return;
+            }
+            
+            // Edge case - onboarded is true but surveyCompleted is false
+            if (userData.onboarded === true && userData.surveyCompleted !== true) {
+              console.log('⚠️ Inconsistent state detected - forcing to dashboard');
+              router.replace('/user-dashboard');
               return;
             }
           }
@@ -149,73 +187,126 @@ export function ProtectedRoute({
 // ✅ Survey Route Guard - Simplified
 export function ProtectedSurveyRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const [isChecking, setIsChecking] = useState(true);
+  const [shouldRender, setShouldRender] = useState(false);
   
   useEffect(() => {
     console.log('🔒 ProtectedSurveyRoute - Checking access to survey...');
     
-    // Quick check - if user is onboarded, redirect immediately
-    try {
-      const userDataStr = localStorage.getItem('velric_user');
-      if (userDataStr) {
+    const checkTimer = setTimeout(() => {
+      try {
+        const userDataStr = localStorage.getItem('velric_user');
+        if (!userDataStr) {
+          console.log('❌ No user data - redirecting to signup');
+          router.replace('/signup');
+          return;
+        }
+
         const userData = JSON.parse(userDataStr);
+        console.log('🔒 Survey Guard Check:', {
+          onboarded: userData.onboarded,
+          surveyCompleted: userData.surveyCompleted
+        });
+        
+        // If user is onboarded, survey is already completed
         if (userData.onboarded === true) {
-          console.log('⚠️ User already onboarded - immediate redirect to dashboard');
+          console.log('⚠️ Survey guard - user already completed survey, redirecting to dashboard');
           router.replace('/user-dashboard');
           return;
         }
+        
+        // If user hasn't completed survey, allow access to survey
+        console.log('✅ Survey guard - allowing access to survey');
+        setShouldRender(true);
+        setIsChecking(false);
+        
+      } catch (error) {
+        console.error('Error in ProtectedSurveyRoute:', error);
+        router.replace('/signup');
       }
-    } catch (error) {
-      console.error('Error in ProtectedSurveyRoute:', error);
-    }
+    }, 100);
+    
+    return () => clearTimeout(checkTimer);
   }, [router]);
   
-  return (
-    <ProtectedRoute
-      requireAuth={true}
-      requireNotOnboarded={true}
-    >
-      {children}
-    </ProtectedRoute>
-  );
+  if (isChecking) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center text-white"
+        style={{
+          background: 'linear-gradient(135deg, #1a0b2e 0%, #16213e 50%, #0f3460 100%)'
+        }}
+      >
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white/80">Checking survey status...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return shouldRender ? <>{children}</> : null;
 }
 
 // ✅ Dashboard Route Guard - Simplified
 export function ProtectedDashboardRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const [isChecking, setIsChecking] = useState(true);
+  const [shouldRender, setShouldRender] = useState(false);
   
   useEffect(() => {
     console.log('🔒 ProtectedDashboardRoute - Checking access to dashboard...');
     
-    // Quick check - if user is NOT onboarded, redirect immediately
-    try {
-      const userDataStr = localStorage.getItem('velric_user');
-      if (userDataStr) {
+    const checkTimer = setTimeout(() => {
+      try {
+        const userDataStr = localStorage.getItem('velric_user');
+        if (!userDataStr) {
+          console.log('❌ Dashboard guard - no user data, redirecting to signup');
+          router.replace('/signup');
+          return;
+        }
+
         const userData = JSON.parse(userDataStr);
-        console.log('Dashboard guard - user onboarded status:', userData.onboarded);
+        console.log('🔒 Dashboard Guard Check:', {
+          onboarded: userData.onboarded,
+          surveyCompleted: userData.surveyCompleted
+        });
         
+        // Check if user is onboarded
         if (userData.onboarded !== true) {
-          console.log('⚠️ User NOT onboarded - immediate redirect to survey');
+          console.log('❌ Dashboard guard - user not onboarded, redirecting to survey');
           router.replace('/onboard/survey');
           return;
-        } else {
-          console.log('✅ User is onboarded - allowing dashboard access');
         }
-      } else {
-        console.log('❌ No user data - redirecting to signup');
+        
+        console.log('✅ Dashboard guard - user is fully onboarded, allowing access');
+        setShouldRender(true);
+        setIsChecking(false);
+        
+      } catch (error) {
+        console.error('Error in ProtectedDashboardRoute:', error);
         router.replace('/signup');
       }
-    } catch (error) {
-      console.error('Error in ProtectedDashboardRoute:', error);
-      router.replace('/signup');
-    }
+    }, 100);
+    
+    return () => clearTimeout(checkTimer);
   }, [router]);
   
-  return (
-    <ProtectedRoute
-      requireAuth={true}
-      requireOnboarded={true}
-    >
-      {children}
-    </ProtectedRoute>
-  );
+  if (isChecking) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center text-white"
+        style={{
+          background: 'linear-gradient(135deg, #1a0b2e 0%, #16213e 50%, #0f3460 100%)'
+        }}
+      >
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white/80">Verifying dashboard access...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return shouldRender ? <>{children}</> : null;
 }
