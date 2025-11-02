@@ -276,6 +276,12 @@ export const validateStep = (step: number, formData: any): ValidationResult => {
       // No validation required - all optional
       break;
       
+    case 7: // Experience Summary
+      if (!formData.experienceSummary?.value?.trim()) {
+        errors.experienceSummary = 'Please share your experience and accomplishments';
+      }
+      break;
+      
     default:
       break;
   }

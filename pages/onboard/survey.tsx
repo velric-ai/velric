@@ -11,6 +11,7 @@ import { StepLearningPreference } from "../../components/survey/StepLearningPref
 import { StepPortfolioUpload } from "../../components/survey/StepPortfolioUpload";
 import { StepPlatformConnections } from "../../components/survey/StepPlatformConnections";
 import { StepCompletion } from "../../components/survey/StepCompletion";
+import { StepExperience } from "../../components/survey/StepExperience";
 import { useSurveyForm } from "../../hooks/useSurveyForm";
 import { AppError, AuthError } from "../../utils/surveyValidation";
 import { ProtectedSurveyRoute } from "../../components/auth/ProtectedRoute";
@@ -33,20 +34,68 @@ function SurveyPageContent() {
 
   // Load any existing survey draft on mount
   useEffect(() => {
-    const loadDraft = () => {
+    const initializeSurvey = () => {
       try {
-        const draftData = localStorage.getItem("velric_survey_draft");
-        if (draftData) {
-          const draft = JSON.parse(draftData);
-          updateFormData(draft);
+        // Check for survey state first
+        const surveyStateStr = localStorage.getItem("velric_survey_state");
+        const surveyState = surveyStateStr ? JSON.parse(surveyStateStr) : null;
+        
+        // CRITICAL FIX: If no state or step is wrong, initialize properly
+        if (!surveyState) {
+          console.log('📋 No survey state found. Initializing...');
+          const newState = {
+            currentStep: 1,
+            currentStepIndex: 0,
+            totalSteps: 8,
+            completedSteps: [],
+            surveyData: {},
+            startedAt: new Date().toISOString()
+          };
+          localStorage.setItem('velric_survey_state', JSON.stringify(newState));
+          updateFormData({ currentStep: 1 });
+          return;
+        }
+        
+        // CRITICAL FIX: If survey was just started but showing wrong step, reset it
+        if (surveyState.completedSteps.length === 0 && surveyState.currentStep !== 1) {
+          console.warn('⚠️ RESETTING: Survey showed step', surveyState.currentStep, 'but no steps completed. Resetting to Step 1.');
+          const resetState = {
+            ...surveyState,
+            currentStep: 1,
+            currentStepIndex: 0,
+            completedSteps: []
+          };
+          localStorage.setItem('velric_survey_state', JSON.stringify(resetState));
+          // 🔴 CRITICAL: Clear any corrupted draft data
+          localStorage.removeItem("velric_survey_draft");
+          updateFormData({ currentStep: 1 });
+          return;
+        }
+        
+        // Normal path: Load existing survey state
+        updateFormData({ currentStep: surveyState.currentStep });
+        
+        // 🔴 CRITICAL FIX: Only load draft data if we're NOT on step 1
+        // This prevents draft data from overriding the reset to step 1
+        if (surveyState.currentStep > 1) {
+          const draftData = localStorage.getItem("velric_survey_draft");
+          if (draftData) {
+            const draft = JSON.parse(draftData);
+            // Only apply draft data if it doesn't conflict with current step
+            if (draft.currentStep === surveyState.currentStep) {
+              updateFormData(draft);
+            }
+          }
         }
       } catch (error) {
-        console.warn("Failed to load survey draft:", error);
+        console.warn("Failed to initialize survey:", error);
         localStorage.removeItem("velric_survey_draft");
+        localStorage.removeItem("velric_survey_state");
+        updateFormData({ currentStep: 1 });
       }
     };
 
-    loadDraft();
+    initializeSurvey();
   }, [updateFormData]);
 
   // Auto-save draft to localStorage
@@ -120,6 +169,8 @@ function SurveyPageContent() {
       case 6:
         return <StepPlatformConnections {...stepProps} />;
       case 7:
+        return <StepExperience {...stepProps} />;
+      case 8:
         return <StepCompletion {...stepProps} />;
       default:
         return <StepBasicInfo {...stepProps} />;
@@ -188,7 +239,6 @@ function SurveyPageContent() {
   );
 }
 
-// ✅ LOCATION 2: Survey Route Guard - Only allow access if logged in but NOT onboarded
 export default function SurveyPage() {
   return (
     <ProtectedSurveyRoute>

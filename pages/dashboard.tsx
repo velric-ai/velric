@@ -4,7 +4,7 @@ import DashboardNavigation from "@/components/dashboard/DashboardNavigation";
 import DashboardLayout, { DashboardGrid, DashboardColumn } from "@/components/dashboard/DashboardLayout";
 import VelricScoreCard from "@/components/dashboard/VelricScoreCard";
 import WeeklyActivityCard from "@/components/dashboard/WeeklyActivityCard";
-import DomainBreakdownGrid from "@/components/dashboard/DomainBreakdownGrid";
+
 import QuickStatsPanel from "@/components/dashboard/QuickStatsPanel";
 import ConnectedPlatformsSection from "@/components/dashboard/ConnectedPlatformsSection";
 import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
@@ -202,7 +202,6 @@ function DashboardContent() {
 
             {/* Right Column */}
             <DashboardColumn span={7}>
-              <DomainBreakdownGrid domains={mockDashboardData.domains} />
               <QuickStatsPanel stats={mockDashboardData.quickStats} />
               <ConnectedPlatformsSection
                 platforms={mockDashboardData.platforms}

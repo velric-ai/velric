@@ -8,7 +8,8 @@ import {
   Check, 
   ExternalLink, 
   AlertCircle,
-  Loader2
+  Loader2,
+  Linkedin
 } from "lucide-react";
 import { initiateOAuthFlow } from "../../utils/oauthHandlers";
 
@@ -46,6 +47,14 @@ const PLATFORMS = [
     description: 'Display your problem-solving skills, badges, and challenge achievements',
     color: '#F59E0B',
     buttonText: 'Connect HackerRank'
+  },
+  {
+    id: 'linkedin',
+    name: 'LinkedIn',
+    icon: Linkedin,
+    description: 'Showcase your professional experience, skills, and endorsements to recruiters',
+    color: '#0A66C2',
+    buttonText: 'Connect with LinkedIn'
   }
 ];
 
@@ -60,7 +69,29 @@ export function StepPlatformConnections({
 }: StepPlatformConnectionsProps) {
   const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
 
-  const platformConnections = formData.platformConnections;
+  // 🔴 FIX: Initialize platformConnections if it doesn't exist
+  const platformConnections = formData.platformConnections || {};
+
+  // 🔴 FIX: Ensure all platforms have default structure
+  const getPlatformConnection = (platformId: string) => {
+    const connection = platformConnections[platformId];
+    
+    if (!connection) {
+      return {
+        connected: false,
+        username: '',
+        userId: '',
+        avatar: '',
+        profile: {},
+        error: null,
+        loading: false,
+        score: null,
+        rank: null
+      };
+    }
+    
+    return connection;
+  };
 
   const handleConnect = async (platformId: string) => {
     setConnectingPlatform(platformId);
@@ -70,7 +101,7 @@ export function StepPlatformConnections({
       platformConnections: {
         ...platformConnections,
         [platformId]: {
-          ...platformConnections[platformId],
+          ...getPlatformConnection(platformId),
           loading: true,
           error: null
         }
@@ -115,6 +146,16 @@ export function StepPlatformConnections({
             badges: 12,
             problemsSolved: 200
           }
+        },
+        linkedin: {
+          username: 'johndoe',
+          userId: '98765',
+          avatar: 'https://media.licdn.com/dms/image/johndoe.png',
+          profile: {
+            headline: 'Full Stack Developer',
+            connections: 500,
+            endorsements: 125
+          }
         }
       };
 
@@ -141,7 +182,7 @@ export function StepPlatformConnections({
         platformConnections: {
           ...platformConnections,
           [platformId]: {
-            ...platformConnections[platformId],
+            ...getPlatformConnection(platformId),
             connected: false,
             loading: false,
             error: (error as Error).message || `Failed to connect ${platformId}. Please try again.`
@@ -178,7 +219,7 @@ export function StepPlatformConnections({
       platformConnections: {
         ...platformConnections,
         [platformId]: {
-          ...platformConnections[platformId],
+          ...getPlatformConnection(platformId),
           error: null
         }
       }
@@ -188,7 +229,7 @@ export function StepPlatformConnections({
   };
 
   const connectedCount = Object.values(platformConnections).filter(
-    (platform: any) => platform.connected
+    (platform: any) => platform?.connected === true
   ).length;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -219,7 +260,7 @@ export function StepPlatformConnections({
           transition={{ delay: 0.2 }}
           className="text-xl text-white/70 mb-2"
         >
-          Link your GitHub, CodeSignal, and HackerRank to showcase your proof of work
+          Link your GitHub, CodeSignal, HackerRank, and LinkedIn to showcase your proof of work
         </motion.p>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -240,7 +281,8 @@ export function StepPlatformConnections({
         {/* Platform Cards */}
         <div className="space-y-6">
           {PLATFORMS.map((platform, index) => {
-            const connection = platformConnections[platform.id];
+            // 🔴 FIX: Use getPlatformConnection instead of direct access
+            const connection = getPlatformConnection(platform.id);
             const isConnected = connection.connected;
             const isLoading = connection.loading;
             const hasError = !!connection.error;

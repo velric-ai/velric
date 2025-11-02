@@ -1,9 +1,9 @@
 import { useState } from 'react';
+import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, 
   Target, 
-  GraduationCap, 
   BarChart3, 
   User, 
   Settings,
@@ -21,14 +21,36 @@ export default function DashboardNavigation({
   onTabChange, 
   notificationCount = 3 
 }: DashboardNavigationProps) {
+  const router = useRouter();
+  
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'missions', label: 'Missions', icon: Target },
-    { id: 'grading', label: 'Grading', icon: GraduationCap },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, route: '/dashboard' },
+    { id: 'missions', label: 'Missions', icon: Target, route: '/missions' },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, route: '/analytics' },
+    { id: 'settings', label: 'Settings', icon: Settings, route: '/settings' },
   ];
+
+  const handleTabClick = (tab: any) => {
+    if (tab.id === 'analytics') {
+      router.push('/analytics');
+    } else if (tab.id === 'profile') {
+      router.push('/profile');
+    } else if (tab.id === 'dashboard') {
+      router.push('/user-dashboard');
+    } else {
+      // Use existing tab change logic for other tabs
+      onTabChange(tab.id);
+    }
+  };
+
+  // Determine active tab based on current route
+  const getCurrentActiveTab = () => {
+    const currentPath = router.pathname;
+    if (currentPath === '/analytics') return 'analytics';
+    if (currentPath === '/profile') return 'profile';
+    if (currentPath === '/dashboard' || currentPath === '/user-dashboard') return 'dashboard';
+    return activeTab;
+  };
 
   return (
     <nav className="glass-nav fixed top-0 left-0 right-0 z-50 h-16">
@@ -46,12 +68,12 @@ export default function DashboardNavigation({
         <div className="flex items-center space-x-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+            const isActive = getCurrentActiveTab() === tab.id;
             
             return (
               <motion.button
                 key={tab.id}
-                onClick={() => onTabChange(tab.id)}
+                onClick={() => handleTabClick(tab)}
                 className={`glass-tab flex items-center space-x-2 ${isActive ? 'active' : ''}`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -78,6 +100,17 @@ export default function DashboardNavigation({
                 {notificationCount > 9 ? '9+' : notificationCount}
               </span>
             )}
+          </motion.button>
+
+          {/* Profile Icon */}
+          <motion.button
+            onClick={() => router.push('/profile')}
+            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+            title="Go to Profile"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <User className="w-5 h-5 text-white/70 hover:text-white" />
           </motion.button>
 
           {/* User Profile */}

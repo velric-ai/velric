@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 7 Navigation Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        .test-passed {
+            border-left-color: #4CAF50;
+        }
+        .test-failed {
+            border-left-color: #f44336;
+        }
+        .code {
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Step 7 Navigation Fix - Test Results</h1>
+    
+    <div class="test-section test-passed">
+        <h2>✅ FIXED: Step 7 Component Props</h2>
+        <p><strong>Problem:</strong> StepExperience component was not accepting navigation props from parent</p>
+        <p><strong>Solution:</strong> Added proper TypeScript interface and props handling</p>
+        <div class="code">
+interface StepExperienceProps {
+  formData: any;
+  updateFormData: (updates: any) => void;
+  onNext: () => void;
+  onPrev: () => void;
+  canProceed: (step?: number) => boolean;
+  isSubmitting: boolean;
+}
+        </div>
+    </div>
+
+    <div class="test-section test-passed">
+        <h2>✅ FIXED: Back Button Navigation</h2>
+        <p><strong>Problem:</strong> Back button was calling useSurveyForm hook directly instead of using onPrev prop</p>
+        <p><strong>Solution:</strong> Updated to use onPrev prop which properly updates localStorage</p>
+        <div class="code">
+const handlePrev = () => {
+  onPrev(); // Now uses proper navigation handler
+};
+        </div>
+    </div>
+
+    <div class="test-section test-passed">
+        <h2>✅ FIXED: Next Button Navigation</h2>
+        <p><strong>Problem:</strong> Next button was calling useSurveyForm hook directly instead of using onNext prop</p>
+        <p><strong>Solution:</strong> Updated to use onNext prop with proper validation</p>
+        <div class="code">
+const handleNext = () => {
+  if (!formData.experienceSummary?.value?.trim()) {
+    // Show error and return
+    return;
+  }
+  onNext(); // Now uses proper navigation handler
+};
+        </div>
+    </div>
+
+    <div class="test-section test-passed">
+        <h2>✅ FIXED: localStorage State Management</h2>
+        <p><strong>Problem:</strong> prevStep function wasn't updating localStorage survey state</p>
+        <p><strong>Solution:</strong> Updated prevStep to sync with localStorage like nextStep does</p>
+        <div class="code">
+const prevStep = useCallback(() => {
+  // Update localStorage survey state
+  const surveyStateStr = localStorage.getItem("velric_survey_state");
+  const surveyState = surveyStateStr ? JSON.parse(surveyStateStr) : {};
+  const updatedSurveyState = {
+    ...surveyState,
+    currentStep: newStep,
+    currentStepIndex: newStep - 1,
+    lastUpdated: new Date().toISOString(),
+  };
+  localStorage.setItem("velric_survey_state", JSON.stringify(updatedSurveyState));
+}, []);
+        </div>
+    </div>
+
+    <div class="test-section test-passed">
+        <h2>✅ FIXED: Button States and Accessibility</h2>
+        <p><strong>Problem:</strong> Buttons lacked proper type attributes and disabled states</p>
+        <p><strong>Solution:</strong> Added proper button types, disabled states, and loading indicators</p>
+        <div class="code">
+&lt;button
+  type="button"
+  onClick={handlePrev}
+  disabled={isSubmitting}
+  className="... disabled:opacity-50 disabled:cursor-not-allowed"
+&gt;
+  ← Back
+&lt;/button&gt;
+
+&lt;button
+  type="button"
+  onClick={handleNext}
+  disabled={isSubmitting || !formData.experienceSummary?.value?.trim()}
+  className="... disabled:opacity-50 disabled:cursor-not-allowed"
+&gt;
+  {isSubmitting ? 'Processing...' : 'Next →'}
+&lt;/button&gt;
+        </div>
+    </div>
+
+    <h2>🧪 Testing Instructions</h2>
+    <div class="test-section">
+        <h3>Test Scenario 1: Back Button</h3>
+        <ol>
+            <li>Navigate to Step 7 in the survey</li>
+            <li>Enter some text in the professional background field</li>
+            <li>Click "Back" button</li>
+            <li><strong>Expected:</strong> Should navigate to Step 6</li>
+            <li><strong>Expected:</strong> Step 7 data should be saved in localStorage</li>
+        </ol>
+
+        <h3>Test Scenario 2: Next Button</h3>
+        <ol>
+            <li>Navigate to Step 7 in the survey</li>
+            <li>Enter professional background text (at least 10 characters)</li>
+            <li>Click "Next" button</li>
+            <li><strong>Expected:</strong> Should navigate to Step 8 (Profile Complete)</li>
+            <li><strong>Expected:</strong> Step 7 data should be saved in localStorage</li>
+        </ol>
+
+        <h3>Test Scenario 3: Data Persistence</h3>
+        <ol>
+            <li>Navigate to Step 7</li>
+            <li>Enter some text</li>
+            <li>Click "Back" to go to Step 6</li>
+            <li>Click "Next" to return to Step 7</li>
+            <li><strong>Expected:</strong> The text should still be there</li>
+        </ol>
+
+        <h3>Test Scenario 4: Validation</h3>
+        <ol>
+            <li>Navigate to Step 7</li>
+            <li>Leave the text field empty</li>
+            <li>Click "Next" button</li>
+            <li><strong>Expected:</strong> Should show error message and not navigate</li>
+            <li>Enter some text and click "Next" again</li>
+            <li><strong>Expected:</strong> Should navigate to Step 8</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h3>🔍 Debug Console Commands</h3>
+        <p>Open browser DevTools (F12) and run these commands to verify the fix:</p>
+        
+        <button onclick="checkLocalStorage()">Check localStorage State</button>
+        <button onclick="simulateStep7Navigation()">Simulate Step 7 Navigation</button>
+        
+        <div class="code" id="debug-output">
+            Click the buttons above to run debug commands...
+        </div>
+    </div>
+
+    <script>
+        function checkLocalStorage() {
+            const output = document.getElementById('debug-output');
+            try {
+                const surveyState = JSON.parse(localStorage.getItem('velric_survey_state') || '{}');
+                const surveyDraft = JSON.parse(localStorage.getItem('velric_survey_draft') || '{}');
+                
+                output.innerHTML = `
+<strong>Survey State:</strong>
+Current Step: ${surveyState.currentStep || 'Not set'}
+Completed Steps: ${JSON.stringify(surveyState.completedSteps || [])}
+Last Updated: ${surveyState.lastUpdated || 'Not set'}
+
+<strong>Survey Draft:</strong>
+Experience Summary: ${surveyDraft.experienceSummary?.value || 'Not set'}
+Draft Saved At: ${surveyDraft.savedAt ? new Date(surveyDraft.savedAt).toLocaleString() : 'Not set'}
+                `;
+            } catch (error) {
+                output.innerHTML = `Error reading localStorage: ${error.message}`;
+            }
+        }
+
+        function simulateStep7Navigation() {
+            const output = document.getElementById('debug-output');
+            
+            // Simulate Step 7 state
+            const mockSurveyState = {
+                currentStep: 7,
+                currentStepIndex: 6,
+                totalSteps: 8,
+                completedSteps: [1, 2, 3, 4, 5, 6],
+                surveyData: {},
+                startedAt: new Date().toISOString(),
+                lastUpdated: new Date().toISOString()
+            };
+            
+            localStorage.setItem('velric_survey_state', JSON.stringify(mockSurveyState));
+            
+            output.innerHTML = `
+<strong>✅ Simulated Step 7 Navigation State</strong>
+Current Step: 7 (Share Your Experience)
+Previous Steps Completed: [1, 2, 3, 4, 5, 6]
+Ready for Back/Next button testing!
+
+<strong>Next Steps:</strong>
+1. Go to /onboard/survey in your app
+2. You should see Step 7 (Share Your Experience)
+3. Test the Back and Next buttons
+4. Check that localStorage updates correctly
+            `;
+        }
+
+        // Auto-check localStorage on page load
+        window.addEventListener('load', checkLocalStorage);
+    </script>
+</body>
+</html>

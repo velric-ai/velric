@@ -48,6 +48,12 @@ export interface SurveyFormData {
     codesignal: PlatformConnection;
     hackerrank: PlatformConnection;
   };
+  // Step 7: Experience Summary
+  experienceSummary: {
+    value: string;
+    error: string | null;
+    touched: boolean;
+  };
   currentStep: number;
   totalSteps: number;
   isSubmitting: boolean;
@@ -185,6 +191,7 @@ export async function submitSurveyData(formData: SurveyFormData): Promise<Survey
         url: formData.portfolio.filePreview || ''
       } : null,
       portfolioUrl: formData.portfolio.url || null,
+      experienceSummary: formData.experienceSummary.value || null,
       platformConnections: {
         github: formData.platformConnections.github.connected ? {
           connected: true,
