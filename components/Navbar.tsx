@@ -1,74 +1,80 @@
-// components/Navbar.tsx
+"use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
-  const [isScrolled, setIsScrolled] = useState(false);
+  const pathname = usePathname();
+  const navRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+    const updateBodyPadding = () => {
+      if (!navRef.current) return;
+      const height = navRef.current.offsetHeight;
+
+      // even tighter top padding for home page
+      const padding = pathname === "/" ? height - 200 : height + 10;
+      document.body.style.paddingTop = `${padding}px`;
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    updateBodyPadding();
+    window.addEventListener("resize", updateBodyPadding);
+    window.addEventListener("load", updateBodyPadding);
+
+    return () => {
+      window.removeEventListener("resize", updateBodyPadding);
+      window.removeEventListener("load", updateBodyPadding);
+      document.body.style.paddingTop = "";
+    };
+  }, [pathname]);
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 px-4 sm:px-6 py-4 transition-all duration-300 ${
-      isScrolled 
-        ? 'bg-black/90 backdrop-blur-xl shadow-lg' 
-        : 'bg-transparent'
-    }`}>
-      <div className="max-w-7xl mx-auto flex flex-col items-center md:flex-row md:justify-between gap-4">
-        {/* Logo (hidden on small screens) */}
-        <div className="hidden md:block">
-          <Link href="/" className="hover:opacity-80 transition-opacity">
+    <nav
+      ref={navRef}
+      className="fixed top-0 left-0 w-full z-50 bg-black text-white shadow-md transition-all duration-300"
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+        {/* Logo */}
+        <div className="flex justify-center md:justify-start">
+          <Link href="/" className="hover:opacity-85 transition-opacity">
             <Image
               src="/assets/logo.png"
               alt="Velric Logo"
               width={120}
               height={40}
+              priority
               className="brightness-110"
             />
           </Link>
         </div>
 
-        {/* Menu links */}
-        <div className="flex justify-center gap-8 text-white font-medium text-sm sm:text-base flex-wrap w-full md:w-auto">
-          <Link href="/" className="whitespace-nowrap hover:text-purple-400 transition-colors duration-300 relative group">
-            Home
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 transition-all duration-300 group-hover:w-full"></span>
-          </Link>
-          <Link href="/about" className="whitespace-nowrap hover:text-purple-400 transition-colors duration-300 relative group">
-            About
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 transition-all duration-300 group-hover:w-full"></span>
-          </Link>
-          <Link href="/faq" className="whitespace-nowrap hover:text-purple-400 transition-colors duration-300 relative group">
-            FAQ
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 transition-all duration-300 group-hover:w-full"></span>
-          </Link>
-          <Link href="/join" className="whitespace-nowrap hover:text-purple-400 transition-colors duration-300 relative group">
-            Join
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 transition-all duration-300 group-hover:w-full"></span>
-          </Link>
-          <Link href="/contact" className="whitespace-nowrap hover:text-purple-400 transition-colors duration-300 relative group">
-            Request Demo
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 transition-all duration-300 group-hover:w-full"></span>
-          </Link>
-          <Link href="/merch" className="whitespace-nowrap hover:text-purple-400 transition-colors duration-300 relative group">
-            Merch
-            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 transition-all duration-300 group-hover:w-full"></span>
-          </Link>
+        {/* Navigation Links */}
+        <div className="flex justify-center gap-5 text-white font-medium text-sm sm:text-base flex-wrap">
+          {[
+            { name: "Home", href: "/" },
+            { name: "About", href: "/about" },
+            { name: "Join", href: "/join" },
+            { name: "Request Demo", href: "/contact" },
+            { name: "Merch", href: "/merch" },
+          ].map((link) => (
+            <Link
+              key={link.name}
+              href={link.href}
+              className="relative group whitespace-nowrap hover:text-purple-400 transition-colors duration-300"
+            >
+              {link.name}
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-400 transition-all duration-300 group-hover:w-full" />
+            </Link>
+          ))}
         </div>
 
-         {/* Join button */}
-        <div className="w-full md:w-auto flex justify-center md:justify-end mt-3 md:mt-0">
+        {/* CTA Button */}
+        <div className="flex justify-center md:justify-end w-full md:w-auto">
           <Link href="/join">
-            <button className="bg-gradient-to-r from-[#9333EA] to-[#06B6D4] text-white px-6 py-3 text-sm sm:text-base rounded-full font-semibold hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 whitespace-nowrap w-full max-w-xs md:w-auto">
+            <button className="bg-gradient-to-r from-[#9333EA] to-[#06B6D4] text-white px-5 py-2.5 text-sm sm:text-base rounded-full font-semibold hover:scale-105 hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 whitespace-nowrap">
               Join Early Access
-              </button>
+            </button>
           </Link>
         </div>
       </div>

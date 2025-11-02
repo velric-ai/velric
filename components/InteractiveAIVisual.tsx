@@ -31,7 +31,7 @@ export default function InteractiveAIVisual() {
 
   const nodes = [
     { icon: Brain, position: { x: 50, y: 20 }, label: 'AI Brain' },
-    { icon: Zap, position: { x: 80, y: 40 }, label: 'Processing' },
+    { icon: Zap, position: { x: 70, y: 40 }, label: 'Processing' },
     { icon: Target, position: { x: 70, y: 70 }, label: 'Targeting' },
     { icon: Code, position: { x: 15, y: 70 }, label: 'Code Gen' },
     { icon: Cpu, position: { x: 20, y: 35 }, label: 'Computing' },
