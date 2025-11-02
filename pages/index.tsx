@@ -1148,7 +1148,7 @@ export default function Home() {
         <ul className="space-y-3 list-none">
           <li className="flex gap-3 text-gray-300 text-sm">
             <span className="text-blue-400 mt-1">•</span>
-            <span>Access a global pool of pre validated talent</span>
+            <span>Access a global pool of pre-validated talent and top performers</span>
           </li>
           <li className="flex gap-3 text-gray-300 text-sm">
             <span className="text-blue-400 mt-1">•</span>
@@ -1177,7 +1177,7 @@ export default function Home() {
         </div>
         <h3 className="text-2xl font-bold text-white mb-4">For Partners</h3>
         <p className="text-gray-300 text-sm mb-6 leading-relaxed">
-          Join the movement redefining how the world hires.
+          Redefining how the world hires.
         </p>
         <ul className="space-y-3 list-none">
           <li className="flex gap-3 text-gray-300 text-sm">
@@ -1190,7 +1190,7 @@ export default function Home() {
           </li>
           <li className="flex gap-3 text-gray-300 text-sm">
             <span className="text-green-400 mt-1">•</span>
-            <span>Build your brand around proof based opportunity</span>
+            <span>Build your brand on proven opportunity</span>
           </li>
         </ul>
       </motion.div>
@@ -1251,7 +1251,7 @@ export default function Home() {
         <ul className="space-y-3 list-none">
           <li className="flex gap-3 text-gray-300 text-sm">
             <span className="text-blue-400 mt-1">•</span>
-            <span>Access a global pool of pre validated talent</span>
+            <span>Access a global pool of pre-validated talent and top performers</span>
           </li>
           <li className="flex gap-3 text-gray-300 text-sm">
             <span className="text-blue-400 mt-1">•</span>
@@ -1280,7 +1280,7 @@ export default function Home() {
           </div>
           <h3 className="text-xl font-bold text-white">For Partners</h3>
         </div>
-        <p className="text-gray-300 text-sm mb-4">Join the movement redefining how the world hires.</p>
+        <p className="text-gray-300 text-sm mb-4">Redefining how the world hires.</p>
         <ul className="space-y-3 list-none">
           <li className="flex gap-3 text-gray-300 text-sm">
             <span className="text-green-400 mt-1">•</span>
@@ -1292,7 +1292,7 @@ export default function Home() {
           </li>
           <li className="flex gap-3 text-gray-300 text-sm">
             <span className="text-green-400 mt-1">•</span>
-            <span>Build your brand around proof based opportunity</span>
+            <span>Build your brand on proven opportunity</span>
           </li>
         </ul>
       </motion.div>
