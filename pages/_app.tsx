@@ -2,10 +2,11 @@ import "@/styles/globals.css";
 import "@/styles/glassmorphic.css";
 import type { AppProps } from "next/app";
 import Head from "next/head";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <>
+    <AuthProvider>
       <Head>
         <link
           rel="icon"
@@ -21,6 +22,6 @@ export default function App({ Component, pageProps }: AppProps) {
         />
       </Head>
       <Component {...pageProps} />
-    </>
+    </AuthProvider>
   );
 }

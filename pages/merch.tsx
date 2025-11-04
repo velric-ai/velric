@@ -29,7 +29,7 @@ const Merch = () => {
 
   const merchItems = useMemo(() => [
     {
-      name: "PRICE TAG Proof Tee",
+      name: "Proof Tee",
       price: "$100",
       image: "/assets/Price-Tag-Proof-Tee.png",
       description: "Show your commitment to proof over promises"
@@ -176,7 +176,6 @@ const Merch = () => {
                     whileTap={{ scale: 0.95 }}
                     type="button"
                   >
-                    Buy Now
                   </motion.button>
                 </div>
               </div>
@@ -198,22 +197,12 @@ const Merch = () => {
           </h2>
           <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto">
             Be part of the community that values <strong className="text-purple-300">execution over credentials</strong>.
-            Shop our exclusive merch collection and represent the movement.
           </p>
-          <motion.button
-            className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            type="button"
-          >
-            Shop All Items
-          </motion.button>
         </motion.div>
       </section>
-
       <Footer />
     </div>
   );
-};
+}
 
 export default Merch;

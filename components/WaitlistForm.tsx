@@ -210,7 +210,7 @@ export default function WaitlistForm() {
                       onFocus={() => setFocusedField('name')}
                       onBlur={() => setFocusedField(null)}
                       className="w-full pl-12 pr-12 py-4 bg-black/50 backdrop-blur-sm text-white placeholder-gray-400 rounded-2xl focus:outline-none transition-all duration-300"
-                      placeholder="First Name"
+                      placeholder="Full Name"
                       required
                     />
                     {validation.name && (
@@ -231,7 +231,7 @@ export default function WaitlistForm() {
                         exit={{ opacity: 0, y: 10 }}
                         className="absolute -top-3 left-4 bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent text-sm font-medium px-2"
                       >
-                        First Name
+                        Full Name
                       </motion.label>
                     )}
                   </AnimatePresence>

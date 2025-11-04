@@ -1,12 +1,18 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
+import { Eye, EyeOff, User, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
+import { SignupData, ValidationError } from '@/types/auth';
+import { validateName, validateEmail, validatePassword } from '@/services/authService';
 
 export default function Signup() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
+  const { signup, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  const [formData, setFormData] = useState<SignupData>({
     name: "",
     email: "",
     password: "",
@@ -14,56 +20,96 @@ export default function Signup() {
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ""
-      }));
+  // Redirect if already authenticated and onboarded
+  useEffect(() => {
+    // Only redirect if user is authenticated, auth loading is complete,
+    // user is already onboarded, and we're not in the middle of a signup process
+    if (isAuthenticated && !authLoading && !isLoading) {
+      // Check if user is already onboarded
+      const userData = localStorage.getItem('velric_user');
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          // Only redirect if user is already onboarded (existing user)
+          if (user.onboarded === true) {
+            router.replace('/user-dashboard');
+          }
+          // If user is not onboarded, let them stay on signup page
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+        }
+      }
     }
+  }, [isAuthenticated, authLoading, router, isLoading]);
+
+  // Real-time validation
+  useEffect(() => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (touched.name && formData.name) {
+      const nameError = validateName(formData.name);
+      if (nameError) newErrors.name = nameError;
+    }
+
+    if (touched.email && formData.email) {
+      const emailError = validateEmail(formData.email);
+      if (emailError) newErrors.email = emailError;
+    }
+
+    if (touched.password && formData.password) {
+      const passwordError = validatePassword(formData.password);
+      if (passwordError) newErrors.password = passwordError;
+    }
+
+    if (touched.confirmPassword && formData.confirmPassword) {
+      if (formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = "Passwords do not match";
+      }
+    }
+
+    setErrors(prev => ({ ...prev, ...newErrors, general: prev.general }));
+  }, [formData, touched]);
+
+  const handleInputChange = (field: keyof SignupData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({ ...prev, [field]: value }));
+
+    // Clear field-specific error when user starts typing
+    if (errors[field as string]) {
+      setErrors((prev: { [key: string]: string }) => {
+        const newErrors = { ...prev };
+        delete newErrors[field as string];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleBlur = (field: string) => () => {
+    setTouched(prev => ({ ...prev, [field]: true }));
   };
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = "Full name is required";
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = "Name must be at least 2 characters";
-    }
+    const nameError = validateName(formData.name);
+    if (nameError) newErrors.name = nameError;
 
-    // Email validation
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
+    const emailError = validateEmail(formData.email);
+    if (emailError) newErrors.email = emailError;
 
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = "Password must contain at least one uppercase letter, one lowercase letter, and one number";
-    }
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) newErrors.password = passwordError;
 
-    // Confirm password validation
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password";
-    } else if (formData.password !== formData.confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
 
     setErrors(newErrors);
+    setTouched({ name: true, email: true, password: true, confirmPassword: true });
     return Object.keys(newErrors).length === 0;
   };
 
@@ -77,20 +123,52 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // For demo purposes, always succeed
-      // In real app, this would call your backend API
-
-      // Show success message and redirect to login
-      router.push("/login?message=Account created successfully! Please sign in.");
+      const response = await signup(formData);
+      console.log('✅ Signup successful - storing user data...');
+      
+      // 🔴 CRITICAL FIX: Store both flags as false for new users
+      const newUserData = {
+        id: response?.user?.id,
+        email: response?.user?.email,
+        name: response?.user?.name,
+        onboarded: false,              // 🔴 Mark as NOT onboarded
+        surveyCompleted: false,        // 🔴 Mark survey as NOT completed
+        signupCompletedAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString()
+      };
+      
+      // Store with exact key 'velric_user'
+      localStorage.setItem('velric_user', JSON.stringify(newUserData));
+      console.log('✅ User data stored with both flags as false');
+      
+      // 🔴 CRITICAL FIX: Clear any existing survey data first
+      localStorage.removeItem('velric_survey_draft');
+      localStorage.removeItem('velric_survey_state');
+      console.log('🧹 Cleared any existing survey data');
+      
+      // 🔴 CRITICAL FIX: Initialize survey state to Step 1
+      const initialSurveyState = {
+        currentStep: 1,
+        currentStepIndex: 0,
+        totalSteps: 8,
+        completedSteps: [],
+        surveyData: {},
+        startedAt: new Date().toISOString()
+      };
+      localStorage.setItem('velric_survey_state', JSON.stringify(initialSurveyState));
+      console.log('✅ Survey state initialized to Step 1');
+      
+      // Redirect to survey for new users
+      console.log('🔄 Redirecting to survey...');
+      router.replace('/onboard/survey');
     } catch (error) {
       setErrors({ general: "Signup failed. Please try again." });
     } finally {
       setIsLoading(false);
     }
   };
+
+
 
   return (
     <>
@@ -140,7 +218,8 @@ export default function Signup() {
                   id="name"
                   name="name"
                   value={formData.name}
-                  onChange={handleInputChange}
+                  onChange={handleInputChange('name')}
+                  onBlur={handleBlur('name')}
                   className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.name ? 'border-red-500' : 'border-purple-500/20'
                     }`}
                   placeholder="Enter your full name"
@@ -160,7 +239,8 @@ export default function Signup() {
                   id="email"
                   name="email"
                   value={formData.email}
-                  onChange={handleInputChange}
+                  onChange={handleInputChange('email')}
+                  onBlur={handleBlur('email')}
                   className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.email ? 'border-red-500' : 'border-purple-500/20'
                     }`}
                   placeholder="Enter your email"
@@ -180,7 +260,8 @@ export default function Signup() {
                   id="password"
                   name="password"
                   value={formData.password}
-                  onChange={handleInputChange}
+                  onChange={handleInputChange('password')}
+                  onBlur={handleBlur('password')}
                   className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.password ? 'border-red-500' : 'border-purple-500/20'
                     }`}
                   placeholder="Create a strong password"
@@ -203,7 +284,8 @@ export default function Signup() {
                   id="confirmPassword"
                   name="confirmPassword"
                   value={formData.confirmPassword}
-                  onChange={handleInputChange}
+                  onChange={handleInputChange('confirmPassword')}
+                  onBlur={handleBlur('confirmPassword')}
                   className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.confirmPassword ? 'border-red-500' : 'border-purple-500/20'
                     }`}
                   placeholder="Confirm your password"

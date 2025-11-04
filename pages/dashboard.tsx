@@ -4,9 +4,11 @@ import DashboardNavigation from "@/components/dashboard/DashboardNavigation";
 import DashboardLayout, { DashboardGrid, DashboardColumn } from "@/components/dashboard/DashboardLayout";
 import VelricScoreCard from "@/components/dashboard/VelricScoreCard";
 import WeeklyActivityCard from "@/components/dashboard/WeeklyActivityCard";
-import DomainBreakdownGrid from "@/components/dashboard/DomainBreakdownGrid";
+
 import QuickStatsPanel from "@/components/dashboard/QuickStatsPanel";
 import ConnectedPlatformsSection from "@/components/dashboard/ConnectedPlatformsSection";
+import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
+import { WelcomeMessage } from "../components/dashboard/WelcomeMessage";
 
 // Mock data for the glassmorphic dashboard
 const mockDashboardData = {
@@ -148,7 +150,7 @@ const mockDashboardData = {
   ]
 };
 
-export default function Dashboard() {
+function DashboardContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
 
   const handleTabChange = (tab: string) => {
@@ -170,6 +172,9 @@ export default function Dashboard() {
         <meta name="description" content="Your Velric dashboard - track your progress and performance" />
         <link rel="icon" href="/assets/logo.png" />
       </Head>
+
+      {/* Welcome Message for Survey Completion */}
+      <WelcomeMessage />
 
       <DashboardLayout>
         <DashboardNavigation
@@ -197,7 +202,6 @@ export default function Dashboard() {
 
             {/* Right Column */}
             <DashboardColumn span={7}>
-              <DomainBreakdownGrid domains={mockDashboardData.domains} />
               <QuickStatsPanel stats={mockDashboardData.quickStats} />
               <ConnectedPlatformsSection
                 platforms={mockDashboardData.platforms}
@@ -217,5 +221,14 @@ export default function Dashboard() {
         )}
       </DashboardLayout>
     </>
+  );
+}
+
+// ✅ LOCATION 4: Dashboard Route Guard - Only allow access if logged in AND onboarded
+export default function Dashboard() {
+  return (
+    <ProtectedDashboardRoute>
+      <DashboardContent />
+    </ProtectedDashboardRoute>
   );
 }

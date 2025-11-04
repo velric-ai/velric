@@ -63,7 +63,8 @@ export default function Login() {
         localStorage.setItem("velric_user", JSON.stringify({
           email: formData.email,
           name: formData.email.split("@")[0],
-          loginTime: new Date().toISOString()
+          loginTime: new Date().toISOString(),
+          onboarded: true // Ensure existing users are marked as onboarded
         }));
         
         // Redirect to NEW user dashboard

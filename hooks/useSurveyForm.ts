@@ -1,0 +1,439 @@
+import { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/router";
+import { submitSurveyData, SurveyFormData, uploadPortfolioFile } from "../services/surveyApi";
+import { validateStep } from "../utils/surveyValidation";
+import {
+  AppError,
+  AuthError,
+  ValidationError,
+} from "../utils/surveyValidation";
+
+const initialFormData: SurveyFormData = {
+  // Step 1: Basic Information
+  fullName: {
+    value: "",
+    error: null,
+    touched: false,
+  },
+  educationLevel: {
+    value: "Bachelors Degree",
+    error: null,
+    touched: false,
+  },
+  industry: {
+    value: "",
+    error: null,
+    touched: false,
+  },
+
+  // Step 2: Mission Questions (dynamic)
+  missionFocus: {
+    value: [],
+    error: null,
+    touched: false,
+    questionText: "",
+    options: [],
+  },
+
+  // Step 3: Strength Areas
+  strengthAreas: {
+    value: [],
+    error: null,
+    touched: false,
+  },
+
+  // Step 4: Learning Preference
+  learningPreference: {
+    value: "",
+    error: null,
+    touched: false,
+  },
+
+  // Step 5: Portfolio (Optional)
+  portfolio: {
+    file: null,
+    filePreview: null,
+    fileError: null,
+    fileProgress: 0,
+    url: "",
+    urlError: null,
+    uploadStatus: null,
+  },
+
+  // Step 6: Platform Connections (Optional)
+  platformConnections: {
+    github: {
+      connected: false,
+      username: "",
+      userId: "",
+      avatar: "",
+      profile: {},
+      error: null,
+      loading: false,
+    },
+    codesignal: {
+      connected: false,
+      username: "",
+      score: null,
+      profile: {},
+      error: null,
+      loading: false,
+    },
+    hackerrank: {
+      connected: false,
+      username: "",
+      rank: null,
+      profile: {},
+      error: null,
+      loading: false,
+    },
+  },
+
+  // Step 7: Experience Summary
+  experienceSummary: {
+    value: "",
+    error: null,
+    touched: false,
+  },
+
+  // Meta/Navigation
+  currentStep: 1,
+  totalSteps: 8,
+  isSubmitting: false,
+  submitError: null,
+  completedAt: null,
+
+  // Draft persistence
+  savedAt: null,
+  isDraft: true,
+
+  // Analytics/Tracking
+  startedAt: Date.now(),
+  timeSpentPerStep: {},
+  interactions: [],
+};
+
+export function useSurveyForm() {
+  const router = useRouter();
+  const [formData, setFormData] = useState<SurveyFormData>(initialFormData);
+  const [stepStartTime, setStepStartTime] = useState<number>(Date.now());
+
+  // 🔴 CRITICAL FIX: Force reset to step 1 on hook initialization if user just signed up
+  useEffect(() => {
+    const checkForNewSignup = () => {
+      try {
+        const userDataStr = localStorage.getItem("velric_user");
+        const surveyStateStr = localStorage.getItem("velric_survey_state");
+
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+
+          // If user is not onboarded and we have survey state
+          if (!userData.onboarded && surveyStateStr) {
+            const surveyState = JSON.parse(surveyStateStr);
+
+            // If survey shows wrong step but no steps completed, force reset
+            if (
+              surveyState.currentStep !== 1 &&
+              (!surveyState.completedSteps ||
+                surveyState.completedSteps.length === 0)
+            ) {
+              console.warn(
+                "🔴 HOOK RESET: Forcing survey back to Step 1 for new signup"
+              );
+
+              const resetState = {
+                ...surveyState,
+                currentStep: 1,
+                currentStepIndex: 0,
+                completedSteps: [],
+              };
+              localStorage.setItem(
+                "velric_survey_state",
+                JSON.stringify(resetState)
+              );
+              localStorage.removeItem("velric_survey_draft");
+
+              // Force update the form data
+              setFormData((prev) => ({
+                ...prev,
+                currentStep: 1,
+              }));
+            }
+          }
+        }
+      } catch (error) {
+        console.warn("Error checking signup state:", error);
+      }
+    };
+
+    checkForNewSignup();
+  }, []); // Run once on mount
+
+  // Track time spent on each step
+  useEffect(() => {
+    setStepStartTime(Date.now());
+  }, [formData.currentStep]);
+
+  const updateFormData = useCallback((updates: Partial<SurveyFormData>) => {
+    setFormData((prevState) => {
+      const newState = {
+        ...prevState,
+        ...updates,
+        updatedAt: Date.now(),
+      };
+
+      // Track interactions
+      if (updates !== prevState) {
+        newState.interactions = [
+          ...prevState.interactions,
+          {
+            timestamp: Date.now(),
+            step: prevState.currentStep,
+            action: "field_update",
+            data: updates,
+          },
+        ];
+      }
+
+      return newState;
+    });
+  }, []);
+
+  const updateFieldData = useCallback((fieldName: string, fieldData: any) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      [fieldName]: {
+        ...prevState[fieldName as keyof SurveyFormData],
+        ...fieldData,
+        touched: true,
+      },
+      updatedAt: Date.now(),
+    }));
+  }, []);
+
+  const nextStep = useCallback(() => {
+    const currentStepTime = Date.now() - stepStartTime;
+
+    setFormData((prevState) => {
+      // Validate current step before proceeding
+      const validation = validateStep(prevState.currentStep, prevState);
+      if (!validation.isValid) {
+        // Update field errors
+        const updatedState = { ...prevState };
+        Object.entries(validation.errors).forEach(([field, error]) => {
+          if (updatedState[field as keyof SurveyFormData]) {
+            (updatedState[field as keyof SurveyFormData] as any).error = error;
+          }
+        });
+        return updatedState;
+      }
+
+      const newStep = Math.min(prevState.currentStep + 1, prevState.totalSteps);
+
+      // Update localStorage survey state
+      const surveyStateStr = localStorage.getItem("velric_survey_state");
+      const surveyState = surveyStateStr ? JSON.parse(surveyStateStr) : {};
+      const updatedSurveyState = {
+        ...surveyState,
+        currentStep: newStep,
+        currentStepIndex: newStep - 1,
+        completedSteps: [
+          ...(surveyState.completedSteps || []),
+          prevState.currentStep,
+        ],
+        lastUpdated: new Date().toISOString(),
+      };
+      localStorage.setItem(
+        "velric_survey_state",
+        JSON.stringify(updatedSurveyState)
+      );
+
+      return {
+        ...prevState,
+        currentStep: newStep,
+        timeSpentPerStep: {
+          ...prevState.timeSpentPerStep,
+          [prevState.currentStep]: currentStepTime,
+        },
+        interactions: [
+          ...prevState.interactions,
+          {
+            timestamp: Date.now(),
+            step: prevState.currentStep,
+            action: "next_step",
+            timeSpent: currentStepTime,
+          },
+        ],
+      };
+    });
+  }, [stepStartTime]);
+
+  const prevStep = useCallback(() => {
+    setFormData((prevState) => {
+      const newStep = Math.max(prevState.currentStep - 1, 1);
+
+      // Update localStorage survey state
+      const surveyStateStr = localStorage.getItem("velric_survey_state");
+      const surveyState = surveyStateStr ? JSON.parse(surveyStateStr) : {};
+      const updatedSurveyState = {
+        ...surveyState,
+        currentStep: newStep,
+        currentStepIndex: newStep - 1,
+        lastUpdated: new Date().toISOString(),
+      };
+      localStorage.setItem(
+        "velric_survey_state",
+        JSON.stringify(updatedSurveyState)
+      );
+
+      return {
+        ...prevState,
+        currentStep: newStep,
+        interactions: [
+          ...prevState.interactions,
+          {
+            timestamp: Date.now(),
+            step: prevState.currentStep,
+            action: "prev_step",
+          },
+        ],
+      };
+    });
+  }, []);
+
+  const canProceed = useCallback(
+    (step?: number) => {
+      const currentStepToCheck = step || formData.currentStep;
+      const validation = validateStep(currentStepToCheck, formData);
+      return validation.isValid;
+    },
+    [formData]
+  );
+
+  const submitSurvey = useCallback(async () => {
+    // Prevent double submission
+    if (formData.isSubmitting) {
+      console.warn("Survey submission already in progress");
+      return;
+    }
+
+    console.log("=== STARTING SURVEY SUBMISSION ===");
+
+    setFormData((prev) => ({
+      ...prev,
+      isSubmitting: true,
+      submitError: null,
+    }));
+
+    try {
+      // Final validation of all steps
+      console.log("Validating all steps...");
+      for (let step = 1; step <= 7; step++) {
+        const validation = validateStep(step, formData);
+        if (!validation.isValid && (step <= 4 || step === 7)) {
+          // Steps 1-4 and 7 are required
+          throw new ValidationError(
+            `Please complete step ${step} before submitting`
+          );
+        }
+      }
+      console.log("✅ All steps validated");
+
+      // Take snapshot of current state
+      const submissionData = {
+        ...formData,
+        completedAt: Date.now(),
+        isDraft: false,
+        totalTimeSpent: Object.values(formData.timeSpentPerStep).reduce(
+          (sum, time) => sum + time,
+          0
+        ),
+      };
+
+      // Submit to backend
+      console.log("Submitting to backend...");
+      const result = await submitSurveyData(submissionData);
+      console.log("✅ Backend submission successful");
+
+      // Update localStorage - SIMPLE FIX
+      const userDataStr = localStorage.getItem("velric_user");
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        userData.onboarded = true;
+        localStorage.setItem("velric_user", JSON.stringify(userData));
+      }
+
+      // Update localStorage survey state to Step 8 (completion)
+      const surveyStateStr = localStorage.getItem("velric_survey_state");
+      const surveyState = surveyStateStr ? JSON.parse(surveyStateStr) : {};
+      const finalSurveyState = {
+        ...surveyState,
+        currentStep: 8, // Show completion step
+        currentStepIndex: 7,
+        completedSteps: [1, 2, 3, 4, 5, 6, 7], // All steps completed
+        completedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(
+        "velric_survey_state",
+        JSON.stringify(finalSurveyState)
+      );
+
+      // Update component state
+      setFormData((prev) => ({
+        ...prev,
+        currentStep: 8, // Completion step
+        completedAt: result.completedAt,
+        isSubmitting: false,
+        isDraft: false,
+      }));
+
+      console.log("=== SURVEY SUBMISSION COMPLETE ===");
+      console.log("✅ localStorage flags are set");
+      console.log("✅ Redirecting to dashboard in 2 seconds...");
+
+      // 🔴 AUTOMATIC REDIRECT after 2 seconds
+      setTimeout(() => {
+        console.log("🔄 REDIRECTING TO DASHBOARD NOW");
+        router.push("/user-dashboard");
+      }, 2000);
+    } catch (error) {
+      console.error("❌ Survey submission error:", error);
+
+      let errorMessage = "Failed to save survey. Please try again.";
+
+      if (error instanceof AuthError) {
+        errorMessage = "Session expired. Please sign in again.";
+        setTimeout(() => {
+          router.push("/login?redirect=/onboard/survey");
+        }, 2000);
+      } else if (error instanceof ValidationError) {
+        errorMessage = error.message;
+      } else if (error instanceof AppError) {
+        errorMessage = error.message;
+      }
+
+
+      setFormData((prev) => ({
+        ...prev,
+        isSubmitting: false,
+        submitError: errorMessage,
+      }));
+    }
+  }, [formData, router]);
+
+  return {
+    formData,
+    currentStep: formData.currentStep,
+    totalSteps: formData.totalSteps,
+    isSubmitting: formData.isSubmitting,
+    submitError: formData.submitError,
+    isCompleted: formData.completedAt !== null,
+    updateFormData,
+    updateFieldData,
+    nextStep,
+    prevStep,
+    canProceed,
+    submitSurvey,
+  };
+}

@@ -16,7 +16,6 @@ export default function TopNavigation({ activeTab, setActiveTab, userData }: Top
     { id: "missions", label: "Missions" },
     { id: "grading", label: "Grading" },
     { id: "analytics", label: "Analytics" },
-    { id: "profile", label: "Profile" },
     { id: "settings", label: "Settings" }
   ];
 
@@ -62,6 +61,20 @@ export default function TopNavigation({ activeTab, setActiveTab, userData }: Top
 
           {/* Right Side */}
           <div className="flex items-center space-x-4">
+            {/* Profile Icon */}
+            <button
+              onClick={() => setActiveTab("profile")}
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                activeTab === "profile"
+                  ? "bg-purple-600 text-white"
+                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+              }`}
+              aria-label="Profile"
+              title="Profile"
+            >
+              <User size={20} />
+            </button>
+
             {/* Notification Bell */}
             <button 
               className="p-2 text-gray-400 hover:text-white transition-colors"

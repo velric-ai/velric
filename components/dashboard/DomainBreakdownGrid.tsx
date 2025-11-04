@@ -74,7 +74,7 @@ export default function DomainBreakdownGrid({ domains }: DomainBreakdownGridProp
                     <p className="text-white/60 text-xs font-medium mb-2 uppercase tracking-wide">
                       Skills
                     </p>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1 overflow-hidden max-w-[95%] w-full">
                       {domain.skills.map((skill, skillIndex) => (
                         <span
                           key={skillIndex}
