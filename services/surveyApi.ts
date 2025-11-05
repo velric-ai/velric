@@ -7,6 +7,7 @@ import {
   ValidationError,
 } from "../utils/surveyValidation";
 import { supabase } from "../lib/supabaseClient";
+import { getLocalStorageItem } from "../utils/envSafe";
 
 /**
  * =========================
@@ -89,11 +90,12 @@ export interface SurveySubmissionResponse {
  * SUPABASE SUBMISSION
  * =========================
  */
+
 export async function submitSurveyData(
   formData: SurveyFormData
 ): Promise<SurveySubmissionResponse> {
   try {
-    const userData = localStorage.getItem("velric_user");
+    const userData = getLocalStorageItem("velric_user");
     const userId = userData ? JSON.parse(userData).id : "guest";
 
     // Validate minimal required data

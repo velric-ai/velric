@@ -28,6 +28,7 @@ export async function getCompletedSubmissionsByUser(userId: string) {
 }
 // lib/supabaseClient.ts
 import { createClient } from "@supabase/supabase-js";
+
 import {
   MissionTemplate,
   UserMission,
@@ -37,6 +38,8 @@ import {
 } from "@/types";
 import { MockDataStore, mockMissionTemplates } from "@/data/mockMissions";
 
+const isBrowser = typeof window !== "undefined";
+
 // Supabase configuration
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -45,7 +48,18 @@ const supabaseKey =
   process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 // Initialize Supabase client
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  {
+    auth: {
+      persistSession: isBrowser,  // only persist session client-side
+      detectSessionInUrl: isBrowser,
+      autoRefreshToken: isBrowser,
+    },
+  }
+);
+
 
 // Determine if we should use dummy data
 const hasValidSupabaseConfig =

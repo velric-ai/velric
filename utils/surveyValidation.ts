@@ -397,9 +397,23 @@ export const getIndustryOptions = (industry: string): string[] => {
   return industryOptionsMap[industry] || industryOptionsMap['Other'];
 };
 
+/*
 // Generate CSRF token for OAuth
 export const generateRandomToken = (): string => {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
   return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+};
+*/
+
+export const generateRandomToken = (): string => {
+  if (typeof window !== "undefined" && window.crypto?.getRandomValues) {
+    const array = new Uint8Array(32);
+    window.crypto.getRandomValues(array);
+    return Array.from(array, b => b.toString(16).padStart(2, "0")).join("");
+  } else {
+    // Fallback for SSR (Node)
+    const nodeCrypto = require("crypto");
+    return nodeCrypto.randomBytes(32).toString("hex");
+  }
 };
