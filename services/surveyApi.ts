@@ -22,7 +22,7 @@ export interface PlatformConnection {
   error: string | null;
   loading: boolean;
   score?: number | null;
-  rank?: string | null;
+  rank?: number | null; // changed to number | null for consistency
 }
 
 export interface SurveyFormData {
@@ -166,6 +166,8 @@ export async function submitSurveyData(
     if (error instanceof ValidationError) throw error;
     if (error instanceof AuthError) throw error;
     if (error instanceof ServerError) throw error;
+    if (error instanceof HttpError) throw error;
+    if (error instanceof TimeoutError) throw error;
 
     throw new AppError(
       error.message || "Failed to submit survey. Please try again."
@@ -173,11 +175,8 @@ export async function submitSurveyData(
   }
 }
 
-/**
- * =========================
- * FILE UPLOAD (Supabase Storage)
- * =========================
- */
+/* FILE UPLOAD (Supabase Storage) */
+
 export async function uploadPortfolioFile(
   file: File,
   onProgress?: (progress: number) => void
@@ -221,7 +220,7 @@ export async function uploadPortfolioFile(
     return {
       success: true,
       filename: file.name,
-      url: urlData.publicUrl,
+      url: urlData.publicUrl, // fixed destructuring
       size: file.size,
       type: file.type,
       uploadedAt: new Date().toISOString(),
