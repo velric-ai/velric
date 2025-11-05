@@ -7,22 +7,22 @@ import SurveyData from "@/components/SurveyData";
 import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
 
 function ProfileContent() {
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState("profile");
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
   };
 
-  // Mock user data - in a real app, this would come from API/context
+  // ✅ Mock user data (used by ProfileCard)
   const mockUserData = {
     name: "John Doe",
     email: "john.doe@example.com",
-    avatar: null, // Will show default icon
+    avatar: "/assets/default-avatar.png",
     status: "Top 5%",
-    statusDescription: "You're in the top 5% of all Velric users"
+    statusDescription: "You're in the top 5% of all Velric users",
   };
 
-  // Mock survey data - in a real app, this would come from API/localStorage
+  // ✅ Mock survey data (used by SurveyData)
   const mockSurveyData = {
     fullName: "John Doe",
     educationLevel: "Bachelor's Degree",
@@ -33,25 +33,35 @@ function ProfileContent() {
     platformConnections: {
       github: { connected: true, username: "johndoe" },
       codesignal: { connected: true, username: "john_doe" },
-      hackerrank: { connected: false }
-    }
+      hackerrank: { connected: false },
+    },
   };
 
   return (
     <>
       <Head>
         <title>Profile | Velric</title>
-        <meta name="description" content="Your Velric profile - manage your information and view your survey data" />
+        <meta
+          name="description"
+          content="Your Velric profile - manage your information and view your survey data"
+        />
         <link rel="icon" href="/assets/logo.png" />
       </Head>
 
-      <div className="min-h-screen text-white" style={{
-        background: 'linear-gradient(135deg, #1a0b2e 0%, #16213e 50%, #0f3460 100%)'
-      }}>
+      <div
+        className="min-h-screen text-white"
+        style={{
+          background:
+            "linear-gradient(135deg, #1a0b2e 0%, #16213e 50%, #0f3460 100%)",
+        }}
+      >
         {/* Background Effects */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-l from-cyan-500/10 to-green-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+          <div
+            className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-l from-cyan-500/10 to-green-500/10 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: "2s" }}
+          />
         </div>
 
         {/* Navigation */}
@@ -91,25 +101,35 @@ function ProfileContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Quick Stats Cards */}
                   <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-white mb-2">Velric Score</h3>
-                    <div className="text-3xl font-bold text-purple-400 mb-1">95</div>
+                    <h3 className="text-lg font-semibold text-white mb-2">
+                      Velric Score
+                    </h3>
+                    <div className="text-3xl font-bold text-purple-400 mb-1">
+                      95
+                    </div>
                     <p className="text-white/60 text-sm">Top 5% globally</p>
                   </div>
 
                   <div className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/10 border border-cyan-500/20 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-white mb-2">Missions Completed</h3>
+                    <h3 className="text-lg font-semibold text-white mb-2">
+                      Missions Completed
+                    </h3>
                     <div className="text-3xl font-bold text-cyan-400 mb-1">12</div>
                     <p className="text-white/60 text-sm">This month</p>
                   </div>
 
                   <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-500/20 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-white mb-2">Streak</h3>
+                    <h3 className="text-lg font-semibold text-white mb-2">
+                      Streak
+                    </h3>
                     <div className="text-3xl font-bold text-green-400 mb-1">7</div>
                     <p className="text-white/60 text-sm">Days active</p>
                   </div>
 
                   <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-white mb-2">Profile Views</h3>
+                    <h3 className="text-lg font-semibold text-white mb-2">
+                      Profile Views
+                    </h3>
                     <div className="text-3xl font-bold text-orange-400 mb-1">24</div>
                     <p className="text-white/60 text-sm">This month</p>
                   </div>

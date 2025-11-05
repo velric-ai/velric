@@ -5,8 +5,8 @@
   command = "npm install --legacy-peer-deps && npm run build"
 
 [build.environment]
-  NODE_VERSION = "18"
-  NPM_VERSION = "9"
+  NODE_VERSION = "20.9.0"
+  NPM_VERSION = "10"
   USE_DUMMY_DATA = "true"
   NEXT_PUBLIC_SUPABASE_URL = "https://yzszgcnuxpkvxueivbyx.supabase.co"
 
@@ -34,3 +34,4 @@
   for = "/_next/static/*"
   [headers.values]
     cache-control = "public, max-age=31536000, immutable"
+

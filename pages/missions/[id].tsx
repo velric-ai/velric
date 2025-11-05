@@ -604,7 +604,9 @@ export default function MissionDetailPage() {
                       </p>
                     </div>
 
-                    {/* Enhanced Action Buttons */}
+                            
+                            {/* Enhanced Action Buttons */}
+                   {/*
                     <div className="space-y-4 mt-8">
                       {missionStatus === "suggested" && (
                         <button
@@ -720,6 +722,8 @@ export default function MissionDetailPage() {
                         </span>
                       </button>
                     </div>
+                     */}
+
                   </div>
                 </div>
               </div>
