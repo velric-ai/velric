@@ -37,6 +37,9 @@ import {
   UserMissionActionRequest,
 } from "@/types";
 import { MockDataStore, mockMissionTemplates } from "@/data/mockMissions";
+import { getDevUserId } from "../utils/devUser";
+import { AppError, ValidationError } from "../utils/surveyValidation";
+import type { SurveyFormData, SurveySubmissionResponse } from "../types";
 
 const isBrowser = typeof window !== "undefined";
 
@@ -60,6 +63,45 @@ export const supabase = createClient(
   }
 );
 
+export async function submitSurveyData(
+  formData: SurveyFormData
+): Promise<SurveySubmissionResponse> {
+  try {
+    // Step 1: Get user ID
+    const userId =
+      process.env.NODE_ENV === "development"
+        ? getDevUserId() // Dev/testing fallback
+        : (await supabase.auth.getUser()).data.user?.id;
+
+    if (!userId) {
+      throw new AppError("User not authenticated");
+    }
+
+    // Step 2: Validate required fields
+    if (!formData.fullName?.value || !formData.industry?.value) {
+      throw new ValidationError("Missing required fields before submission");
+    }
+
+    // Step 3: Insert into Supabase
+      const { data, error } = await supabase
+  .from("survey_responses")
+  .insert([{
+    user_id: userId,
+    is_dev: process.env.NODE_ENV === "development",
+    ...formData
+  }]);
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      data: data[0],
+    };
+  } catch (error: any) {
+    console.error("Failed to submit survey:", error);
+    throw error;
+  }
+}
 
 // Determine if we should use dummy data
 const hasValidSupabaseConfig =
