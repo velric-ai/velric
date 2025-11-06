@@ -43,12 +43,6 @@ import type { SurveyFormData, SurveySubmissionResponse } from "../types";
 import { createClient } from "@supabase/supabase-js";
 
 // Supabase configuration
-/*
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-const supabaseKey =
-  process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-*/
 
 // Check if we’re in the browser or on the server
 const isBrowser = typeof window !== "undefined";
