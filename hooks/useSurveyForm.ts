@@ -153,57 +153,47 @@ export function useSurveyForm() {
   const [stepStartTime, setStepStartTime] = useState<number>(Date.now());
 
   // 🔴 CRITICAL FIX: Force reset to step 1 on hook initialization if user just signed up
-  useEffect(() => {
-    const checkForNewSignup = () => {
-      try {
-        const userDataStr = localStorage.getItem("velric_user");
-        const surveyStateStr = localStorage.getItem("velric_survey_state");
+useEffect(() => {
+  const checkForNewSignup = () => {
+    try {
+      const userDataStr = localStorage.getItem("velric_user");
+      const surveyStateStr = localStorage.getItem("velric_survey_state");
 
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
 
-          if (!userData.onboarded && surveyStateStr) {
-            const surveyState = JSON.parse(surveyStateStr);
+        if (!userData.onboarded && surveyStateStr) {
+          const surveyState = JSON.parse(surveyStateStr);
 
-            if (
-              surveyState.currentStep !== 1 &&
-              (!surveyState.completedSteps ||
-                surveyState.completedSteps.length === 0)
-            ) {
-              console.warn(
-                "🔴 HOOK RESET: Forcing survey back to Step 1 for new signup"
-              );
+          if (
+            surveyState.currentStep !== 1 &&
+            (!surveyState.completedSteps || surveyState.completedSteps.length === 0)
+          ) {
+            console.warn("🔴 HOOK RESET: Forcing survey back to Step 1 for new signup");
 
-              const resetState = {
-                ...surveyState,
-                currentStep: 1,
-                currentStepIndex: 0,
-                completedSteps: [],
-              };
-              localStorage.setItem(
-                "velric_survey_state",
-                JSON.stringify(resetState)
-              );
-              localStorage.removeItem("velric_survey_draft");
+            const resetState = {
+              ...surveyState,
+              currentStep: 1,
+              currentStepIndex: 0,
+              completedSteps: [],
+            };
+            localStorage.setItem("velric_survey_state", JSON.stringify(resetState));
+            localStorage.removeItem("velric_survey_draft");
 
-              setFormData((prev) => ({
-                ...prev,
-                currentStep: 1,
-              }));
-            }
+            setFormData((prev) => ({
+              ...prev,
+              currentStep: 1,
+            }));
           }
         }
-      } catch (error) {
-        console.warn("Error checking signup state:", error);
       }
-    };
+    } catch (error) {
+      console.warn("Error checking signup state:", error);
+    }
+  };
 
-    checkForNewSignup();
-  }, []);
-
-  useEffect(() => {
-    setStepStartTime(Date.now());
-  }, [formData.currentStep]);
+  checkForNewSignup();
+}, []);
 
   const updateFormData = useCallback((updates: Partial<SurveyFormData>) => {
     setFormData((prevState) => {
