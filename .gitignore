@@ -128,3 +128,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 >>>>>>> origin/main
 .next/
+
+.DS_Store
