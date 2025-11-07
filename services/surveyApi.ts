@@ -1,5 +1,239 @@
-import { AppError, AuthError, HttpError, TimeoutError, ServerError, ValidationError } from "../utils/surveyValidation";
+import {
+  AppError,
+  AuthError,
+  HttpError,
+  TimeoutError,
+  ServerError,
+  ValidationError,
+} from "../utils/surveyValidation";
+import { supabase } from "../lib/supabaseClient";
+import { getLocalStorageItem } from "../utils/envSafe";
 
+/**
+ * =========================
+ * TYPE DEFINITIONS
+ * =========================
+ */
+export interface PlatformConnection {
+  connected: boolean;
+  username: string;
+  userId: string | null;
+  avatar: string;
+  profile: any;
+  error: string | null;
+  loading: boolean;
+  score?: number | null;
+  rank?: number | null; // changed to number | null for consistency
+}
+
+export interface SurveyFormData {
+  fullName: { value: string; error: string | null; touched: boolean };
+  educationLevel: { value: string; error: string | null; touched: boolean };
+  industry: { value: string; error: string | null; touched: boolean };
+  missionFocus: {
+    value: string[];
+    error: string | null;
+    touched: boolean;
+    questionText: string;
+    options: string[];
+  };
+  strengthAreas: { value: string[]; error: string | null; touched: boolean };
+  learningPreference: { value: string; error: string | null; touched: boolean };
+  portfolio: {
+    file: File | null;
+    filePreview: string | null;
+    fileError: string | null;
+    fileProgress: number;
+    url: string;
+    urlError: string | null;
+    uploadStatus: "uploading" | "success" | "error" | null;
+  };
+  platformConnections: {
+    github: PlatformConnection;
+    codesignal: PlatformConnection;
+    hackerrank: PlatformConnection;
+  };
+  experienceSummary: { value: string; error: string | null; touched: boolean };
+  currentStep: number;
+  totalSteps: number;
+  isSubmitting: boolean;
+  submitError: string | null;
+  completedAt: number | null;
+  savedAt: number | null;
+  isDraft: boolean;
+  startedAt: number;
+  timeSpentPerStep: { [key: number]: number };
+  interactions: Array<{
+    timestamp: number;
+    step: number;
+    action: string;
+    data?: any;
+    timeSpent?: number;
+  }>;
+}
+
+export interface SurveySubmissionResponse {
+  success: boolean;
+  userId: string | null;
+  message: string;
+  profile: {
+    onboarded: boolean;
+    completedAt: string;
+    surveyData: any;
+  };
+  redirectUrl: string;
+  completedAt: number;
+}
+
+/**
+ * =========================
+ * SUPABASE SUBMISSION
+ * =========================
+ */
+
+export async function submitSurveyData(
+  formData: SurveyFormData
+): Promise<SurveySubmissionResponse> {
+  try {
+    const userData = getLocalStorageItem("velric_user");
+    const userId = userData ? JSON.parse(userData).id : "guest";
+
+    // Validate minimal required data
+    if (!formData.fullName.value || !formData.industry.value) {
+      throw new ValidationError("Missing required fields before submission");
+    }
+
+    // Prepare payload for Supabase
+    const payload = {
+      user_id: userId,
+      full_name: formData.fullName.value,
+      education_level: formData.educationLevel.value,
+      industry: formData.industry.value,
+      mission_focus: formData.missionFocus.value,
+      strength_areas: formData.strengthAreas.value,
+      learning_preference: formData.learningPreference.value,
+      portfolio: {
+        file: formData.portfolio.file
+          ? {
+              name: formData.portfolio.file.name,
+              size: formData.portfolio.file.size,
+              type: formData.portfolio.file.type,
+            }
+          : null,
+        url: formData.portfolio.url || null,
+      },
+      experience_summary: formData.experienceSummary.value,
+      platform_connections: formData.platformConnections,
+      metadata: {
+        total_time_spent: Object.values(formData.timeSpentPerStep).reduce(
+          (a, b) => a + b,
+          0
+        ),
+        interactions: formData.interactions,
+        started_at: formData.startedAt,
+        completed_at: Date.now(),
+      },
+      created_at: new Date().toISOString(),
+    };
+
+    // Insert into Supabase
+    const { data, error } = await supabase
+      .from("survey_responses")
+      .insert([payload])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("❌ Supabase insert error:", error);
+      throw new ServerError(error.message || "Failed to save survey data");
+    }
+
+    console.log("✅ Survey saved to Supabase:", data);
+
+    return {
+      success: true,
+      userId,
+      message: "Survey submitted successfully",
+      profile: {
+        onboarded: true,
+        completedAt: new Date().toISOString(),
+        surveyData: data,
+      },
+      redirectUrl: "/user-dashboard",
+      completedAt: Date.now(),
+    };
+  } catch (error: any) {
+    console.error("❌ submitSurveyData error:", error);
+
+    if (error instanceof ValidationError) throw error;
+    if (error instanceof AuthError) throw error;
+    if (error instanceof ServerError) throw error;
+    if (error instanceof HttpError) throw error;
+    if (error instanceof TimeoutError) throw error;
+
+    throw new AppError(
+      error.message || "Failed to submit survey. Please try again."
+    );
+  }
+}
+
+/* FILE UPLOAD (Supabase Storage) */
+
+export async function uploadPortfolioFile(
+  file: File,
+  onProgress?: (progress: number) => void
+): Promise<{
+  success: boolean;
+  filename: string;
+  url: string;
+  size: number;
+  type: string;
+  uploadedAt: string;
+}> {
+  try {
+    const maxSize = 10 * 1024 * 1024;
+    const allowedTypes = [
+      "application/pdf",
+      "image/png",
+      "image/jpeg",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    if (file.size > maxSize)
+      throw new ValidationError("File too large (max 10MB)");
+    if (!allowedTypes.includes(file.type))
+      throw new ValidationError("Unsupported file type");
+
+    const fileName = `${Date.now()}_${file.name}`;
+    const { data, error } = await supabase.storage
+      .from("portfolio_uploads")
+      .upload(fileName, file, {
+        upsert: false,
+        contentType: file.type,
+      });
+
+    if (error) throw new AppError("Upload failed: " + error.message);
+
+    const { data: urlData } = supabase.storage
+      .from("portfolio_uploads")
+      .getPublicUrl(fileName);
+
+    return {
+      success: true,
+      filename: file.name,
+      url: urlData.publicUrl, // fixed destructuring
+      size: file.size,
+      type: file.type,
+      uploadedAt: new Date().toISOString(),
+    };
+  } catch (error: any) {
+    console.error("Upload error:", error);
+    throw new AppError(error.message || "Failed to upload file");
+  }
+}
+
+/*
 // Type Definitions
 export interface SurveyFormData {
   fullName: {
@@ -436,4 +670,5 @@ export async function uploadPortfolioFile(
       reject(error);
     }
   });
-}
+
+*/

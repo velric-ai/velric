@@ -141,3 +141,13 @@ export interface Submission {
   created_at: string;
   updated_at: string;
 }
+
+export interface SurveyFormData {
+  [key: string]: string | number | boolean | null;
+}
+
+export interface SurveySubmissionResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+}

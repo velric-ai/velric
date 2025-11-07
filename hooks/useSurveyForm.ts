@@ -1,12 +1,42 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/router";
-import { submitSurveyData, SurveyFormData } from "../services/surveyApi";
+import {
+  submitSurveyData,
+  SurveyFormData,
+  uploadPortfolioFile,
+} from "../services/surveyApi";
 import { validateStep } from "../utils/surveyValidation";
 import {
   AppError,
   AuthError,
   ValidationError,
 } from "../utils/surveyValidation";
+
+// Added missing types
+interface PlatformConnection {
+  connected: boolean;
+  username: string;
+  userId: string;
+  avatar: string;
+  profile: any;
+  error: string | null;
+  loading: boolean;
+  score?: number | null;
+  rank?: number | null;
+}
+
+interface SurveySubmissionResponse {
+  success: boolean;
+  userId: string | null;
+  message: string;
+  profile: {
+    onboarded: boolean;
+    completedAt: string;
+    surveyData: any;
+  };
+  redirectUrl: string;
+  completedAt: number;
+}
 
 const initialFormData: SurveyFormData = {
   // Step 1: Basic Information
@@ -74,6 +104,8 @@ const initialFormData: SurveyFormData = {
     codesignal: {
       connected: false,
       username: "",
+      userId: "",
+      avatar: "",
       score: null,
       profile: {},
       error: null,
@@ -82,6 +114,8 @@ const initialFormData: SurveyFormData = {
     hackerrank: {
       connected: false,
       username: "",
+      userId: "",
+      avatar: "",
       rank: null,
       profile: {},
       error: null,
@@ -119,61 +153,47 @@ export function useSurveyForm() {
   const [stepStartTime, setStepStartTime] = useState<number>(Date.now());
 
   // 🔴 CRITICAL FIX: Force reset to step 1 on hook initialization if user just signed up
-  useEffect(() => {
-    const checkForNewSignup = () => {
-      try {
-        const userDataStr = localStorage.getItem("velric_user");
-        const surveyStateStr = localStorage.getItem("velric_survey_state");
+useEffect(() => {
+  const checkForNewSignup = () => {
+    try {
+      const userDataStr = localStorage.getItem("velric_user");
+      const surveyStateStr = localStorage.getItem("velric_survey_state");
 
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
 
-          // If user is not onboarded and we have survey state
-          if (!userData.onboarded && surveyStateStr) {
-            const surveyState = JSON.parse(surveyStateStr);
+        if (!userData.onboarded && surveyStateStr) {
+          const surveyState = JSON.parse(surveyStateStr);
 
-            // If survey shows wrong step but no steps completed, force reset
-            if (
-              surveyState.currentStep !== 1 &&
-              (!surveyState.completedSteps ||
-                surveyState.completedSteps.length === 0)
-            ) {
-              console.warn(
-                "🔴 HOOK RESET: Forcing survey back to Step 1 for new signup"
-              );
+          if (
+            surveyState.currentStep !== 1 &&
+            (!surveyState.completedSteps || surveyState.completedSteps.length === 0)
+          ) {
+            console.warn("🔴 HOOK RESET: Forcing survey back to Step 1 for new signup");
 
-              const resetState = {
-                ...surveyState,
-                currentStep: 1,
-                currentStepIndex: 0,
-                completedSteps: [],
-              };
-              localStorage.setItem(
-                "velric_survey_state",
-                JSON.stringify(resetState)
-              );
-              localStorage.removeItem("velric_survey_draft");
+            const resetState = {
+              ...surveyState,
+              currentStep: 1,
+              currentStepIndex: 0,
+              completedSteps: [],
+            };
+            localStorage.setItem("velric_survey_state", JSON.stringify(resetState));
+            localStorage.removeItem("velric_survey_draft");
 
-              // Force update the form data
-              setFormData((prev) => ({
-                ...prev,
-                currentStep: 1,
-              }));
-            }
+            setFormData((prev) => ({
+              ...prev,
+              currentStep: 1,
+            }));
           }
         }
-      } catch (error) {
-        console.warn("Error checking signup state:", error);
       }
-    };
+    } catch (error) {
+      console.warn("Error checking signup state:", error);
+    }
+  };
 
-    checkForNewSignup();
-  }, []); // Run once on mount
-
-  // Track time spent on each step
-  useEffect(() => {
-    setStepStartTime(Date.now());
-  }, [formData.currentStep]);
+  checkForNewSignup();
+}, []);
 
   const updateFormData = useCallback((updates: Partial<SurveyFormData>) => {
     setFormData((prevState) => {
@@ -183,7 +203,6 @@ export function useSurveyForm() {
         updatedAt: Date.now(),
       };
 
-      // Track interactions
       if (updates !== prevState) {
         newState.interactions = [
           ...prevState.interactions,
@@ -216,10 +235,8 @@ export function useSurveyForm() {
     const currentStepTime = Date.now() - stepStartTime;
 
     setFormData((prevState) => {
-      // Validate current step before proceeding
       const validation = validateStep(prevState.currentStep, prevState);
       if (!validation.isValid) {
-        // Update field errors
         const updatedState = { ...prevState };
         Object.entries(validation.errors).forEach(([field, error]) => {
           if (updatedState[field as keyof SurveyFormData]) {
@@ -231,7 +248,6 @@ export function useSurveyForm() {
 
       const newStep = Math.min(prevState.currentStep + 1, prevState.totalSteps);
 
-      // Update localStorage survey state
       const surveyStateStr = localStorage.getItem("velric_survey_state");
       const surveyState = surveyStateStr ? JSON.parse(surveyStateStr) : {};
       const updatedSurveyState = {
@@ -273,7 +289,6 @@ export function useSurveyForm() {
     setFormData((prevState) => {
       const newStep = Math.max(prevState.currentStep - 1, 1);
 
-      // Update localStorage survey state
       const surveyStateStr = localStorage.getItem("velric_survey_state");
       const surveyState = surveyStateStr ? JSON.parse(surveyStateStr) : {};
       const updatedSurveyState = {
@@ -312,13 +327,10 @@ export function useSurveyForm() {
   );
 
   const submitSurvey = useCallback(async () => {
-    // Prevent double submission
     if (formData.isSubmitting) {
       console.warn("Survey submission already in progress");
       return;
     }
-
-    console.log("=== STARTING SURVEY SUBMISSION ===");
 
     setFormData((prev) => ({
       ...prev,
@@ -327,22 +339,28 @@ export function useSurveyForm() {
     }));
 
     try {
-      // Final validation of all steps
-      console.log("Validating all steps...");
       for (let step = 1; step <= 7; step++) {
         const validation = validateStep(step, formData);
         if (!validation.isValid && (step <= 4 || step === 7)) {
-          // Steps 1-4 and 7 are required
           throw new ValidationError(
             `Please complete step ${step} before submitting`
           );
         }
       }
-      console.log("✅ All steps validated");
 
-      // Take snapshot of current state
+      // 🔴 FIX: Attach user_id to submission
+      const userDataStr = localStorage.getItem("velric_user");
+      let userId = "";
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        userId = userData.id || userData.user_id || "";
+        userData.onboarded = true;
+        localStorage.setItem("velric_user", JSON.stringify(userData));
+      }
+
       const submissionData = {
         ...formData,
+        user_id: userId,
         completedAt: Date.now(),
         isDraft: false,
         totalTimeSpent: Object.values(formData.timeSpentPerStep).reduce(
@@ -351,27 +369,16 @@ export function useSurveyForm() {
         ),
       };
 
-      // Submit to backend
-      console.log("Submitting to backend...");
-      const result = await submitSurveyData(submissionData);
-      console.log("✅ Backend submission successful");
+      // Call API
+      const result: SurveySubmissionResponse = await submitSurveyData(submissionData);
 
-      // Update localStorage - SIMPLE FIX
-      const userDataStr = localStorage.getItem("velric_user");
-      if (userDataStr) {
-        const userData = JSON.parse(userDataStr);
-        userData.onboarded = true;
-        localStorage.setItem("velric_user", JSON.stringify(userData));
-      }
-
-      // Update localStorage survey state to Step 8 (completion)
       const surveyStateStr = localStorage.getItem("velric_survey_state");
       const surveyState = surveyStateStr ? JSON.parse(surveyStateStr) : {};
       const finalSurveyState = {
         ...surveyState,
-        currentStep: 8, // Show completion step
+        currentStep: 8,
         currentStepIndex: 7,
-        completedSteps: [1, 2, 3, 4, 5, 6, 7], // All steps completed
+        completedSteps: [1, 2, 3, 4, 5, 6, 7],
         completedAt: new Date().toISOString(),
       };
       localStorage.setItem(
@@ -379,22 +386,15 @@ export function useSurveyForm() {
         JSON.stringify(finalSurveyState)
       );
 
-      // Update component state
       setFormData((prev) => ({
         ...prev,
-        currentStep: 8, // Completion step
+        currentStep: 8,
         completedAt: result.completedAt,
         isSubmitting: false,
         isDraft: false,
       }));
 
-      console.log("=== SURVEY SUBMISSION COMPLETE ===");
-      console.log("✅ localStorage flags are set");
-      console.log("✅ Redirecting to dashboard in 2 seconds...");
-
-      // 🔴 AUTOMATIC REDIRECT after 2 seconds
       setTimeout(() => {
-        console.log("🔄 REDIRECTING TO DASHBOARD NOW");
         router.push("/user-dashboard");
       }, 2000);
     } catch (error) {

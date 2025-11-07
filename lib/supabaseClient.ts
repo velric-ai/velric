@@ -27,7 +27,7 @@ export async function getCompletedSubmissionsByUser(userId: string) {
   }
 }
 // lib/supabaseClient.ts
-import { createClient } from "@supabase/supabase-js";
+
 import {
   MissionTemplate,
   UserMission,
@@ -36,24 +36,106 @@ import {
   UserMissionActionRequest,
 } from "@/types";
 import { MockDataStore, mockMissionTemplates } from "@/data/mockMissions";
+import { getDevUserId } from "../utils/devUser";
+import { AppError, ValidationError } from "../utils/surveyValidation";
+import type { SurveyFormData, SurveySubmissionResponse } from "../types";
+
+import { createClient } from "@supabase/supabase-js";
 
 // Supabase configuration
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  "https://yzszgcnuxpkvxueivbyx.supabase.co";
+
+// Check if we’re in the browser or on the server
+const isBrowser = typeof window !== "undefined";
+
+// Load from environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
 const supabaseKey =
   process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
-// Initialize Supabase client
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Handling the error
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error("Missing Supabase environment variables!");
+}
+
+// Gracefully handle missing keys instead of crashing
+if (!supabaseUrl || !supabaseAnonKey) {
+  if (isBrowser) {
+    console.error(
+      "⚠️ Supabase environment variables are missing. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+    );
+  } else {
+    console.warn(
+      "⚠️ [Server] Missing Supabase env vars — likely misconfigured in Netlify or local build environment."
+    );
+  }
+}
+
+// Create client safely (empty string fallback prevents crash)
+export const supabase = createClient(
+  supabaseUrl || "",
+  supabaseAnonKey || "",
+  {
+    auth: {
+      persistSession: isBrowser, // only persist client-side
+      detectSessionInUrl: isBrowser,
+      autoRefreshToken: isBrowser,
+    },
+  }
+);
+
+export async function submitSurveyData(
+  formData: SurveyFormData
+): Promise<SurveySubmissionResponse> {
+  try {
+    const userId =
+      process.env.NODE_ENV === "development"
+        ? getDevUserId()
+        : (await supabase.auth.getUser()).data.user?.id;
+
+    if (!userId) {
+      throw new AppError("User not authenticated");
+    }
+
+    if (!formData.fullName || !formData.industry) {
+      throw new ValidationError("Missing required fields before submission");
+    }
+
+    const { data, error } = await supabase
+      .from("survey_responses")
+      .insert([
+        {
+          user_id: userId,
+          is_dev: process.env.NODE_ENV === "development",
+          ...formData,
+        },
+      ])
+      .select();
+
+    if (error) throw error;
+
+    console.log(data);
+
+    return {
+      success: true,
+      message: "Survey submitted successfully",
+      data: data?.[0],
+    };
+  } catch (error: any) {
+    console.error("Failed to submit survey:", error);
+    return {
+      success: false,
+      message: error.message || "An error occurred",
+    };
+  }
+}
+
 
 // Determine if we should use dummy data
 const hasValidSupabaseConfig =
-  supabaseKey &&
-  supabaseKey !== "your_supabase_anon_key_here" &&
-  supabaseKey !== "your_openai_api_key_here" &&
-  supabaseKey !== "PUT_YOUR_SERVICE_ROLE_KEY_HERE" &&
-  supabaseKey !== "PUT_YOUR_ANON_KEY_HERE" &&
+  supabaseAnonKey &&
+  supabaseAnonKey !== "your_supabase_anon_key_here" &&
   supabaseUrl &&
   supabaseUrl.startsWith("https://");
 

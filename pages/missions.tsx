@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { StaticMission } from "@/data/staticMissions";
 import { ArrowLeft, Clock, TrendingUp, Users, Star } from "lucide-react";
+import SubmissionForm from "@/components/SubmissionForm";
 
 export default function MissionsPage() {
   const router = useRouter();
@@ -171,7 +172,8 @@ export default function MissionsPage() {
   };
 
   const handleBackToDashboard = () => {
-    router.push('/dashboard');
+    console.log("Button clicked!");
+    router.push("/dashboard");
   };
 
   if (loading) {
@@ -205,16 +207,19 @@ export default function MissionsPage() {
           <div className="relative max-w-7xl mx-auto px-4 md:px-8 lg:px-16 py-16 md:py-24">
             
             {/* Header Section */}
-            <div className="text-center mb-16">
-              <motion.button
-                onClick={handleBackToDashboard}
-                className="inline-flex items-center gap-2 text-[#00D9FF] hover:text-[#6A0DAD] transition-colors duration-200 mb-8"
-                whileHover={{ x: -5 }}
-              >
-                <ArrowLeft className="w-5 h-5" />
-                Back to Dashboard
-              </motion.button>
+    <div className="text-center mb-16 relative z-50">
+      <motion.button
+        type="button"
+        onClick={handleBackToDashboard}
+        className="inline-flex items-center gap-2 text-[#00D9FF] hover:text-[#00D9FF] transition-colors duration-200 mb-8 bg-transparent border border-[#00D9FF] px-4 py-2 rounded-lg cursor-pointer"
+        whileHover={{ x: -5, scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <ArrowLeft className="w-5 h-5" />
+        Back to Dashboard
+      </motion.button>
 
+{/*
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -224,11 +229,12 @@ export default function MissionsPage() {
                 <span className="text-[#00D9FF] text-[14px] font-inter font-semibold uppercase tracking-wide">
                   Fresh AI Missions Generated
                 </span>
-                {/* Refresh hint */}
+
                 <span className="ml-3 px-3 py-1.5 text-xs rounded-lg bg-[#00D9FF]/20 text-[#00D9FF]/70 border border-[#00D9FF]/30">
                   Refresh page for new missions
                 </span>
               </motion.div>
+*/}
 
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
@@ -375,6 +381,7 @@ export default function MissionsPage() {
                       </div>
 
                       {/* Start Button */}
+                     {/*
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -386,6 +393,7 @@ export default function MissionsPage() {
                       >
                         Start Mission
                       </motion.button>
+                      */}
                     </div>
                   </motion.div>
                 ))}

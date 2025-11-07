@@ -1,58 +1,13 @@
-<<<<<<< HEAD
-node_modules
-node_modules
-.env
-# Next.js
-.next/
-=======
-# Logs
-logs
-*.log
+# Node / package managers
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-lerna-debug.log*
-
-# Diagnostic reports
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Directory for instrumented libs
-lib-cov
-
-# Coverage directories
-coverage
-*.lcov
-.nyc_output
-
-# Grunt
-.grunt
-
-# Bower
-bower_components
-
-# Compiled binary addons
-build/Release
-
-# Dependency directories
-node_modules/
-jspm_packages/
-
-# Snowpack
-web_modules/
-
-# TypeScript
-*.tsbuildinfo
-
-# npm / yarn / pnpm
+.pnp.*
 .npm
 .yarn-integrity
-.pnp.*
+
+# Yarn (Berry) cache, but keep config folders if used
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
@@ -60,73 +15,60 @@ web_modules/
 !.yarn/sdks
 !.yarn/versions
 
-# ESLint / Stylelint
-.eslintcache
-.stylelintcache
-
-# REPL
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# dotenv
+# Environments
 .env
 .env.*
 !.env.example
-
-# Parcel
-.cache
-.parcel-cache
 
 # Next.js
 .next/
 out/
 
-# Nuxt.js
+# Logs / reports
+logs
+*.log
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Coverage / build outputs
+coverage
+*.lcov
+.nyc_output
+build/Release
+lib-cov
+
+# Tooling caches
+.eslintcache
+.stylelintcache
+.cache
+.parcel-cache
+.vscode-test
+
+# Misc package systems
+bower_components
+jspm_packages/
+web_modules/
+.docusaurus
+.serverless/
+.fusebox/
+.dynamodb/
+.firebase/
+.tern-port
+
+# Frameworks
 .nuxt/
 dist/
-
-# Gatsby
 .cache/
-
-# VuePress
 .vuepress/dist
 .temp
-.cache
-
-# SvelteKit
 .svelte-kit/
-
-# VitePress
 **/.vitepress/dist
 **/.vitepress/cache
 
-# Docusaurus
-.docusaurus
+# TypeScript
+*.tsbuildinfo
 
-# Serverless
-.serverless/
+# REPL
+.node_repl_history
 
-# FuseBox
-.fusebox/
-
-# DynamoDB
-.dynamodb/
-
-# Firebase
-.firebase/
-
-# TernJS
-.tern-port
-
-# VSCode testing
-.vscode-test
-
-# Vite logs
-vite.config.js.timestamp-*
-vite.config.ts.timestamp-*
->>>>>>> origin/main
-.next/
-
+# Ignore macOS junk
 .DS_Store
