@@ -1,12 +1,8 @@
-# Dependencies
-node_modules/
-jspm_packages/
-web_modules/
-
+node_modules
+node_modules
+.env
 # Next.js
 .next/
-out/
-
 # Logs
 logs
 *.log
@@ -15,42 +11,45 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# Diagnostics
-report.*.json
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
-# Runtime
+# Runtime data
 pids
 *.pid
 *.seed
 *.pid.lock
 
-# Coverage / build
+# Directory for instrumented libs
+lib-cov
+
+# Coverage directories
 coverage
 *.lcov
 .nyc_output
-lib-cov
+
+# Grunt
+.grunt
+
+# Bower
+bower_components
+
+# Compiled binary addons
 build/Release
 
-# Tooling caches
-.eslintcache
-.stylelintcache
-.node_repl_history
-.vscode-test
-.cache
-.parcel-cache
-.svelte-kit/
-.docusaurus
-.serverless/
-.fusebox/
-.dynamodb/
-.firebase/
-.tern-port
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Snowpack
+web_modules/
 
 # TypeScript
 *.tsbuildinfo
 
 # npm / yarn / pnpm
 .npm
+.yarn-integrity
 .pnp.*
 .yarn/*
 !.yarn/patches
@@ -59,14 +58,70 @@ build/Release
 !.yarn/sdks
 !.yarn/versions
 
-# Env files
+# ESLint / Stylelint
+.eslintcache
+.stylelintcache
+
+# REPL
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# dotenv
 .env
 .env.*
 !.env.example
 
-# Misc
-.DS_Store
+# Parcel
+.cache
+.parcel-cache
+
+# Next.js
+.next/
+out/
+
+# Nuxt.js
+.nuxt/
+dist/
+
+# Gatsby
+.cache/
+
+# VuePress
+.vuepress/dist
+.temp
+.cache
+
+# SvelteKit
+.svelte-kit/
+
+# VitePress
+**/.vitepress/dist
+**/.vitepress/cache
+
+# Docusaurus
+.docusaurus
+
+# Serverless
+.serverless/
+
+# FuseBox
+.fusebox/
+
+# DynamoDB
+.dynamodb/
+
+# Firebase
+.firebase/
+
+# TernJS
+.tern-port
+
+# VSCode testing
+.vscode-test
 
 # Vite logs
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+.next/

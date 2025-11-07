@@ -13,7 +13,6 @@ const nextConfig = {
     // Do not force a default here; allow .env.local to control this explicitly
     USE_DUMMY_DATA: process.env.USE_DUMMY_DATA,
   },
-  allowedDevOrigins: ['149.160.249.233'],
 };
 
 module.exports = nextConfig;
