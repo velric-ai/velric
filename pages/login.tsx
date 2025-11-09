@@ -9,7 +9,7 @@ export default function Login() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
-    password: ""
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -17,9 +17,9 @@ export default function Login() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     // Clear error when user starts typing
     if (error) setError("");
@@ -47,7 +47,7 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
@@ -55,20 +55,36 @@ export default function Login() {
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // For demo purposes, accept any valid email/password
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       if (formData.email && formData.password.length >= 6) {
-        // Store user session (in real app, this would be handled by auth service)
-        localStorage.setItem("velric_user", JSON.stringify({
+        // Check for existing role in localStorage (for returning users)
+        const existingUserDataString = localStorage.getItem("velric_user");
+        const existingUserData = existingUserDataString
+          ? JSON.parse(existingUserDataString)
+          : {};
+        const storedRole = existingUserData.role || null; // Retrieve existing role if available
+
+        // Create new user data structure
+        let userData = {
           email: formData.email,
           name: formData.email.split("@")[0],
           loginTime: new Date().toISOString(),
-          onboarded: true // Ensure existing users are marked as onboarded
-        }));
-        
-        // Redirect to NEW user dashboard
-        router.push("/user-dashboard");
+          onboarded: true,
+          role: storedRole, // Preserve the stored role
+        };
+
+        localStorage.setItem("velric_user", JSON.stringify(userData));
+
+        // Conditional Redirection based on saved role
+        if (storedRole === "professional") {
+          router.push("/user-dashboard");
+        } else if (storedRole === "recruiter") {
+          router.push("/recruiter-dashboard");
+        } else {
+          // No role selected yet, go to role selection layer
+          router.push("/select-role");
+        }
       } else {
         setError("Invalid email or password");
       }
@@ -103,7 +119,11 @@ export default function Login() {
           {/* Header */}
           <div className="text-center mb-8">
             <Link href="/" className="inline-block mb-6">
-              <img src="/assets/logo.png" alt="Velric" className="h-12 mx-auto" />
+              <img
+                src="/assets/logo.png"
+                alt="Velric"
+                className="h-12 mx-auto"
+              />
             </Link>
             <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
             <p className="text-white/70">Sign in to your Velric account</p>
@@ -130,7 +150,10 @@ export default function Login() {
 
               {/* Email Field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium mb-2"
+                >
                   Email Address
                 </label>
                 <div className="relative">
@@ -150,7 +173,10 @@ export default function Login() {
 
               {/* Password Field */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium mb-2"
+                >
                   Password
                 </label>
                 <div className="relative">
@@ -170,14 +196,21 @@ export default function Login() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
               </div>
 
               {/* Forgot Password */}
               <div className="text-right">
-                <Link href="/forgot-password" className="text-sm text-purple-400 hover:text-purple-300 transition-colors">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                >
                   Forgot your password?
                 </Link>
               </div>
@@ -203,7 +236,10 @@ export default function Login() {
             <div className="mt-6 text-center">
               <p className="text-white/70">
                 Don't have an account?{" "}
-                <Link href="/signup" className="text-purple-400 hover:text-purple-300 transition-colors font-medium">
+                <Link
+                  href="/signup"
+                  className="text-purple-400 hover:text-purple-300 transition-colors font-medium"
+                >
                   Sign up here
                 </Link>
               </p>
@@ -212,7 +248,10 @@ export default function Login() {
 
           {/* Back to Home */}
           <div className="text-center mt-6">
-            <Link href="/" className="text-white/60 hover:text-white/80 transition-colors text-sm">
+            <Link
+              href="/"
+              className="text-white/60 hover:text-white/80 transition-colors text-sm"
+            >
               ← Back to Home
             </Link>
           </div>
