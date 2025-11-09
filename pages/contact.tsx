@@ -54,8 +54,6 @@ const RequestDemo = () => {
     };
   }, []);
 
-  const [submitted, setSubmitted] = useState(false);
-
   return (
     <div className="bg-[#0D0D0D] text-white relative overflow-hidden min-h-screen">
       {/* Floating decorative elements */}
@@ -117,25 +115,20 @@ const RequestDemo = () => {
             {/* Right Side - Form */}
             <div className="lg:pl-8">
               <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] rounded-2xl border border-purple-500/20 p-8">
-                {submitted ? (
-                  <div className="text-center py-16">
-                    <h2 className="text-2xl font-semibold mb-2">Request received</h2>
-                    <p className="text-white/70">We'll email you shortly to schedule your demo.</p>
-                  </div>
-                ) : (
                   <>
                     <h2 className="text-2xl font-bold mb-2">Get Your Demo</h2>
                     <p className="text-gray-400 mb-8">Fill out the form below and we'll schedule a personalized walkthrough of Velric.</p>
                     
                     <form
-                      className="space-y-6"
+                      name="demo"
                       method="POST"
-                      action="/api/demo" 
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        setSubmitted(true);
-                      }}
+                      data-netlify="true"
+                      netlify-honeypot="bot-field"
+                      className="space-y-6"
                     >
+                      <input type="hidden" name="form-name" value="demo" />
+                      <input type="text" name="bot-field" className="hidden" tabIndex={-1} autoComplete="off" title="Leave this field empty" placeholder="Leave this field empty" />
+                      
                       <div className="grid gap-4 md:grid-cols-2">
                         <Field label="First Name" name="firstName" placeholder="Ada" required />
                         <Field label="Last Name" name="lastName" placeholder="Lovelace" required />
@@ -280,7 +273,6 @@ const RequestDemo = () => {
                       </p>
                     </form>
                   </>
-                )}
               </div>
             </div>
           </div>
@@ -291,5 +283,12 @@ const RequestDemo = () => {
     </div>
   );
 };
-
 export default RequestDemo;
+export const NetlifyHiddenForm = () => (
+  <form name="demo" data-netlify="true" netlify-honeypot="bot-field" hidden>
+    <input type="text" name="firstName" />
+    <input type="text" name="lastName" />
+    <input type="email" name="email" />
+    <textarea name="details"></textarea>
+  </form>
+);
