@@ -130,10 +130,37 @@ const RequestDemo = () => {
                     <form
                       className="space-y-6"
                       method="POST"
-                      action="/api/demo" 
-                      onSubmit={(e) => {
+                      action="/api/demo"
+                      onSubmit={async (e) => {
                         e.preventDefault();
-                        setSubmitted(true);
+                        const formEl = e.currentTarget as HTMLFormElement;
+                        const fd = new FormData(formEl);
+
+                        // Convert FormData to plain object
+                        const payload: Record<string, any> = Object.fromEntries(fd as any);
+
+                        // Checkbox may not be included when unchecked
+                        payload.marketingConsent = fd.get("marketingConsent") ? true : false;
+
+                        try {
+                          const resp = await fetch("/api/demo", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(payload),
+                          });
+
+                          const json = await resp.json();
+                          if (resp.ok && json.success) {
+                            setSubmitted(true);
+                          } else {
+                            console.error("Failed to submit demo request:", json);
+                            // Show a basic alert for now
+                            alert(json.error || json.message || "Failed to submit request");
+                          }
+                        } catch (err) {
+                          console.error("Error sending demo request:", err);
+                          alert("An unexpected error occurred. Please try again later.");
+                        }
                       }}
                     >
                       <div className="grid gap-4 md:grid-cols-2">
