@@ -92,7 +92,7 @@ const About = () => {
       </section>
 
       {/* Our Values - Orbiting Animation */}
-      <section className="bg-[#0D0D0D] py-28 px-4 md:px-8 lg:px-16 section-spacing relative z-10">
+      <section className="hidden sm:block bg-[#0D0D0D] py-28 px-4 md:px-8 lg:px-16 section-spacing relative z-10">
         <h2 className="text-3xl font-semibold text-center mb-12">
           Our <span className="text-purple-400 font-bold">Values</span>
         </h2>
@@ -100,6 +100,7 @@ const About = () => {
           <OrbitingValues />
         </div>
       </section>
+
       {/* Contact section at bottom */}
       <section className="max-w-3xl mx-auto px-4 md:px-8 lg:px-16 py-20 relative z-10 text-center">
         <h2 className="text-3xl font-semibold mb-4">
