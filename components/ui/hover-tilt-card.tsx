@@ -43,9 +43,7 @@ export const HoverTiltCard = ({
       ref={ref}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      style={{
-        perspective: "1200px",
-      }}
+      style={{ perspective: "1200px" }}
     >
       <motion.div
         animate={{
@@ -57,13 +55,11 @@ export const HoverTiltCard = ({
           stiffness: 300,
           damping: 30,
         }}
-        style={{
-          transformStyle: "preserve-3d",
-        }}
+        style={{ transformStyle: "preserve-3d" }}
         className="w-full h-full rounded-2xl"
       >
-        {/* Base gradient background */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-900/50 via-purple-800/30 to-purple-700/40 border border-purple-500/40 backdrop-blur-xl shadow-2xl"></div>
+        {/* Base background — cleaned up */}
+        <div className="absolute inset-0 rounded-2xl backdrop-blur-xl shadow-2xl border border-purple-500/20"></div>
 
         {/* Dynamic gradient glow */}
         <div
@@ -73,11 +69,14 @@ export const HoverTiltCard = ({
           }}
         ></div>
 
-        {/* Color shift on hover */}
+        {/* Hover color shift */}
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-pink-500/0 via-purple-400/0 to-cyan-400/0 opacity-0 hover:opacity-15 transition-opacity duration-500"></div>
 
         {/* Content */}
-        <div className="relative w-full h-full p-6 flex flex-col items-center justify-center" style={{ transformStyle: "preserve-3d" }}>
+        <div
+          className="relative w-full h-full p-6 flex flex-col items-center justify-center"
+          style={{ transformStyle: "preserve-3d" }}
+        >
           {children}
         </div>
       </motion.div>
