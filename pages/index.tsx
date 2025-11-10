@@ -180,7 +180,7 @@ export default function Home() {
         </section>
 
 {/* ⚙️ How Velric Works - CUSTOM ANIMATIONS */}
-<section className="px-4 md:px-8 lg:px-16 py-20 section-spacing relative z-10">
+<section className="px-4 md:px-8 lg:px-16 py-12 section-spacing relative z-10">
   <motion.h2
     className="text-4xl md:text-5xl font-extrabold mb-16 text-center text-white"
     initial={{ opacity: 0, y: 30 }}
@@ -699,49 +699,57 @@ export default function Home() {
         </div>
       </motion.div>
 
-      {/* CARD 3: HOVER TILT CARD - UNCHANGED */}
-      <motion.div
-        className="h-[380px] w-full"
-        initial={{ opacity: 0, y: 60 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8, delay: 0.5 }}
-      >
-        <HoverTiltCard className="w-full h-full">
-          <div className="flex flex-col items-center justify-center text-center gap-6 h-full">
-            {/* Title */}
-            <h3 className="text-2xl font-bold text-white">
-              Unlock Career<br />Opportunities
-            </h3>
+      {/* CARD 3: MATCHED STYLE (NO TILT) */}
+<motion.div
+  className="h-[380px] w-full"
+  initial={{ opacity: 0, y: 60 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  viewport={{ once: true }}
+  transition={{ duration: 0.8, delay: 0.5 }}
+>
+  <div className="relative group w-full h-full rounded-2xl overflow-hidden bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] border border-purple-500/20 cursor-pointer transition-all duration-300 hover:shadow-2xl hover:scale-105">
+    {/* Animated Background Gradient */}
+    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-blue-500/10 to-transparent opacity-50 group-hover:opacity-80 transition-opacity duration-500"></div>
 
-            {/* Icons */}
-            <div className="flex gap-12 items-center justify-center">
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                  </svg>
-                </div>
-                <p className="text-sm text-gray-300 break-words text-center max-w-full overflow-hidden">Talent</p>
-              </div>
+    {/* Content Container */}
+    <div className="relative z-10 flex flex-col items-center justify-center text-center gap-6 h-full p-6">
+      {/* Title */}
+      <h3 className="text-2xl font-bold text-white">
+        Unlock Career<br />Opportunities
+      </h3>
 
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                  </svg>
-                </div>
-                <p className="text-sm text-gray-300 break-words text-center max-w-full overflow-hidden">Companies</p>
-              </div>
-            </div>
-
-            {/* Description */}
-            <p className="text-sm text-gray-300 max-w-xs">
-              Showcase your skills and portfolio to top employers. Let your real work speak louder than your resume.
-            </p>
+      {/* Icons */}
+      <div className="flex gap-12 items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg">
+            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg>
           </div>
-        </HoverTiltCard>
-      </motion.div>
+          <p className="text-sm text-gray-300 text-center">Talent</p>
+        </div>
+
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-lg">
+            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+            </svg>
+          </div>
+          <p className="text-sm text-gray-300 text-center">Companies</p>
+        </div>
+      </div>
+
+      {/* Description */}
+      <p className="text-sm text-gray-300 max-w-xs">
+        Showcase your skills and portfolio to top employers. Let your real work speak louder than your resume.
+      </p>
+    </div>
+
+    {/* Hover Glow Effect */}
+    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 via-purple-400/0 to-transparent opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-2xl"></div>
+  </div>
+</motion.div>
+
     </div>
   </div>
 
@@ -900,7 +908,7 @@ export default function Home() {
 
         {/* 🚀 What Makes Us Different - ENHANCED ANIMATED VERSION */}
       <motion.h2
-  className="text-4xl md:text-5xl font-extrabold mb-16 text-center text-white"
+  className="text-4xl md:text-5xl font-extrabold mb-0 text-center text-white"
   initial={{ opacity: 0, y: 30 }}
   whileInView={{ opacity: 1, y: 0 }}
   viewport={{ once: true }}
