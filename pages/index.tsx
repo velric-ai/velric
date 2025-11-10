@@ -19,6 +19,7 @@ import { useEffect } from "react";
 import { Circle, Triangle } from "lucide-react";
 import FloatingPopupLink from "@/components/ui/FloatingPopupLink";
 import { AnimatedCircularProgress, AnimatedAIDashboard, AnimatedTalentCompanies } from "@/components/ui/animated-dashboard-components";
+import { Timeline } from "@/components/TimelineScroll";
 
 export default function Home() {
   // Custom cursor glow effect
@@ -898,185 +899,71 @@ export default function Home() {
 </section>
 
         {/* 🚀 What Makes Us Different - ENHANCED ANIMATED VERSION */}
-        <section className="px-4 md:px-8 lg:px-16 py-20 section-spacing relative z-10">
-          <motion.h2
-            className="text-4xl md:text-5xl font-extrabold mb-16 text-center text-white"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            What Makes Us <span className="bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">Different</span>
-          </motion.h2>
+      <motion.h2
+  className="text-4xl md:text-5xl font-extrabold mb-16 text-center text-white"
+  initial={{ opacity: 0, y: 30 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  viewport={{ once: true }}
+  transition={{ duration: 0.6 }}
+>
+  What Makes Us{" "}
+  <span className="bg-gradient-to-r from-purple-400 to-purple-300 bg-clip-text text-transparent">
+    Different
+  </span>
+</motion.h2>
 
-          <div className="max-w-7xl mx-auto">
-            {/* Desktop Layout - 2x2 Grid with bottom card spanning full width */}
-            <div className="hidden lg:block">
-              {/* Top Row - 2 Cards */}
-              <div className="grid grid-cols-2 gap-8 mb-8">
-                {/* Card 1 - No Resumes */}
-                <motion.div
-                  className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-8 rounded-2xl border border-purple-500/20 relative overflow-hidden"
-                  initial={{ opacity: 0, y: 40 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                  whileHover={{ y: -8, scale: 1.02 }}
-                >
-                  <div className="absolute top-6 left-6 w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div className="pt-20">
-                    <h3 className="text-2xl font-bold text-white mb-4">No Resumes</h3>
-                    <p className="text-gray-300 text-sm leading-relaxed mb-6">
-                      Resumes were invented in the 1930s and haven&apos;t evolved since. Velric replaces them with personalized proof of work missions that reveal how candidates actually think, build, and perform.
-                    </p>
-                    {/* ANIMATED: Circular Progress with thick outer ring */}
-                    <div className="rounded-xl p-4 h-48 flex items-center justify-center">
-                      <AnimatedCircularProgress width={280} height={180} />
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Card 2 - No Guesswork */}
-                <motion.div
-                  className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-8 rounded-2xl border border-blue-500/20 relative overflow-hidden"
-                  initial={{ opacity: 0, y: 40 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  whileHover={{ y: -8, scale: 1.02 }}
-                >
-                  <div className="absolute top-6 left-6 w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
-                  </div>
-                  <div className="pt-20">
-                    <h3 className="text-2xl font-bold text-white mb-4">No Guesswork</h3>
-                    <p className="text-gray-300 text-sm leading-relaxed mb-6">
-                      Recruiters waste hours screening candidates based on buzzwords. Velric&apos;s AI evaluates real work, generating a Velric Score that quantifies skill, consistency, and problem solving ability.
-                    </p>
-                    {/* ANIMATED: Talent/Companies Horizontal Connection */}
-                    <div className="rounded-xl p-4 h-48 flex items-center justify-center">
-                      <AnimatedTalentCompanies width={280} height={180} compact={false} />
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-
-              {/* Bottom Row - Full Width Card */}
-              <motion.div
-                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-8 rounded-2xl border border-green-500/20 relative overflow-hidden"
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                whileHover={{ y: -8, scale: 1.01 }}
-              >
-                <div className="flex items-start space-x-8">
-                  <div className="flex-shrink-0">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-6">
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                    </div>
-                    <div className="max-w-md">
-                      <h3 className="text-2xl font-bold text-white mb-4">No Bias</h3>
-                      <p className="text-gray-300 text-sm leading-relaxed">
-                        Every candidate is measured by the same standard. The Velric Score levels the playing field, removing subjective judgment and giving companies data backed confidence in every hire.
-                      </p>
-                    </div>
-                  </div>
-                  {/* ANIMATED: AI Dashboard Charts Full Width */}
-                  <div className="flex-1 rounded-xl p-6 h-56 flex items-center justify-center">
-                    <AnimatedAIDashboard width={400} height={220} compact={false} />
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Mobile Layout */}
-            <div className="lg:hidden space-y-6">
-              {/* Card 1 - No Resumes */}
-              <motion.div
-                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-purple-500/20"
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-white">No Resumes</h3>
-                </div>
-                <p className="text-gray-300 text-sm mb-4">
-                  Resumes were invented in the 1930s and haven&apos;t evolved since. Velric replaces them with personalized proof of work missions.
-                </p>
-                {/* ANIMATED: Circular Progress Mobile */}
-                <div className="rounded-xl p-4 h-40 flex items-center justify-center">
-                  <AnimatedCircularProgress width={240} height={140} />
-                </div>
-              </motion.div>
-
-              {/* Card 2 - No Guesswork */}
-              <motion.div
-                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-blue-500/20"
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-white">No Guesswork</h3>
-                </div>
-                <p className="text-gray-300 text-sm mb-4">
-                  Velric&apos;s AI evaluates real work, generating a Velric Score that quantifies skill, consistency, and problem solving ability.
-                </p>
-                {/* ANIMATED: Talent/Companies Mobile (Vertical) */}
-                <div className="rounded-xl p-4 h-40 flex items-center justify-center">
-                  <AnimatedTalentCompanies width={240} height={140} compact={true} />
-                </div>
-              </motion.div>
-
-              {/* Card 3 - No Bias */}
-              <motion.div
-                className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-6 rounded-2xl border border-green-500/20"
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-white">No Bias</h3>
-                </div>
-                <p className="text-gray-300 text-sm mb-4">
-                  The Velric Score levels the playing field, removing subjective judgment and giving companies data backed confidence.
-                </p>
-                {/* ANIMATED: AI Dashboard Mobile */}
-                <div className="rounded-xl p-4 h-44 flex items-center justify-center">
-                  <AnimatedAIDashboard width={240} height={160} compact={true} />
-                </div>
-              </motion.div>
-            </div>
+        <Timeline
+  data={[
+    {
+      title: "No Resumes",
+      content: (
+        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-8 rounded-2xl border border-purple-500/20">
+          <h3 className="text-2xl font-bold text-white mb-4">No Resumes</h3>
+          <p className="text-gray-300 text-sm leading-relaxed mb-6">
+            Resumes were invented in the 1930s and haven’t evolved since.
+            Velric replaces them with personalized proof-of-work missions that
+            reveal how candidates actually think, build, and perform.
+          </p>
+          <div className="rounded-xl p-4 h-48 flex items-center justify-center">
+            <AnimatedCircularProgress width={280} height={180} />
           </div>
-        </section>
+        </div>
+      ),
+    },
+    {
+      title: "No Guesswork",
+      content: (
+        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-8 rounded-2xl border border-blue-500/20">
+          <h3 className="text-2xl font-bold text-white mb-4">No Guesswork</h3>
+          <p className="text-gray-300 text-sm leading-relaxed mb-6">
+            Recruiters waste hours screening candidates based on buzzwords.
+            Velric’s AI evaluates real work, generating a Velric Score that
+            quantifies skill, consistency, and problem-solving ability.
+          </p>
+          <div className="rounded-xl p-4 h-48 flex items-center justify-center">
+            <AnimatedTalentCompanies width={280} height={180} compact={false} />
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "No Bias",
+      content: (
+        <div className="bg-gradient-to-br from-[#1C1C1E] to-[#2A1A3A] p-8 rounded-2xl border border-green-500/20">
+          <h3 className="text-2xl font-bold text-white mb-4">No Bias</h3>
+          <p className="text-gray-300 text-sm leading-relaxed">
+            Every candidate is measured by the same standard. The Velric Score
+            levels the playing field, removing subjective judgment and giving
+            companies data-backed confidence in every hire.
+          </p>
+          <div className="flex-1 rounded-xl p-6 h-56 flex items-center justify-center">
+            <AnimatedAIDashboard width={400} height={220} compact={false} />
+          </div>
+        </div>
+      ),
+    },
+  ]}
+/>
        {/* 🌍 A Platform for Everyone - FIXED ALIGNMENT */}
 <section className="px-4 md:px-8 lg:px-16 py-20 text-center section-spacing relative z-10">
   <motion.h2
@@ -1306,6 +1193,7 @@ export default function Home() {
         />
 
         {/* Footer */}
+
 
 {/* Footer */}
 <Footer />
