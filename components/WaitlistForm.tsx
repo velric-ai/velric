@@ -6,7 +6,7 @@ import { User, Mail, Briefcase, Check, Sparkles, ChevronDown } from "lucide-reac
 type FormData = {
   name: string;
   email: string;
-  interest: string;
+  interest: string; // will be sent as Role
 };
 
 type ValidationState = {
@@ -86,25 +86,27 @@ export default function WaitlistForm() {
     e.preventDefault();
     setIsLoading(true);
 
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyrY4MO68paGjqI3UWRgeHt9jLA-xNk4AMlbDutnnUBg8Bwq0V4s-kk_QgJf-_sc9H-qQ/exec";
-
     try {
-      await fetch(scriptURL, {
+      const resp = await fetch("/api/waitlist", {
         method: "POST",
-        mode: "no-cors",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams(formData).toString(),
+        headers: { "Content-Type": "application/json" },
+        // Supabase table requires columns: Name, Email, Role
+        body: JSON.stringify({ Name: formData.name, Email: formData.email, Role: formData.interest }),
       });
 
-      setTimeout(() => {
+      const json = await resp.json();
+      if (resp.ok && json.success) {
         setIsLoading(false);
         setSubmitted(true);
-      }, 1500);
+      } else {
+        setIsLoading(false);
+        console.error("Waitlist save failed:", json);
+        alert(json.error || json.message || "Failed to join waitlist");
+      }
     } catch (error) {
       setIsLoading(false);
-      console.error("Error!", error);
+      console.error("Error submitting waitlist:", error);
+      alert("An unexpected error occurred. Please try again later.");
     }
   };
 
