@@ -85,15 +85,22 @@ export default function HeroSection() {
           </motion.h1>
 
           <motion.p
-            className="hero-description text-lg md:text-2xl max-w-3xl mx-auto mt-6 mb-10 text-gray-300 text-center px-4"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-          >
-            Proof driven hiring starts with us.
-          </motion.p>
-
-
+  className="hero-description text-lg md:text-2xl max-w-3xl mx-auto mt-6 mb-10 text-center px-4 bg-gradient-to-r from-gray-200 via-purple-300 to-gray-200 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(168,85,247,0.25)]"
+  initial={{ opacity: 0, y: 30 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.8, delay: 0.4 }}
+>
+  {"Proof driven hiring starts with us.".split("").map((char, i) => (
+    <motion.span
+      key={i}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.8 + i * 0.035 }}
+    >
+      {char}
+    </motion.span>
+  ))}
+</motion.p>
 
           {/* Company Logos Ticker - Continuous Scroll */}
           <motion.div
