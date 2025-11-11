@@ -17,7 +17,6 @@ import { HoverTiltCard } from "@/components/ui/hover-tilt-card";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { Circle, Triangle } from "lucide-react";
-import FloatingPopupLink from "@/components/ui/FloatingPopupLink";
 import { AnimatedCircularProgress, AnimatedAIDashboard, AnimatedTalentCompanies } from "@/components/ui/animated-dashboard-components";
 import { Timeline } from "@/components/TimelineScroll";
 
@@ -1194,15 +1193,7 @@ export default function Home() {
     </div>
   </div>
 </section> 
-        <FloatingPopupLink
-          externalLink="https://mahir-s-site-699c.thinkific.com/products/courses/master-self-presentation-course"
-          title="Master Self-Presentation"
-          description="Learn how to present yourself with confidence and impact"
-        />
-
         {/* Footer */}
-
-
 {/* Footer */}
 <Footer />
       </main>
