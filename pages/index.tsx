@@ -14,11 +14,12 @@ import AnimatedDashboard from "@/components/AnimatedDashboard";
 import ConnectionAnimation from "@/components/ConnectionAnimation";
 import { Compare } from "@/components/ui/compare";
 import { HoverTiltCard } from "@/components/ui/hover-tilt-card";
-import { motion } from "framer-motion";
-import { useEffect } from "react";
+import { motion, useInView } from "framer-motion";
+import { useRef, useEffect } from "react";
 import { Circle, Triangle } from "lucide-react";
 import { AnimatedCircularProgress, AnimatedAIDashboard, AnimatedTalentCompanies } from "@/components/ui/animated-dashboard-components";
 import { Timeline } from "@/components/TimelineScroll";
+
 
 export default function Home() {
   // Custom cursor glow effect
@@ -104,6 +105,41 @@ export default function Home() {
     };
   }, []);
 
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const videoInView = useInView(containerRef, { amount: 0.1 });
+
+  useEffect(() => {
+  const video = videoRef.current;
+  if (!video) return;
+
+  let timeout: NodeJS.Timeout | null = null;
+
+  const handleEnded = () => {
+    timeout = setTimeout(() => {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    }, 1000);
+  };
+
+  if (videoInView) {
+    video.loop = false;
+    video.play().catch(() => {});
+    video.addEventListener("ended", handleEnded);
+  } else {
+    video.pause();
+    video.currentTime = 0;
+    video.removeEventListener("ended", handleEnded);
+  }
+
+  return () => {
+    if (timeout) clearTimeout(timeout);
+    video.removeEventListener("ended", handleEnded);
+  };
+}, [videoInView]);
+
+
   return (
     <>
       <Head>
@@ -138,8 +174,29 @@ export default function Home() {
         {/* Hero Section */}
         <HeroSection />
 
+        {/* 🎥 Hero Demo Video */}
+<section
+  ref={containerRef}
+  className="relative flex justify-center items-center bg-black py-12"
+>
+  <motion.video
+    ref={videoRef}
+    className="rounded-2xl shadow-2xl w-[90%] max-w-5xl border border-purple-500/20"
+    src="/velricdemo.mp4"
+    muted
+    playsInline
+    preload="metadata"
+    initial={{ opacity: 0, scale: 0.98 }}
+    whileInView={{ opacity: 1, scale: 1 }}
+    viewport={{ once: false }}
+    transition={{ duration: 0.8, ease: "easeOut" }}
+  />
+</section>
+
+
+
         {/* 🧠 Problem Statement - Enhanced with Animations */}
-        <section className="next-section px-4 md:px-8 lg:px-16 py-20 max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center section-spacing relative z-10">
+        <section className="next-section px-4 md:px-8 lg:px-16 pt-20 pb-8  max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center section-spacing relative z-10">
           <motion.div
             initial={{ opacity: 0, x: -60 }}
             whileInView={{ opacity: 1, x: 0 }}
