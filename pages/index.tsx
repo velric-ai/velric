@@ -139,40 +139,56 @@ export default function Home() {
         {/* Hero Section */}
         <HeroSection />
 
-        {/* Hero Demo Video */}
-{(() => {
-  const videoRef = React.useRef<HTMLVideoElement>(null);
-  const sectionRef = React.useRef(null);
-  const isInView = useInView(sectionRef, { amount: 0.1 });
+        {/* 🎥 Hero Demo Video */}
+        {(() => {
+          const videoRef = React.useRef<HTMLVideoElement>(null);
+          const sectionRef = React.useRef(null);
+          const isInView = useInView(sectionRef, { amount: 0.1 });
 
-  React.useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+          React.useEffect(() => {
+            const video = videoRef.current;
+            if (!video) return;
 
-    if (isInView) {
-      // replay from start when re-entered
-      video.currentTime = 0;
-      video.play();
-    } else {
-      video.pause();
-    }
-  }, [isInView]);
+            let timeout: NodeJS.Timeout;
 
-  return (
-    <section
-      ref={sectionRef}
-      className="relative flex justify-center items-center bg-black py-12"
-    >
-      <motion.video
-        ref={videoRef}
-        className="rounded-2xl shadow-2xl w-[90%] max-w-5xl border border-purple-500/20"
-        src="/velricdemo.mp4"
-        muted
-        playsInline
-      />
-    </section>
-  );
-})()}
+            const handleEnded = () => {
+              timeout = setTimeout(() => {
+                video.currentTime = 0;
+                video.play();
+              }, 1000); 
+            };
+
+            if (isInView) {
+              video.currentTime = 0;
+              video.play();
+              video.addEventListener("ended", handleEnded);
+            } else {
+              video.pause();
+              video.removeEventListener("ended", handleEnded);
+            }
+
+            return () => {
+              clearTimeout(timeout);
+              video.removeEventListener("ended", handleEnded);
+            };
+          }, [isInView]);
+
+          return (
+            <section
+              ref={sectionRef}
+              className="relative flex justify-center items-center bg-black py-12"
+            >
+              <motion.video
+                ref={videoRef}
+                className="rounded-2xl shadow-2xl w-[90%] max-w-5xl border border-purple-500/20"
+                src="/velricdemo.mp4"
+                muted
+                playsInline
+              />
+            </section>
+          );
+        })()}
+
 
 
         {/* 🧠 Problem Statement - Enhanced with Animations */}
