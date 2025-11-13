@@ -5,6 +5,7 @@ import HeroSection from "@/components/HeroSection";
 
 import Footer from "@/components/Footer";
 
+
 import InteractiveAIVisual from "@/components/InteractiveAIVisual";
 import HumanAIConnection from "@/components/HumanAIConnection";
 import InteractiveDashboard from "@/components/InteractiveDashboard";
@@ -14,8 +15,8 @@ import AnimatedDashboard from "@/components/AnimatedDashboard";
 import ConnectionAnimation from "@/components/ConnectionAnimation";
 import { Compare } from "@/components/ui/compare";
 import { HoverTiltCard } from "@/components/ui/hover-tilt-card";
-import { motion } from "framer-motion";
-import { useEffect } from "react";
+import { motion, useInView } from "framer-motion";
+import React, { useRef, useEffect } from "react";
 import { Circle, Triangle } from "lucide-react";
 import { AnimatedCircularProgress, AnimatedAIDashboard, AnimatedTalentCompanies } from "@/components/ui/animated-dashboard-components";
 import { Timeline } from "@/components/TimelineScroll";
@@ -137,6 +138,58 @@ export default function Home() {
 
         {/* Hero Section */}
         <HeroSection />
+
+        {/* 🎥 Hero Demo Video */}
+        {(() => {
+          const videoRef = React.useRef<HTMLVideoElement>(null);
+          const sectionRef = React.useRef(null);
+          const isInView = useInView(sectionRef, { amount: 0.1 });
+
+          React.useEffect(() => {
+            const video = videoRef.current;
+            if (!video) return;
+
+            let timeout: NodeJS.Timeout;
+
+            const handleEnded = () => {
+              timeout = setTimeout(() => {
+                video.currentTime = 0;
+                video.play();
+              }, 1000); 
+            };
+
+            if (isInView) {
+              video.currentTime = 0;
+              video.play();
+              video.addEventListener("ended", handleEnded);
+            } else {
+              video.pause();
+              video.removeEventListener("ended", handleEnded);
+            }
+
+            return () => {
+              clearTimeout(timeout);
+              video.removeEventListener("ended", handleEnded);
+            };
+          }, [isInView]);
+
+          return (
+            <section
+              ref={sectionRef}
+              className="relative flex justify-center items-center bg-black py-12"
+            >
+              <motion.video
+                ref={videoRef}
+                className="rounded-2xl shadow-2xl w-[90%] max-w-5xl border border-purple-500/20"
+                src="/velricdemo.mp4"
+                muted
+                playsInline
+              />
+            </section>
+          );
+        })()}
+
+
 
         {/* 🧠 Problem Statement - Enhanced with Animations */}
         <section className="next-section px-4 md:px-8 lg:px-16 py-20 max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center section-spacing relative z-10">
