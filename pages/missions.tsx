@@ -17,27 +17,93 @@ export default function MissionsPage() {
   const [generating, setGenerating] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [previewGenerating, setPreviewGenerating] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userSurveyData, setUserSurveyData] = useState<any>(null);
+
+  // Get logged-in user data
+  useEffect(() => {
+    const userDataStr = localStorage.getItem('velric_user');
+    if (userDataStr) {
+      try {
+        const user = JSON.parse(userDataStr);
+        setUserId(user.id);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+  }, []);
+
+  // Fetch user survey data when userId is available
+  useEffect(() => {
+    const fetchUserSurveyData = async () => {
+      if (!userId) return;
+
+      try {
+        const response = await fetch(`/api/survey/${userId}`);
+        const result = await response.json();
+        
+        if (result.success && result.surveyData) {
+          setUserSurveyData(result.surveyData);
+        }
+      } catch (error) {
+        console.error('Error fetching user survey data:', error);
+      }
+    };
+
+    fetchUserSurveyData();
+  }, [userId]);
 
   useEffect(() => {
-    fetchAndGenerateMissions();
-  }, []);
+    if (userId) {
+      fetchAndGenerateMissions();
+    }
+  }, [userId, userSurveyData]);
 
   const fetchAndGenerateMissions = async () => {
     try {
       setLoading(true);
       setError('');
       
-      // First, generate fresh AI missions
-      const generateResponse = await fetch('/api/missions/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      // Prepare payload based on logged-in user's survey data
+      let payload: any = {
+        count: 5
+      };
+
+      if (userSurveyData) {
+        // Use real user survey data
+        payload = {
+          userBackground: userSurveyData.experience_summary || 
+            `Developer with ${userSurveyData.education_level || 'some'} education, interested in ${userSurveyData.industry || 'Technology'}.`,
+          interests: userSurveyData.mission_focus || userSurveyData.strength_areas || ['Technology'],
+          industry: userSurveyData.industry || 'Technology',
+          difficulty: userSurveyData.metadata?.difficulty || 'Intermediate',
+          count: 5
+        };
+      } else if (userId) {
+        // User is logged in but no survey data - use basic defaults
+        payload = {
+          userBackground: 'Developer looking to improve skills and build projects.',
+          interests: ['Technology', 'Web Development'],
+          industry: 'Technology',
+          difficulty: 'Intermediate',
+          count: 5
+        };
+      } else {
+        // No user logged in - use generic defaults
+        payload = {
           userBackground: 'Motivated developer interested in web and AI, familiar with React/Next.js and Node.js.',
           interests: ['AI', 'SaaS', 'Productivity', 'Web Development'],
           industry: 'SaaS',
           difficulty: 'Intermediate',
           count: 5
-        })
+        };
+      }
+
+      // Generate missions with user data using existing generate API
+      const generateResponse = await fetch('/api/missions/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
       
       if (generateResponse.ok) {
@@ -49,7 +115,7 @@ export default function MissionsPage() {
         }
       }
       
-      // Fallback to regular missions if generation fails
+      // Fallback: Get existing missions from database
       const response = await fetch('/api/missions');
       const data = await response.json();
       
@@ -92,13 +158,31 @@ export default function MissionsPage() {
     try {
       setGenerating(true);
       setError('');
-      const payload = {
-        userBackground: 'Ambitious developer focused on web and AI. Comfortable with React/Next.js and Node.js.',
-        interests: ['AI','SaaS','Productivity'],
-        industry: 'SaaS',
-        difficulty: 'Intermediate',
+      
+      // Use logged-in user's survey data for mission generation
+      let payload: any = {
         count: 3,
       };
+
+      if (userSurveyData) {
+        payload = {
+          userBackground: userSurveyData.experience_summary || 
+            `Developer with ${userSurveyData.education_level || 'some'} education, interested in ${userSurveyData.industry || 'Technology'}.`,
+          interests: userSurveyData.mission_focus || userSurveyData.strength_areas || ['Technology'],
+          industry: userSurveyData.industry || 'Technology',
+          difficulty: userSurveyData.metadata?.difficulty || 'Intermediate',
+          count: 3,
+        };
+      } else {
+        payload = {
+          userBackground: 'Ambitious developer focused on web and AI. Comfortable with React/Next.js and Node.js.',
+          interests: ['AI','SaaS','Productivity'],
+          industry: 'SaaS',
+          difficulty: 'Intermediate',
+          count: 3,
+        };
+      }
+
       const resp = await fetch('/api/admin/generate-missions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,13 +205,31 @@ export default function MissionsPage() {
     try {
       setPreviewGenerating(true);
       setError('');
-      const payload = {
-        userBackground: 'Ambitious developer focused on web and AI. Comfortable with React/Next.js and Node.js.',
-        interests: ['AI','SaaS','Productivity'],
-        industry: 'SaaS',
-        difficulty: 'Intermediate',
+      
+      // Use logged-in user's survey data for mission generation
+      let payload: any = {
         count: 3,
       };
+
+      if (userSurveyData) {
+        payload = {
+          userBackground: userSurveyData.experience_summary || 
+            `Developer with ${userSurveyData.education_level || 'some'} education, interested in ${userSurveyData.industry || 'Technology'}.`,
+          interests: userSurveyData.mission_focus || userSurveyData.strength_areas || ['Technology'],
+          industry: userSurveyData.industry || 'Technology',
+          difficulty: userSurveyData.metadata?.difficulty || 'Intermediate',
+          count: 3,
+        };
+      } else {
+        payload = {
+          userBackground: 'Ambitious developer focused on web and AI. Comfortable with React/Next.js and Node.js.',
+          interests: ['AI','SaaS','Productivity'],
+          industry: 'SaaS',
+          difficulty: 'Intermediate',
+          count: 3,
+        };
+      }
+
       const resp = await fetch('/api/missions/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

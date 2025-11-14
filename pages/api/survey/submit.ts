@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { supabase, USE_DUMMY } from '@/lib/supabaseClient';
 
 // Rate limiting store (in production, use Redis or database)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -299,18 +300,76 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       metadata: metadata || {}
     };
 
-    // In a real implementation, save to database
-    console.log('Survey submission:', {
-      timestamp: new Date().toISOString(),
-      userId: token,
-      data: sanitizedData
-    });
+    // Get user ID from token (token is the user ID from localStorage)
+    const userId = token;
 
-    // Simulate database save delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Handle dummy mode
+    if (USE_DUMMY) {
+      const completedAt = new Date().toISOString();
+      return res.status(200).json({
+        success: true,
+        userId,
+        message: 'Survey submitted successfully (demo mode - not persisted)',
+        profile: {
+          onboarded: true,
+          completedAt,
+          surveyData: sanitizedData
+        },
+        redirectUrl: '/dashboard',
+        completedAt: Date.now()
+      });
+    }
 
-    // Generate mock user ID for demo
-    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Prepare payload for Supabase
+    const payload = {
+      user_id: userId,
+      full_name: sanitizedData.fullName,
+      education_level: sanitizedData.educationLevel,
+      industry: sanitizedData.industry,
+      mission_focus: sanitizedData.missionFocus,
+      strength_areas: sanitizedData.strengthAreas,
+      learning_preference: sanitizedData.learningPreference,
+      portfolio: {
+        file: sanitizedData.portfolioFile,
+        url: sanitizedData.portfolioUrl,
+      },
+      experience_summary: sanitizedData.metadata?.experienceSummary || null,
+      platform_connections: sanitizedData.platformConnections,
+      metadata: sanitizedData.metadata,
+      created_at: new Date().toISOString(),
+    };
+
+    // Insert into Supabase survey_responses table
+    const { data: surveyData, error: dbError } = await supabase
+      .from("survey_responses")
+      .insert([payload])
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error('Supabase insert error:', dbError);
+      return res.status(500).json({
+        success: false,
+        code: 'DATABASE_ERROR',
+        message: dbError.message || 'Failed to save survey data to database'
+      });
+    }
+
+    // Update user's onboarded status in users table
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({
+        onboarded: true,
+        survey_completed_at: new Date().toISOString(),
+        profile_complete: true,
+      })
+      .eq("id", userId);
+
+    if (updateError) {
+      console.warn('Failed to update user onboarded status:', updateError);
+      // Don't fail the request if user update fails, survey is already saved
+    }
+
     const completedAt = new Date().toISOString();
 
     // Success response
@@ -321,7 +380,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       profile: {
         onboarded: true,
         completedAt,
-        surveyData: sanitizedData
+        surveyData: surveyData || sanitizedData
       },
       redirectUrl: '/dashboard',
       completedAt: Date.now()

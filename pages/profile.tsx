@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import DashboardNavigation from "@/components/dashboard/DashboardNavigation";
 import ProfileCard from "@/components/ProfileCard";
@@ -8,34 +8,138 @@ import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
 
 function ProfileContent() {
   const [activeTab, setActiveTab] = useState("profile");
+  const [userData, setUserData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
   };
 
-  // ✅ Mock user data (used by ProfileCard)
-  const mockUserData = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    avatar: "/assets/default-avatar.png",
-    status: "Top 5%",
-    statusDescription: "You're in the top 5% of all Velric users",
-  };
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-  // ✅ Mock survey data (used by SurveyData)
-  const mockSurveyData = {
-    fullName: "John Doe",
-    educationLevel: "Bachelor's Degree",
-    industry: "Technology",
-    missionFocus: ["Backend Development", "Data Analytics", "AI & Machine Learning"],
-    strengthAreas: ["Problem Solving", "Technical Implementation", "System Design"],
-    learningPreference: "Hands-on Projects",
-    platformConnections: {
-      github: { connected: true, username: "johndoe" },
-      codesignal: { connected: true, username: "john_doe" },
-      hackerrank: { connected: false },
-    },
-  };
+        // Get user ID from localStorage
+        const userDataStr = localStorage.getItem('velric_user');
+        if (!userDataStr) {
+          throw new Error('User not authenticated');
+        }
+
+        const localUser = JSON.parse(userDataStr);
+        const userId = localUser.id;
+
+        if (!userId) {
+          throw new Error('User ID not found');
+        }
+
+        // Fetch user data from API
+        const response = await fetch(`/api/user/${userId}`);
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to fetch user data');
+        }
+
+        // Format user data for ProfileCard
+        setUserData({
+          name: result.user.name || 'User',
+          email: result.user.email,
+          avatar: "/assets/default-avatar.png",
+          status: result.user.onboarded ? "Active" : "Pending Onboarding",
+          statusDescription: result.user.onboarded 
+            ? "Your profile is complete" 
+            : "Complete your onboarding to get started",
+          onboarded: result.user.onboarded,
+          profileComplete: result.user.profile_complete,
+        });
+      } catch (err: any) {
+        console.error('Error fetching user data:', err);
+        setError(err.message || 'Failed to load user data');
+        
+        // Fallback to mock data on error
+        setUserData({
+          name: "User",
+          email: "user@example.com",
+          avatar: "/assets/default-avatar.png",
+          status: "Loading...",
+          statusDescription: "Unable to load user data",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const [surveyData, setSurveyData] = useState<any>(null);
+  const [isLoadingSurvey, setIsLoadingSurvey] = useState(true);
+
+  // Fetch survey data from API
+  useEffect(() => {
+    const fetchSurveyData = async () => {
+      try {
+        setIsLoadingSurvey(true);
+
+        // Get user ID from localStorage
+        const userDataStr = localStorage.getItem('velric_user');
+        if (!userDataStr) {
+          setIsLoadingSurvey(false);
+          return;
+        }
+
+        const localUser = JSON.parse(userDataStr);
+        const userId = localUser.id;
+
+        if (!userId) {
+          setIsLoadingSurvey(false);
+          return;
+        }
+
+        // Fetch survey data from API
+        const response = await fetch(`/api/survey/${userId}`);
+        const result = await response.json();
+
+        if (!result.success) {
+          console.error('Failed to fetch survey data:', result.error);
+          setIsLoadingSurvey(false);
+          return;
+        }
+
+        // Transform API response to match SurveyData component format
+        if (result.surveyData) {
+          const transformedData = {
+            fullName: result.surveyData.full_name || "",
+            educationLevel: result.surveyData.education_level || "",
+            industry: result.surveyData.industry || "",
+            missionFocus: Array.isArray(result.surveyData.mission_focus) 
+              ? result.surveyData.mission_focus 
+              : [],
+            strengthAreas: Array.isArray(result.surveyData.strength_areas) 
+              ? result.surveyData.strength_areas 
+              : [],
+            learningPreference: result.surveyData.learning_preference || "",
+            platformConnections: result.surveyData.platform_connections || {
+              github: { connected: false },
+              codesignal: { connected: false },
+              hackerrank: { connected: false },
+            },
+          };
+          setSurveyData(transformedData);
+        }
+      } catch (err: any) {
+        console.error('Error fetching survey data:', err);
+      } finally {
+        setIsLoadingSurvey(false);
+      }
+    };
+
+    fetchSurveyData();
+  }, []);
 
   return (
     <>
@@ -93,7 +197,21 @@ function ProfileContent() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
               {/* Left Column - Profile Card */}
               <div className="lg:col-span-1">
-                <ProfileCard user={mockUserData} />
+                {isLoading ? (
+                  <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 rounded-xl p-8 text-center">
+                    <div className="animate-pulse">
+                      <div className="w-24 h-24 mx-auto mb-4 bg-white/10 rounded-full"></div>
+                      <div className="h-4 bg-white/10 rounded w-3/4 mx-auto mb-2"></div>
+                      <div className="h-4 bg-white/10 rounded w-1/2 mx-auto"></div>
+                    </div>
+                  </div>
+                ) : error ? (
+                  <div className="bg-gradient-to-br from-red-500/10 to-red-600/10 border border-red-500/20 rounded-xl p-8 text-center">
+                    <p className="text-red-400">{error}</p>
+                  </div>
+                ) : (
+                  <ProfileCard user={userData} />
+                )}
               </div>
 
               {/* Right Column - Quick Stats */}
@@ -139,7 +257,25 @@ function ProfileContent() {
 
             {/* Survey Data Section */}
             <div className="mb-8">
-              <SurveyData surveyData={mockSurveyData} />
+              {isLoadingSurvey ? (
+                <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 rounded-xl p-8">
+                  <div className="animate-pulse">
+                    <div className="h-6 bg-white/10 rounded w-1/3 mb-4"></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="h-20 bg-white/10 rounded"></div>
+                      <div className="h-20 bg-white/10 rounded"></div>
+                      <div className="h-20 bg-white/10 rounded"></div>
+                      <div className="h-20 bg-white/10 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              ) : surveyData ? (
+                <SurveyData surveyData={surveyData} />
+              ) : (
+                <div className="bg-gradient-to-br from-gray-500/10 to-gray-600/10 border border-gray-500/20 rounded-xl p-8 text-center">
+                  <p className="text-white/60">No survey data available. Please complete your onboarding survey.</p>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
