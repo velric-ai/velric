@@ -108,8 +108,8 @@ const FeedbackPage: React.FC = () => {
                 </div>
 
                 {/* Velric Score Section - PROMINENT DISPLAY */}
-                {submission?.velricScore !== undefined &&
-                  submission?.velricScore !== null && (
+                {submission?.velric_score !== undefined &&
+                  submission?.velric_score !== null && (
                     <div className="mb-12">
                       <h2 className="text-[25px] font-bold font-sora text-white mb-4 antialiased">
                         Velric Score
@@ -120,7 +120,7 @@ const FeedbackPage: React.FC = () => {
                           <div className="mb-4">
                             <div className="inline-flex items-baseline gap-2">
                               <span className="text-[72px] font-bold font-sora bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] bg-clip-text text-transparent">
-                                {submission.velricScore.toFixed(1)}
+                                {submission.velric_score.toFixed(1)}
                               </span>
                               <span className="text-[36px] font-semibold text-[#F5F5F5]/60 font-sora">
                                 / 10
@@ -135,13 +135,13 @@ const FeedbackPage: React.FC = () => {
 
                           {/* Score Description */}
                           <p className="text-[14px] text-[#F5F5F5]/70 font-inter max-w-md mx-auto">
-                            {submission.velricScore >= 9.5
+                            {submission.velric_score >= 9.5
                               ? "Outstanding! Exceptional work across all criteria."
-                              : submission.velricScore >= 8.5
+                              : submission.velric_score >= 8.5
                               ? "Excellent work! Strong performance."
-                              : submission.velricScore >= 7.5
+                              : submission.velric_score >= 7.5
                               ? "Great job! Good understanding demonstrated."
-                              : submission.velricScore >= 6.5
+                              : submission.velric_score >= 6.5
                               ? "Good effort. Room for improvement."
                               : "Keep working on it. Review the feedback carefully."}
                           </p>
@@ -153,7 +153,7 @@ const FeedbackPage: React.FC = () => {
                                 className="h-full bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] rounded-full transition-all duration-1000"
                                 style={{
                                   width: `${
-                                    (submission.velricScore / 10) * 100
+                                    (submission.velric_score / 10) * 100
                                   }%`,
                                 }}
                               />
@@ -273,11 +273,11 @@ const FeedbackPage: React.FC = () => {
                           </div>
                         ))}
                         {/* Velric overall score out of 10 */}
-                        {typeof submission.velricScore === "number" && (
+                        {typeof submission.velric_score === "number" && (
                           <div className="bg-[#1C1C1E] border border-[#6A0DAD]/30 rounded-xl p-3 mt-2 text-center">
                             <span className="text-[16px] font-bold text-[#00D9FF]">
                               Velric Score:{" "}
-                              {Math.round(submission.velricScore / 10)}
+                              {Math.round(submission.velric_score / 10)}
                               /10
                             </span>
                           </div>

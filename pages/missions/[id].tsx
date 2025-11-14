@@ -21,9 +21,20 @@ export default function MissionDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const submissionSectionRef = useRef<HTMLDivElement | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // For demo purposes, using a hardcoded user ID
-  const userId = "demo-user-123";
+  // Get logged-in user ID from localStorage
+  useEffect(() => {
+    const userDataStr = localStorage.getItem('velric_user');
+    if (userDataStr) {
+      try {
+        const user = JSON.parse(userDataStr);
+        setUserId(user.id);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!id || typeof id !== "string") return;
@@ -52,21 +63,25 @@ export default function MissionDetailPage() {
             missionData.mission?.evaluationMetrics?.length || 0,
         });
 
-        // Fetch user's mission status
-        try {
-          const statusResponse = await fetch(
-            `/api/user/missions/${id}?userId=${userId}`
-          );
-          const statusData = await statusResponse.json();
+        // Fetch user's mission status (only if logged in)
+        if (userId) {
+          try {
+            const statusResponse = await fetch(
+              `/api/user/missions/${id}?userId=${userId}`
+            );
+            const statusData = await statusResponse.json();
 
-          if (statusData.success && statusData.userMission) {
-            setMissionStatus(statusData.userMission.status);
-          } else {
-            setMissionStatus("suggested"); // Default status
+            if (statusData.success && statusData.userMission) {
+              setMissionStatus(statusData.userMission.status);
+            } else {
+              setMissionStatus("suggested"); // Default status
+            }
+          } catch (statusError) {
+            console.warn("Could not fetch mission status:", statusError);
+            setMissionStatus("suggested");
           }
-        } catch (statusError) {
-          console.warn("Could not fetch mission status:", statusError);
-          setMissionStatus("suggested");
+        } else {
+          setMissionStatus("suggested"); // Default for non-logged-in users
         }
       } catch (err) {
         const errorMessage =
@@ -85,7 +100,10 @@ export default function MissionDetailPage() {
   };
 
   const handleStartMission = async () => {
-    if (!mission || !id) return;
+    if (!mission || !id || !userId) {
+      alert("Please log in to start a mission.");
+      return;
+    }
 
     try {
       setIsStarting(true);
@@ -121,7 +139,10 @@ export default function MissionDetailPage() {
   };
 
   const handleSubmission = async (form: { submissionText: string }) => {
-    if (!id || typeof id !== "string") return;
+    if (!id || typeof id !== "string" || !userId) {
+      alert("Please log in to submit a mission response.");
+      return;
+    }
     try {
       setIsSubmitting(true);
       const res = await fetch("/api/submissions", {

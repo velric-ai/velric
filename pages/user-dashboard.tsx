@@ -32,6 +32,8 @@ function UserDashboardContent() {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [averageVelricScore, setAverageVelricScore] = useState<number>(0);
 
   // Check authentication and load user data
   useEffect(() => {
@@ -56,6 +58,30 @@ function UserDashboardContent() {
 
     checkAuth();
   }, [router]);
+
+  // Fetch recent activity
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchRecentActivity = async () => {
+      try {
+        const response = await fetch(`/api/recent-activity?userId=${user.id}`);
+        const data = await response.json();
+        if (data.success) {
+          if (data.activities) {
+            setRecentActivities(data.activities);
+          }
+          if (data.averageVelricScore !== undefined) {
+            setAverageVelricScore(data.averageVelricScore);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching recent activity:", error);
+      }
+    };
+
+    fetchRecentActivity();
+  }, [user?.id]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -89,24 +115,25 @@ function UserDashboardContent() {
 
   // Mock data matching the reference images
   const dashboardData = {
-    velricScore: 95,
+    velricScore: averageVelricScore || 0,
     percentile: 95,
     lastUpdated: "2025-10-14",
-    weeklyActivity: [
-      { day: 'Mon', active: true },
-      { day: 'Tue', active: true },
-      { day: 'Wed', active: false },
-      { day: 'Thu', active: true },
-      { day: 'Fri', active: true },
-      { day: 'Sat', active: false },
-      { day: 'Sun', active: false }
+    yearlyActivity: [
+      { month: 'Jan', active: false },
+      { month: 'Feb', active: false },
+      { month: 'Mar', active: false },
+      { month: 'Apr', active: false },
+      { month: 'May', active: false },
+      { month: 'Jun', active: false },
+      { month: 'Jul', active: false },
+      { month: 'Aug', active: false },
+      { month: 'Sep', active: false },
+      { month: 'Oct', active: false },
+      { month: 'Nov', active: false },
+      { month: 'Dec', active: false }
     ],
-    streakCount: 5,
-    recentActivities: [
-      { name: "Completed: Backend Challenge", score: 92, timeAgo: "2 days ago" },
-      { name: "Updated: Portfolio", timeAgo: "3 days ago" },
-      { name: "Completed: Frontend Mission", score: 88, timeAgo: "5 days ago" }
-    ],
+    streakCount: 0,
+    recentActivities: [],
     domains: [
       {
         name: "Backend Development",
@@ -440,8 +467,8 @@ function UserDashboardContent() {
                     <div className="relative z-10">
                       <div className="flex items-center justify-between mb-6">
                         <div>
-                          <h3 className="text-xl font-semibold text-white mb-1">Weekly Activity</h3>
-                          <p className="text-white/60 text-sm">Keep the momentum going!</p>
+                          <h3 className="text-xl font-semibold text-white mb-1">Yearly Activity</h3>
+                          <p className="text-white/60 text-sm">Your progress throughout the year</p>
                         </div>
                         <div className="flex items-center space-x-2 px-4 py-2 rounded-full"
                           style={{
@@ -454,22 +481,22 @@ function UserDashboardContent() {
                         </div>
                       </div>
 
-                      <div className="flex justify-between gap-3">
-                        {dashboardData.weeklyActivity.map((day, index) => (
+                      <div className="grid grid-cols-6 gap-2">
+                        {dashboardData.yearlyActivity.map((month, index) => (
                           <motion.div
-                            key={day.day}
+                            key={month.month}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 + index * 0.1, duration: 0.3 }}
-                            className="flex-1"
+                            transition={{ delay: 0.3 + index * 0.05, duration: 0.3 }}
+                            className="flex flex-col items-center"
                           >
                             <div
-                              className={`h-32 rounded-xl mb-2 transition-all duration-300 ${day.active
+                              className={`w-full h-24 rounded-xl mb-2 transition-all duration-300 ${month.active
                                 ? 'bg-gradient-to-t from-orange-500 to-yellow-400 shadow-lg shadow-orange-500/30'
                                 : 'bg-white/5 border border-white/10'
                                 }`}
                             />
-                            <p className="text-center text-xs text-white/70 font-medium">{day.day}</p>
+                            <p className="text-center text-xs text-white/70 font-medium">{month.month}</p>
                           </motion.div>
                         ))}
                       </div>
@@ -491,7 +518,7 @@ function UserDashboardContent() {
                   >
                     <h3 className="text-xl font-semibold text-white mb-4">Recent Activity</h3>
                     <div className="space-y-3">
-                      {dashboardData.recentActivities.map((activity, index) => (
+                      {recentActivities.length > 0 ? recentActivities.map((activity:any, index) => (
                         <motion.div
                           key={activity.name}
                           initial={{ opacity: 0, x: -20 }}
@@ -522,7 +549,11 @@ function UserDashboardContent() {
                             )}
                           </div>
                         </motion.div>
-                      ))}
+                      )) : (
+                        <div className="p-4 text-center text-white/60 text-sm">
+                          No activity today
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 </div>

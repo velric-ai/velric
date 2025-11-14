@@ -9,7 +9,7 @@ export async function getCompletedSubmissionsByUser(userId: string) {
   }
   try {
     const { data, error } = await supabase
-      .from("submissions")
+      .from("user_mission")
       .select("*")
       .eq("user_id", userId)
       .eq("status", "graded");
@@ -18,7 +18,7 @@ export async function getCompletedSubmissionsByUser(userId: string) {
   } catch (error: any) {
     // Fall back to mockStore if table doesn't exist
     if (error?.code === "PGRST205" || error?.code === "42P01") {
-      console.warn("Submissions table not found, using mockStore fallback");
+      console.warn("user_mission table not found, using mockStore fallback");
       return mockStore.submissions.filter(
         (s) => s.user_id === userId && s.status === "graded"
       );
@@ -72,10 +72,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   }
 }
 
-// Create client safely (empty string fallback prevents crash)
+// Create client safely (placeholder fallback prevents validation error)
 export const supabase = createClient(
-  supabaseUrl || "",
-  supabaseAnonKey || "",
+  supabaseUrl || "https://placeholder.supabase.co",
+  supabaseAnonKey || "placeholder-key",
   {
     auth: {
       persistSession: isBrowser, // only persist client-side
@@ -140,8 +140,7 @@ const hasValidSupabaseConfig =
   supabaseUrl.startsWith("https://");
 
 // Toggle between dummy data and real Supabase
-export const USE_DUMMY =
-  !hasValidSupabaseConfig || process.env.USE_DUMMY_DATA === "true";
+export const USE_DUMMY = process.env.USE_DUMMY_DATA === "true";
 
 if (USE_DUMMY) {
   console.warn("🟡 Using dummy data mode. To enable Supabase:");
@@ -245,8 +244,8 @@ export async function getMissions(status?: string): Promise<MissionTemplate[]> {
   // Real Supabase implementation
   let query = supabase.from("mission_templates").select("*");
   if (status) {
-    // Join with user_missions table to filter by status
-    query = query.eq("user_missions.status", status);
+    // Join with user_mission table to filter by status
+    query = query.eq("user_mission.status", status);
   }
 
   const { data, error } = await query;
@@ -297,7 +296,7 @@ export async function createUserMission(
   }
 
   const { data, error } = await supabase
-    .from("user_missions")
+    .from("user_mission")
     .insert({
       user_id: userId,
       mission_id: missionId,
@@ -355,7 +354,7 @@ export async function updateUserMissionStatus(
 
   // Check if user mission exists
   const { data: existing } = await supabase
-    .from("user_missions")
+    .from("user_mission")
     .select("*")
     .eq("user_id", userId)
     .eq("mission_id", missionId)
@@ -381,7 +380,7 @@ export async function updateUserMissionStatus(
   }
 
   const { data, error } = await supabase
-    .from("user_missions")
+    .from("user_mission")
     .update(updateData)
     .eq("user_id", userId)
     .eq("mission_id", missionId)
@@ -478,7 +477,7 @@ export async function getPersonalizedMissions(
 
   // Get existing user missions to filter out already assigned ones
   const { data: existingMissions } = await supabase
-    .from("user_missions")
+    .from("user_mission")
     .select("mission_id")
     .eq("user_id", userId);
 
@@ -681,7 +680,7 @@ export async function getUserMissionStatus(
 
   try {
     const { data, error } = await supabase
-      .from("user_missions")
+      .from("user_mission")
       .select("*")
       .eq("user_id", userId)
       .eq("mission_id", missionId)
@@ -719,13 +718,39 @@ export async function getSubmissionById(submissionId: string): Promise<any> {
   }
 
   try {
+    // Convert submissionId to number since id is bigint in the database
+    const idAsNumber = parseInt(submissionId, 10);
+    if (isNaN(idAsNumber)) {
+      console.error(`[getSubmissionById] Invalid ID format: ${submissionId}`);
+      return null;
+    }
+
     const { data, error } = await supabase
-      .from("submissions")
+      .from("user_mission")
       .select("*")
-      .eq("id", submissionId)
+      .eq("id", idAsNumber)
       .single();
 
-    if (error && error.code !== "PGRST116") throw error;
+    if (error) {
+      // Check for RLS policy violation
+      if (error.code === "42501" || error.message?.includes("row-level security")) {
+        console.error(`[getSubmissionById] RLS policy violation for ID ${submissionId}:`, error.message);
+        // Try to get more info about the error
+        console.error(`[getSubmissionById] Error details:`, {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        });
+        throw new Error("Access denied: Row-level security policy violation");
+      }
+      // Check for not found
+      if (error.code === "PGRST116") {
+        console.log(`[getSubmissionById] Record not found for ID: ${submissionId}`);
+        return null;
+      }
+      throw error;
+    }
 
     // If DB returns null, also check mockStore
     if (!data) {
@@ -789,12 +814,12 @@ export async function createSubmission(submissionData: {
 
   try {
     const { data, error } = await supabase
-      .from("submissions")
+      .from("user_mission")
       .insert({
         user_id: submissionData.userId,
-        mission_id: submissionData.missionId,
-        submission_text: submissionData.submissionText,
+        mission_id: parseInt(submissionData.missionId) || 0,
         status: "submitted",
+        submission_text: submissionData.submissionText,
       })
       .select()
       .single();
@@ -804,7 +829,7 @@ export async function createSubmission(submissionData: {
   } catch (error: any) {
     // Fall back to mockStore if table doesn't exist
     if (error?.code === "PGRST205" || error?.code === "42P01") {
-      console.warn("Submissions table not found, using mockStore fallback");
+      console.warn("user_mission table not found, using mockStore fallback");
       const newSubmission = {
         id: `submission-${Date.now()}`,
         user_id: submissionData.userId,
@@ -866,35 +891,41 @@ export async function updateSubmission(
     return null;
   }
   try {
+    const userMissionUpdate: any = {};
+    
+    if (updates.status !== undefined) userMissionUpdate.status = updates.status;
+    if (updates.overall_score !== undefined) userMissionUpdate.grade = updates.overall_score;
+    if (updates.velricScore !== undefined) userMissionUpdate.velric_score = updates.velricScore;
+    if (updates.feedback !== undefined) userMissionUpdate.feedback_text = updates.feedback;
+    if (updates.summary !== undefined) userMissionUpdate.summary = updates.summary;
+    if (updates.letter_grade !== undefined) userMissionUpdate.letter_grade = updates.letter_grade;
+    if (updates.grades !== undefined) userMissionUpdate.grades = updates.grades;
+    if (updates.rubric !== undefined) userMissionUpdate.rubric = updates.rubric;
+    if (updates.positiveTemplates !== undefined) userMissionUpdate.positive_templates = updates.positiveTemplates;
+    if (updates.improvementTemplates !== undefined) userMissionUpdate.improvement_templates = updates.improvementTemplates;
+    if (updates.status === "graded" || updates.status === "completed") {
+      userMissionUpdate.completed_at = new Date().toISOString();
+    }
+
     const { data, error } = await supabase
-      .from("submissions")
-      .update(updates as any)
+      .from("user_mission")
+      .update(userMissionUpdate)
       .eq("id", submissionId)
       .select()
       .single();
     if (error) throw error;
     return data;
   } catch (error: any) {
-    // Fall back to mockStore if table doesn't exist
     if (error?.code === "PGRST205" || error?.code === "42P01") {
-      console.warn("Submissions table not found, using mockStore fallback");
+      console.warn("user_mission table not found, using mockStore fallback");
       const idx = mockStore.submissions.findIndex((s) => s.id === submissionId);
       if (idx >= 0) {
         mockStore.submissions[idx] = {
           ...mockStore.submissions[idx],
           ...updates,
         } as any;
-        console.log(`[MockStore] Updated submission ${submissionId}:`, {
-          hasFeedback: !!mockStore.submissions[idx].feedback,
-          hasGrades: !!mockStore.submissions[idx].grades,
-          status: mockStore.submissions[idx].status,
-          velricScore: mockStore.submissions[idx].velricScore,
-        });
         return mockStore.submissions[idx];
       }
-      console.warn(
-        `[MockStore] Submission ${submissionId} not found for update`
-      );
       return null;
     }
     throw error;

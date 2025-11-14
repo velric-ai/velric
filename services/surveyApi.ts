@@ -6,7 +6,7 @@ import {
   ServerError,
   ValidationError,
 } from "../utils/surveyValidation";
-import { supabase } from "../lib/supabaseClient";
+import { supabase, USE_DUMMY } from "../lib/supabaseClient";
 import { getLocalStorageItem } from "../utils/envSafe";
 
 /**
@@ -136,7 +136,25 @@ export async function submitSurveyData(
       created_at: new Date().toISOString(),
     };
 
-    // Insert into Supabase
+    // Handle dummy mode or invalid API keys - use API endpoint instead
+    if (USE_DUMMY) {
+      console.warn("⚠️ Using dummy mode - survey data not persisted");
+      // Return mock response for dummy mode
+      return {
+        success: true,
+        userId,
+        message: "Survey submitted successfully (demo mode)",
+        profile: {
+          onboarded: true,
+          completedAt: new Date().toISOString(),
+          surveyData: payload,
+        },
+        redirectUrl: "/user-dashboard",
+        completedAt: Date.now(),
+      };
+    }
+
+    // Try to insert into Supabase
     const { data, error } = await supabase
       .from("survey_responses")
       .insert([payload])
@@ -145,6 +163,13 @@ export async function submitSurveyData(
 
     if (error) {
       console.error("❌ Supabase insert error:", error);
+      
+      // If API key is invalid, fallback to API endpoint
+      if (error.message?.includes("Invalid API key") || error.message?.includes("JWT")) {
+        console.warn("⚠️ Invalid API key detected, falling back to API endpoint");
+        return await submitViaAPIEndpoint(payload, userId);
+      }
+      
       throw new ServerError(error.message || "Failed to save survey data");
     }
 
@@ -173,6 +198,61 @@ export async function submitSurveyData(
 
     throw new AppError(
       error.message || "Failed to submit survey. Please try again."
+    );
+  }
+}
+
+// Fallback function to submit via API endpoint when direct Supabase fails
+async function submitViaAPIEndpoint(
+  payload: any,
+  userId: string
+): Promise<SurveySubmissionResponse> {
+  try {
+    // Transform payload to API format
+    const apiPayload = {
+      fullName: payload.full_name,
+      educationLevel: payload.education_level,
+      industry: payload.industry,
+      missionFocus: payload.mission_focus,
+      strengthAreas: payload.strength_areas,
+      learningPreference: payload.learning_preference,
+      portfolioFile: payload.portfolio?.file || null,
+      portfolioUrl: payload.portfolio?.url || null,
+      experienceSummary: payload.experience_summary,
+      platformConnections: payload.platform_connections,
+      metadata: payload.metadata,
+    };
+
+    const response = await fetch("/api/survey/submit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userId}`,
+      },
+      body: JSON.stringify(apiPayload),
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new ServerError(result.message || "Failed to save survey data");
+    }
+
+    return {
+      success: true,
+      userId: result.userId || userId,
+      message: result.message || "Survey submitted successfully",
+      profile: result.profile || {
+        onboarded: true,
+        completedAt: new Date().toISOString(),
+        surveyData: result.surveyData,
+      },
+      redirectUrl: result.redirectUrl || "/user-dashboard",
+      completedAt: result.completedAt || Date.now(),
+    };
+  } catch (error: any) {
+    throw new ServerError(
+      error.message || "Failed to submit survey via API endpoint"
     );
   }
 }

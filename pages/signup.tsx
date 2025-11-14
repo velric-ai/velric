@@ -86,6 +86,15 @@ export default function Signup() {
         return newErrors;
       });
     }
+    
+    // Clear general error when user starts typing
+    if (errors.general) {
+      setErrors((prev: { [key: string]: string }) => {
+        const newErrors = { ...prev };
+        delete newErrors.general;
+        return newErrors;
+      });
+    }
   };
 
   const handleBlur = (field: string) => () => {
@@ -161,8 +170,10 @@ export default function Signup() {
       // Redirect to survey for new users
       console.log('🔄 Redirecting to survey...');
       router.replace('/onboard/survey');
-    } catch (error) {
-      setErrors({ general: "Signup failed. Please try again." });
+    } catch (error: any) {
+      // Extract error message from API response
+      const errorMessage = error || "Signup failed. Please try again.";
+      setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
     }

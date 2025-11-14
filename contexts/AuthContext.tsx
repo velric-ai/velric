@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, AuthContextType, LoginData, SignupData } from '../types/auth';
+import { User, AuthContextType, LoginData, SignupData, SignupResponse } from '../types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -51,24 +51,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signup = async (data: SignupData): Promise<void> => {
+  const signup = async (data: SignupData): Promise<SignupResponse> => {
     setIsLoading(true);
     try {
-      // Mock signup - in real app this would call your API
-      const mockUser: User = {
-        id: `user_${Date.now()}`,
-        email: data.email,
-        name: data.name,
-        onboarded: false, // New users need onboarding
-        createdAt: new Date().toISOString(),
-        surveyCompletedAt: null,
-        profileComplete: false,
+      // Call the signup API endpoint
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        // Throw error with the API error message
+        const errorMessage = result.error || 'Signup failed';
+        throw errorMessage;
+      }
+
+      // Map API response to User type
+      const user: User = {
+        id: result.user.id,
+        email: result.user.email,
+        name: result.user.name,
+        onboarded: result.user.onboarded,
+        createdAt: result.user.created_at,
+        surveyCompletedAt: result.user.survey_completed_at,
+        profileComplete: result.user.profile_complete,
       };
 
-      localStorage.setItem('velric_user', JSON.stringify(mockUser));
-      setUser(mockUser);
-    } catch (error) {
-      throw new Error('Signup failed');
+      // Store user in localStorage
+      localStorage.setItem('velric_user', JSON.stringify(user));
+      setUser(user);
+
+      return {
+        user,
+        message: result.message,
+      };
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      // Preserve the original error message if it exists
+      throw error;
     } finally {
       setIsLoading(false);
     }
