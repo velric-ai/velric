@@ -8,7 +8,6 @@ import { CheckCircle, Clock, FileText, Award, X, Target } from "lucide-react";
 
 function AnalyticsContent() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('analytics');
   const [user, setUser] = useState<any>(null);
   const [missions, setMissions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,9 +68,6 @@ function AnalyticsContent() {
     };
   }, [expandedMissionId]);
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -119,11 +115,7 @@ function AnalyticsContent() {
         </div>
 
         {/* Navigation */}
-        <DashboardNavigation
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          notificationCount={3}
-        />
+        <DashboardNavigation activeTab="analytics" />
 
         {/* Main Content */}
         <div className="relative z-10 pt-16">

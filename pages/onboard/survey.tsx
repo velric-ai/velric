@@ -29,7 +29,8 @@ function SurveyPageContent() {
     prevStep,
     submitSurvey,
     canProceed,
-    isCompleted
+    isCompleted,
+    resetSubsequentSteps
   } = useSurveyForm();
 
   // Load any existing survey draft on mount
@@ -145,35 +146,35 @@ function SurveyPageContent() {
   };
 
   const renderStep = () => {
-    const stepProps = {
+    const baseStepProps = {
       formData,
       updateFormData,
       onNext: handleNext,
       onPrev: handlePrev,
       onSkip: handleSkip,
-      canProceed,
-      isSubmitting
+      isSubmitting,
+      resetSubsequentSteps
     };
 
     switch (currentStep) {
       case 1:
-        return <StepBasicInfo {...stepProps} />;
+        return <StepBasicInfo {...baseStepProps} canProceed={canProceed()} />;
       case 2:
-        return <StepMissionQuestions {...stepProps} />;
+        return <StepMissionQuestions {...baseStepProps} canProceed={canProceed()} />;
       case 3:
-        return <StepStrengthAreas {...stepProps} />;
+        return <StepStrengthAreas {...baseStepProps} canProceed={canProceed()} />;
       case 4:
-        return <StepLearningPreference {...stepProps} />;
+        return <StepLearningPreference {...baseStepProps} canProceed={canProceed()} />;
       case 5:
-        return <StepPortfolioUpload {...stepProps} />;
+        return <StepPortfolioUpload {...baseStepProps} canProceed={canProceed()} />;
       case 6:
-        return <StepPlatformConnections {...stepProps} />;
+        return <StepPlatformConnections {...baseStepProps} canProceed={canProceed()} />;
       case 7:
-        return <StepExperience {...stepProps} />;
+        return <StepExperience {...baseStepProps} canProceed={canProceed} />;
       case 8:
-        return <StepCompletion {...stepProps} />;
+        return <StepCompletion {...baseStepProps} canProceed={canProceed()} />;
       default:
-        return <StepBasicInfo {...stepProps} />;
+        return <StepBasicInfo {...baseStepProps} canProceed={canProceed()} />;
     }
   };
 

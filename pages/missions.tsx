@@ -1,5 +1,5 @@
 import Head from "next/head";
-import Navbar from "@/components/Navbar";
+import DashboardNavigation from "@/components/dashboard/DashboardNavigation";
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
@@ -298,9 +298,9 @@ export default function MissionsPage() {
       </Head>
 
       <div className="min-h-screen bg-[#0D0D0D]">
-        <Navbar />
+        <DashboardNavigation activeTab="missions" />
         
-        <div className="relative overflow-hidden">
+        <div className="relative overflow-hidden pt-16">
           {/* Background Effects */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#6A0DAD]/10 via-transparent to-[#00D9FF]/10" />
           <div className="absolute top-20 left-10 w-72 h-72 bg-[#6A0DAD]/20 rounded-full blur-3xl" />
