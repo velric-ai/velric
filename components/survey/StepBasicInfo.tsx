@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, Check, AlertCircle } from "lucide-react";
 import { FormInput } from "./FormInput";
@@ -11,6 +11,7 @@ interface StepBasicInfoProps {
   onPrev: () => void;
   canProceed: boolean;
   isSubmitting: boolean;
+  resetSubsequentSteps?: () => void;
 }
 
 const EDUCATION_LEVELS = [
@@ -60,11 +61,16 @@ export function StepBasicInfo({
   updateFormData, 
   onNext, 
   canProceed, 
-  isSubmitting 
+  isSubmitting,
+  resetSubsequentSteps
 }: StepBasicInfoProps) {
   const [industrySearch, setIndustrySearch] = useState('');
   const [showIndustryDropdown, setShowIndustryDropdown] = useState(false);
   const [filteredIndustries, setFilteredIndustries] = useState(INDUSTRIES);
+  
+  // Track previous values to detect changes
+  const prevEducationLevel = useRef(formData.educationLevel?.value);
+  const prevIndustry = useRef(formData.industry?.value);
 
   // Filter industries based on search
   useEffect(() => {
@@ -77,6 +83,25 @@ export function StepBasicInfo({
       setFilteredIndustries(INDUSTRIES);
     }
   }, [industrySearch]);
+
+  // Reset subsequent steps when education level or industry changes
+  useEffect(() => {
+    // Only reset if we're on step 1 and values have actually changed
+    if (formData.currentStep === 1 && resetSubsequentSteps) {
+      const educationChanged = prevEducationLevel.current !== formData.educationLevel?.value;
+      const industryChanged = prevIndustry.current !== formData.industry?.value;
+      
+      // Only reset if the field was previously filled (not initial load)
+      if ((educationChanged && prevEducationLevel.current) || (industryChanged && prevIndustry.current)) {
+        console.log('🔄 Resetting subsequent steps due to change in Education Level or Industry');
+        resetSubsequentSteps();
+      }
+      
+      // Update refs
+      prevEducationLevel.current = formData.educationLevel?.value;
+      prevIndustry.current = formData.industry?.value;
+    }
+  }, [formData.educationLevel?.value, formData.industry?.value, formData.currentStep, resetSubsequentSteps]);
 
   const handleNameChange = (value: string) => {
     const sanitized = sanitizeName(value);

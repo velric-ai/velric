@@ -223,12 +223,133 @@ useEffect(() => {
     setFormData((prevState) => ({
       ...prevState,
       [fieldName]: {
-        ...prevState[fieldName as keyof SurveyFormData],
+        ...(prevState[fieldName as keyof SurveyFormData] as object),
         ...fieldData,
         touched: true,
       },
       updatedAt: Date.now(),
     }));
+  }, []);
+
+  // Reset subsequent steps when education level or industry changes on step 1
+  const resetSubsequentSteps = useCallback(() => {
+    setFormData((prevState) => {
+      // Only reset if we're on step 1
+      if (prevState.currentStep !== 1) {
+        return prevState;
+      }
+
+      // Reset all fields from step 2 onwards
+      const resetState = {
+        ...prevState,
+        // Step 2: Mission Questions
+        missionFocus: {
+          value: [],
+          error: null,
+          touched: false,
+          questionText: "",
+          options: [],
+        },
+        // Step 3: Strength Areas
+        strengthAreas: {
+          value: [],
+          error: null,
+          touched: false,
+        },
+        // Step 4: Learning Preference
+        learningPreference: {
+          value: "",
+          error: null,
+          touched: false,
+        },
+        // Step 5: Portfolio (Optional)
+        portfolio: {
+          file: null,
+          filePreview: null,
+          fileError: null,
+          fileProgress: 0,
+          url: "",
+          urlError: null,
+          uploadStatus: null,
+        },
+        // Step 6: Platform Connections (Optional)
+        platformConnections: {
+          github: {
+            connected: false,
+            username: "",
+            userId: "",
+            avatar: "",
+            profile: {},
+            error: null,
+            loading: false,
+          },
+          codesignal: {
+            connected: false,
+            username: "",
+            userId: "",
+            avatar: "",
+            score: null,
+            profile: {},
+            error: null,
+            loading: false,
+          },
+          hackerrank: {
+            connected: false,
+            username: "",
+            userId: "",
+            avatar: "",
+            rank: null,
+            profile: {},
+            error: null,
+            loading: false,
+          },
+        },
+        // Step 7: Experience Summary
+        experienceSummary: {
+          value: "",
+          error: null,
+          touched: false,
+        },
+        updatedAt: Date.now(),
+      };
+
+      // Update survey state to remove completed steps after step 1
+      const surveyStateStr = localStorage.getItem("velric_survey_state");
+      const surveyState = surveyStateStr ? JSON.parse(surveyStateStr) : {};
+      const updatedSurveyState = {
+        ...surveyState,
+        completedSteps: [1], // Only keep step 1 as completed
+        lastUpdated: new Date().toISOString(),
+      };
+      localStorage.setItem(
+        "velric_survey_state",
+        JSON.stringify(updatedSurveyState)
+      );
+
+      // Clear draft data for subsequent steps
+      const draftData = localStorage.getItem("velric_survey_draft");
+      if (draftData) {
+        try {
+          const draft = JSON.parse(draftData);
+          // Only keep step 1 data in draft
+          const cleanedDraft = {
+            ...draft,
+            missionFocus: resetState.missionFocus,
+            strengthAreas: resetState.strengthAreas,
+            learningPreference: resetState.learningPreference,
+            portfolio: resetState.portfolio,
+            platformConnections: resetState.platformConnections,
+            experienceSummary: resetState.experienceSummary,
+            currentStep: 1,
+          };
+          localStorage.setItem("velric_survey_draft", JSON.stringify(cleanedDraft));
+        } catch (error) {
+          console.warn("Failed to clean draft data:", error);
+        }
+      }
+
+      return resetState;
+    });
   }, []);
 
   const nextStep = useCallback(() => {
@@ -432,6 +553,7 @@ useEffect(() => {
     updateFieldData,
     nextStep,
     prevStep,
+    resetSubsequentSteps,
     canProceed,
     submitSurvey,
   };

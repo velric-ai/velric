@@ -7,14 +7,9 @@ import SurveyData from "@/components/SurveyData";
 import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
 
 function ProfileContent() {
-  const [activeTab, setActiveTab] = useState("profile");
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-  };
 
   // Fetch user data from API
   useEffect(() => {
@@ -78,6 +73,9 @@ function ProfileContent() {
 
   const [surveyData, setSurveyData] = useState<any>(null);
   const [isLoadingSurvey, setIsLoadingSurvey] = useState(true);
+  const [totalMissionsCompleted, setTotalMissionsCompleted] = useState<number>(0);
+  const [averageVelricScore, setAverageVelricScore] = useState<number>(0);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // Fetch survey data from API
   useEffect(() => {
@@ -141,6 +139,65 @@ function ProfileContent() {
     fetchSurveyData();
   }, []);
 
+  // Fetch mission statistics
+  useEffect(() => {
+    const fetchMissionStats = async () => {
+      try {
+        setIsLoadingStats(true);
+        
+        // Get user ID from localStorage
+        const userDataStr = localStorage.getItem('velric_user');
+        if (!userDataStr) {
+          setIsLoadingStats(false);
+          return;
+        }
+
+        const localUser = JSON.parse(userDataStr);
+        const userId = localUser.id;
+
+        if (!userId) {
+          setIsLoadingStats(false);
+          return;
+        }
+
+        // Fetch missions from analytics API
+        const response = await fetch(`/api/analytics?userId=${userId}`);
+        const result = await response.json();
+
+        if (result.success && result.missions) {
+          // Count completed missions (status is 'completed' or 'graded')
+          const completedMissions = result.missions.filter((mission: any) => 
+            mission.status === 'completed' || mission.status === 'graded'
+          );
+          setTotalMissionsCompleted(completedMissions.length);
+
+          // Calculate average velric score from all missions with scores
+          const missionsWithScores = result.missions.filter((mission: any) => 
+            mission.velric_score !== null && 
+            mission.velric_score !== undefined && 
+            typeof mission.velric_score === 'number'
+          );
+
+          if (missionsWithScores.length > 0) {
+            const totalScore = missionsWithScores.reduce((sum: number, mission: any) => 
+              sum + mission.velric_score, 0
+            );
+            const average = totalScore / missionsWithScores.length;
+            setAverageVelricScore(Math.round(average * 10) / 10); // Round to 1 decimal place
+          } else {
+            setAverageVelricScore(0);
+          }
+        }
+      } catch (err: any) {
+        console.error('Error fetching mission stats:', err);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+
+    fetchMissionStats();
+  }, []);
+
   return (
     <>
       <Head>
@@ -169,11 +226,7 @@ function ProfileContent() {
         </div>
 
         {/* Navigation */}
-        <DashboardNavigation
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          notificationCount={3}
-        />
+        <DashboardNavigation activeTab="profile" />
 
         {/* Main Content */}
         <div className="relative z-10 pt-16">
@@ -220,35 +273,35 @@ function ProfileContent() {
                   {/* Quick Stats Cards */}
                   <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 rounded-xl p-6">
                     <h3 className="text-lg font-semibold text-white mb-2">
-                      Velric Score
+                      Average Velric Score
                     </h3>
-                    <div className="text-3xl font-bold text-purple-400 mb-1">
-                      95
-                    </div>
-                    <p className="text-white/60 text-sm">Top 5% globally</p>
+                    {isLoadingStats ? (
+                      <div className="text-3xl font-bold text-purple-400 mb-1">-</div>
+                    ) : (
+                      <div className="text-3xl font-bold text-purple-400 mb-1">
+                        {averageVelricScore > 0 ? averageVelricScore.toFixed(1) : '0.0'}
+                      </div>
+                    )}
+                    <p className="text-white/60 text-sm">Across all missions</p>
                   </div>
 
                   <div className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/10 border border-cyan-500/20 rounded-xl p-6">
                     <h3 className="text-lg font-semibold text-white mb-2">
                       Missions Completed
                     </h3>
-                    <div className="text-3xl font-bold text-cyan-400 mb-1">12</div>
-                    <p className="text-white/60 text-sm">This month</p>
+                    {isLoadingStats ? (
+                      <div className="text-3xl font-bold text-cyan-400 mb-1">-</div>
+                    ) : (
+                      <div className="text-3xl font-bold text-cyan-400 mb-1">{totalMissionsCompleted}</div>
+                    )}
+                    <p className="text-white/60 text-sm">Total completed</p>
                   </div>
 
-                  <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-500/20 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-white mb-2">
-                      Streak
-                    </h3>
-                    <div className="text-3xl font-bold text-green-400 mb-1">7</div>
-                    <p className="text-white/60 text-sm">Days active</p>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-xl p-6">
+                  <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-xl p-6 md:col-span-2">
                     <h3 className="text-lg font-semibold text-white mb-2">
                       Profile Views
                     </h3>
-                    <div className="text-3xl font-bold text-orange-400 mb-1">24</div>
+                    <div className="text-3xl font-bold text-orange-400 mb-1">0</div>
                     <p className="text-white/60 text-sm">This month</p>
                   </div>
                 </div>
