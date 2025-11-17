@@ -148,10 +148,10 @@ function UserDashboardContent() {
       { title: "0", subtitle: "Profile Views This Month", icon: Eye, color: "#A78BFA" }
     ],
     platforms: [
-      { name: "GitHub", icon: Github, connected: true, status: "Public" },
-      { name: "CodeSignal", icon: Code, connected: true, status: "Private" },
+      { name: "GitHub", icon: Github, connected: false, status: "Public" },
+      { name: "CodeSignal", icon: Code, connected: false, status: "Private" },
       { name: "HackerRank", icon: Trophy, connected: false },
-      { name: "Discord", icon: MessageCircle, connected: true, status: "Public" },
+      { name: "Discord", icon: MessageCircle, connected: false, status: "Public" },
       { name: "LinkedIn", icon: Linkedin, connected: false }
     ]
   };
