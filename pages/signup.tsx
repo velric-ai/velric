@@ -3,26 +3,43 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, User, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { Eye, EyeOff, User, Briefcase, Mail, Lock } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { SignupData, ValidationError } from '@/types/auth';
 import { validateName, validateEmail, validatePassword } from '@/services/authService';
+
+type SignupFormState = Omit<SignupData, "isRecruiter"> & { isRecruiter: boolean | null };
 
 export default function Signup() {
   const router = useRouter();
   const { signup, isAuthenticated, isLoading: authLoading } = useAuth();
 
-  const [formData, setFormData] = useState<SignupData>({
+  const [formData, setFormData] = useState<SignupFormState>({
     name: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    isRecruiter: false
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
+  const roleOptions: Array<{ key: "professional" | "recruiter"; isRecruiter: boolean; title: string; description: string }> = [
+    {
+      key: "professional",
+      isRecruiter: false,
+      title: "I'm a Professional",
+      description: "Complete missions, improve your Velric score, and get matched",
+    },
+    {
+      key: "recruiter",
+      isRecruiter: true,
+      title: "I'm a Recruiter",
+      description: "Discover verified talent, post missions, and manage pipelines",
+    },
+  ];
 
   // Redirect if already authenticated and onboarded
   useEffect(() => {
@@ -71,10 +88,16 @@ export default function Signup() {
       }
     }
 
+    if (touched.isRecruiter) {
+      if (formData.isRecruiter === null) {
+        newErrors.role = "Please select an account type";
+      }
+    }
+
     setErrors(prev => ({ ...prev, ...newErrors, general: prev.general }));
   }, [formData, touched]);
 
-  const handleInputChange = (field: keyof SignupData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (field: keyof SignupFormState) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setFormData(prev => ({ ...prev, [field]: value }));
 
@@ -88,6 +111,27 @@ export default function Signup() {
     }
     
     // Clear general error when user starts typing
+    if (errors.general) {
+      setErrors((prev: { [key: string]: string }) => {
+        const newErrors = { ...prev };
+        delete newErrors.general;
+        return newErrors;
+      });
+    }
+  };
+
+  const handleRoleSelect = (isRecruiterSelection: boolean) => {
+    setFormData(prev => ({ ...prev, isRecruiter: isRecruiterSelection }));
+    setTouched(prev => ({ ...prev, isRecruiter: true }));
+
+    if (errors.role) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.role;
+        return newErrors;
+      });
+    }
+
     if (errors.general) {
       setErrors((prev: { [key: string]: string }) => {
         const newErrors = { ...prev };
@@ -117,8 +161,12 @@ export default function Signup() {
       newErrors.confirmPassword = "Passwords do not match";
     }
 
+    if (formData.isRecruiter === null) {
+      newErrors.role = "Please select an account type";
+    }
+
     setErrors(newErrors);
-    setTouched({ name: true, email: true, password: true, confirmPassword: true });
+    setTouched({ name: true, email: true, password: true, confirmPassword: true, isRecruiter: true });
     return Object.keys(newErrors).length === 0;
   };
 
@@ -132,8 +180,20 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
-      const response = await signup(formData);
+      const isRecruiter = formData.isRecruiter === true;
+      const payload: SignupData = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        isRecruiter,
+      };
+
+      const response = await signup(payload);
       console.log('✅ Signup successful - storing user data...');
+      
+      // Use is_recruiter from backend API response (mapped from is_recruiter to isRecruiter in AuthContext)
+      const isRecruiterFromBackend = Boolean(response?.user?.isRecruiter);
       
       // 🔴 CRITICAL FIX: Store both flags as false for new users
       const newUserData = {
@@ -143,33 +203,40 @@ export default function Signup() {
         onboarded: false,              // 🔴 Mark as NOT onboarded
         surveyCompleted: false,        // 🔴 Mark survey as NOT completed
         signupCompletedAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString()
+        lastUpdated: new Date().toISOString(),
+        isRecruiter: isRecruiterFromBackend, // Use value from backend
       };
       
       // Store with exact key 'velric_user'
       localStorage.setItem('velric_user', JSON.stringify(newUserData));
       console.log('✅ User data stored with both flags as false');
       
-      // 🔴 CRITICAL FIX: Clear any existing survey data first
-      localStorage.removeItem('velric_survey_draft');
-      localStorage.removeItem('velric_survey_state');
-      console.log('🧹 Cleared any existing survey data');
-      
-      // 🔴 CRITICAL FIX: Initialize survey state to Step 1
-      const initialSurveyState = {
-        currentStep: 1,
-        currentStepIndex: 0,
-        totalSteps: 8,
-        completedSteps: [],
-        surveyData: {},
-        startedAt: new Date().toISOString()
-      };
-      localStorage.setItem('velric_survey_state', JSON.stringify(initialSurveyState));
-      console.log('✅ Survey state initialized to Step 1');
-      
-      // Redirect to survey for new users
-      console.log('🔄 Redirecting to survey...');
-      router.replace('/onboard/survey');
+      // Redirect based on is_recruiter from backend
+      if (isRecruiterFromBackend) {
+        console.log('🔄 Redirecting recruiter to dashboard...');
+        router.replace('/recruiter-dashboard');
+      } else {
+        // 🔴 CRITICAL FIX: Clear any existing survey data first
+        localStorage.removeItem('velric_survey_draft');
+        localStorage.removeItem('velric_survey_state');
+        console.log('🧹 Cleared any existing survey data');
+        
+        // 🔴 CRITICAL FIX: Initialize survey state to Step 1
+        const initialSurveyState = {
+          currentStep: 1,
+          currentStepIndex: 0,
+          totalSteps: 8,
+          completedSteps: [],
+          surveyData: {},
+          startedAt: new Date().toISOString()
+        };
+        localStorage.setItem('velric_survey_state', JSON.stringify(initialSurveyState));
+        console.log('✅ Survey state initialized to Step 1');
+        
+        // Redirect to survey for new users
+        console.log('🔄 Redirecting professional to survey...');
+        router.replace('/onboard/survey');
+      }
     } catch (error: any) {
       // Extract error message from API response
       const errorMessage = error || "Signup failed. Please try again.";
@@ -303,6 +370,64 @@ export default function Signup() {
                 />
                 {errors.confirmPassword && (
                   <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>
+                )}
+              </div>
+
+              {/* Role Selection */}
+              <div>
+                <p className="text-sm font-medium text-gray-300 mb-3">
+                  Choose your account type
+                </p>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {roleOptions.map((option) => {
+                    const isSelected = formData.isRecruiter === option.isRecruiter;
+                    return (
+                      <label
+                        key={option.key}
+                        className={`relative flex cursor-pointer flex-col space-y-2 sm:space-y-3 rounded-2xl border p-4 pr-12 text-left transition-all ${
+                          isSelected
+                            ? "border-transparent bg-gradient-to-r from-[#9333EA]/20 to-[#06B6D4]/20 shadow-lg shadow-purple-500/10"
+                            : "border-white/10 bg-[#27272A]"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="accountType"
+                          value={option.key}
+                          checked={isSelected}
+                          onChange={() => handleRoleSelect(option.isRecruiter)}
+                          className="sr-only"
+                        />
+                        <div className="flex items-center space-x-3">
+                          <div
+                            className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                              option.isRecruiter
+                                ? "bg-purple-500/20 text-purple-300"
+                                : "bg-cyan-500/20 text-cyan-300"
+                            }`}
+                          >
+                            {option.isRecruiter ? (
+                              <Briefcase className="h-5 w-5" />
+                            ) : (
+                              <User className="h-5 w-5" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-white">{option.title}</p>
+                            <p className="text-xs text-white/60">{option.description}</p>
+                          </div>
+                        </div>
+                        <div
+                          className={`absolute right-4 top-4 h-5 w-5 rounded-full border ${
+                            isSelected ? "border-transparent bg-gradient-to-r from-purple-400 to-cyan-400" : "border-white/30"
+                          }`}
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+                {errors.role && (
+                  <p className="mt-2 text-sm text-red-400">{errors.role}</p>
                 )}
               </div>
 

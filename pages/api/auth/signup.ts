@@ -15,19 +15,24 @@ const supabase = supabaseUrl && supabaseAnonKey
     })
   : null;
 
+type SignupSuccessUser = {
+  id: string;
+  email: string;
+  name: string;
+  onboarded: boolean;
+  created_at: string;
+  survey_completed_at: string | null;
+  profile_complete: boolean;
+  is_recruiter: boolean;
+};
+
 type SignupResponse =
   | {
       success: true;
-      user: {
-        id: string;
-        email: string;
-        name: string;
-        onboarded: boolean;
-        created_at: string;
-        survey_completed_at: string | null;
-        profile_complete: boolean;
-      };
+      user: SignupSuccessUser;
       message?: string;
+      access_token?: string;
+      refresh_token?: string;
     }
   | { success: false; error: string };
 
@@ -45,13 +50,14 @@ export default async function handler(
 
   try {
     const body = req.body || {};
-    const { name, email, password } = body;
+    const { name, email, password, isRecruiter } = body;
+    const recruiterFlag = Boolean(isRecruiter);
 
     // Validation
     if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        error: "Missing required fields: name, email, and password are required",
+      error: "Missing required fields: name, email, and password are required",
       });
     }
 
@@ -68,7 +74,15 @@ export default async function handler(
     if (password.length < 8) {
       return res.status(400).json({
         success: false,
-        error: "Password must be at least 8 characters long",
+      error: "Password must be at least 8 characters long",
+      });
+    }
+
+    // Validate isRecruiter flag presence
+    if (typeof isRecruiter === "undefined") {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required field: isRecruiter",
       });
     }
 
@@ -106,6 +120,7 @@ export default async function handler(
       options: {
         data: {
           name: name.trim(),
+          is_recruiter: recruiterFlag,
         },
       },
     });
@@ -157,6 +172,7 @@ export default async function handler(
       email: email.trim(),
       name: name.trim(),
       onboarded: false,
+      is_recruiter: recruiterFlag,
       created_at: new Date().toISOString(),
       survey_completed_at: null,
       profile_complete: false,
@@ -181,18 +197,23 @@ export default async function handler(
           .single();
 
         if (existingUser) {
+          const existingResponseUser: SignupSuccessUser = {
+            id: existingUser.id,
+            email: existingUser.email,
+            name: existingUser.name,
+            onboarded: existingUser.onboarded || false,
+            created_at: existingUser.created_at,
+            survey_completed_at: existingUser.survey_completed_at || null,
+            profile_complete: existingUser.profile_complete || false,
+            is_recruiter: recruiterFlag,
+          };
+
           return res.status(200).json({
             success: true,
-            user: {
-              id: existingUser.id,
-              email: existingUser.email,
-              name: existingUser.name,
-              onboarded: existingUser.onboarded || false,
-              created_at: existingUser.created_at,
-              survey_completed_at: existingUser.survey_completed_at || null,
-              profile_complete: existingUser.profile_complete || false,
-            },
+            user: existingResponseUser,
             message: "User already exists",
+            access_token: authData.session?.access_token,
+            refresh_token: authData.session?.refresh_token,
           });
         }
       }
@@ -203,19 +224,24 @@ export default async function handler(
       });
     }
 
-    // Return success with user data
+    const responseUser: SignupSuccessUser = {
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      onboarded: userData.onboarded || false,
+      created_at: userData.created_at,
+      survey_completed_at: userData.survey_completed_at || null,
+      profile_complete: userData.profile_complete || false,
+      is_recruiter: recruiterFlag,
+    };
+
+    // Return success with user data (same structure as login)
     return res.status(201).json({
       success: true,
-      user: {
-        id: userData.id,
-        email: userData.email,
-        name: userData.name,
-        onboarded: userData.onboarded || false,
-        created_at: userData.created_at,
-        survey_completed_at: userData.survey_completed_at || null,
-        profile_complete: userData.profile_complete || false,
-      },
+      user: responseUser,
       message: "User created successfully",
+      access_token: authData.session?.access_token,
+      refresh_token: authData.session?.refresh_token,
     });
   } catch (err: any) {
     console.error("/api/auth/signup error:", err);

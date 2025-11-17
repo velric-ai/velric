@@ -11,7 +11,8 @@ import {
   Bell,
   ChevronDown,
   LogOut,
-  User, // ✅ Added User import
+  User,
+  UserCircle,
 } from "lucide-react";
 import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
 import { WelcomeMessage } from "../components/dashboard/WelcomeMessage";
@@ -54,9 +55,16 @@ function RecruiterDashboardContent() {
       try {
         const parsedUser = JSON.parse(userDataString);
 
-        // Safety check: if role is not recruiter, redirect (though login.tsx should handle this)
-        if (parsedUser.role !== "recruiter") {
-          router.push("/select-role");
+        // Safety check: if user is not a recruiter, redirect
+        // Check both isRecruiter (frontend) and is_recruiter (backend) for compatibility
+        const isRecruiter = Boolean(parsedUser.isRecruiter || parsedUser.is_recruiter);
+        if (!isRecruiter) {
+          // If not recruiter, redirect to appropriate dashboard
+          if (parsedUser.onboarded === true) {
+            router.push("/user-dashboard");
+          } else {
+            router.push("/onboard/survey");
+          }
           return;
         }
 
@@ -221,12 +229,21 @@ function RecruiterDashboardContent() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center">
-                    <Briefcase className="w-4 h-4 text-white" />
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-semibold text-sm">
+                    {user?.name ? (
+                      user.name.charAt(0).toUpperCase()
+                    ) : (
+                      <Briefcase className="w-5 h-5 text-white" />
+                    )}
                   </div>
-                  <span className="text-sm font-medium text-white">
-                    Velric Recruiter
-                  </span>
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-semibold text-white">
+                      {user?.name || "Recruiter"}
+                    </span>
+                    <span className="text-xs text-white/60">
+                      {user?.email || ""}
+                    </span>
+                  </div>
                   <ChevronDown
                     className={`w-4 h-4 text-white/60 transition-transform ${
                       showUserDropdown ? "rotate-180" : ""
@@ -241,7 +258,7 @@ function RecruiterDashboardContent() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 top-full mt-2 w-48 rounded-xl overflow-hidden z-50"
+                    className="absolute right-0 top-full mt-2 w-56 rounded-xl overflow-hidden z-50"
                     style={{
                       background: "rgba(0, 0, 0, 0.8)",
                       backdropFilter: "blur(20px)",
@@ -249,6 +266,25 @@ function RecruiterDashboardContent() {
                       boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
                     }}
                   >
+                    {/* User Info Section */}
+                    {user && (
+                      <div className="px-4 py-3 border-b border-white/10">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-semibold">
+                            {user.name ? user.name.charAt(0).toUpperCase() : "R"}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white truncate">
+                              {user.name || "Recruiter"}
+                            </p>
+                            <p className="text-xs text-white/60 truncate">
+                              {user.email || ""}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
                     <motion.button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -267,6 +303,7 @@ function RecruiterDashboardContent() {
                         Switch to Professional
                       </span>
                     </motion.button>
+                    
                     <motion.button
                       onClick={(e) => {
                         e.stopPropagation();

@@ -267,19 +267,39 @@ export function ProtectedDashboardRoute({ children }: { children: React.ReactNod
         }
 
         const userData = JSON.parse(userDataStr);
+        const currentPath = router.pathname;
+        const isRecruiter = Boolean(userData.isRecruiter || userData.is_recruiter);
+        
         console.log('🔒 Dashboard Guard Check:', {
+          path: currentPath,
+          isRecruiter,
           onboarded: userData.onboarded,
           surveyCompleted: userData.surveyCompleted
         });
         
-        // Check if user is onboarded
-        if (userData.onboarded !== true) {
-          console.log('❌ Dashboard guard - user not onboarded, redirecting to survey');
+        // If user is a recruiter accessing recruiter dashboard, skip onboarding check
+        if (isRecruiter && currentPath === '/recruiter-dashboard') {
+          console.log('✅ Dashboard guard - recruiter accessing recruiter dashboard, allowing access');
+          setShouldRender(true);
+          setIsChecking(false);
+          return;
+        }
+        
+        // For professionals or user-dashboard, check if user is onboarded
+        if (!isRecruiter && userData.onboarded !== true) {
+          console.log('❌ Dashboard guard - professional not onboarded, redirecting to survey');
           router.replace('/onboard/survey');
           return;
         }
         
-        console.log('✅ Dashboard guard - user is fully onboarded, allowing access');
+        // If recruiter trying to access user-dashboard, redirect to recruiter dashboard
+        if (isRecruiter && currentPath === '/user-dashboard') {
+          console.log('⚠️ Dashboard guard - recruiter trying to access user dashboard, redirecting to recruiter dashboard');
+          router.replace('/recruiter-dashboard');
+          return;
+        }
+        
+        console.log('✅ Dashboard guard - access granted');
         setShouldRender(true);
         setIsChecking(false);
         
