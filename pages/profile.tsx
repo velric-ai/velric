@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import DashboardNavigation from "@/components/dashboard/DashboardNavigation";
 import ProfileCard from "@/components/ProfileCard";
 import SurveyData from "@/components/SurveyData";
@@ -10,6 +10,22 @@ function ProfileContent() {
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
+  const [isSnackbarVisible, setIsSnackbarVisible] = useState(false);
+
+  const showUserDataError = (message?: string) => {
+    const friendlyMessage = message || "Failed to load user data";
+    setError(friendlyMessage);
+    setSnackbarMessage(friendlyMessage);
+    setIsSnackbarVisible(true);
+    setUserData({
+      name: "User",
+      email: "user@example.com",
+      avatar: "/assets/default-avatar.png",
+      status: "Loading...",
+      statusDescription: "Unable to load user data",
+    });
+  };
 
   // Fetch user data from API
   useEffect(() => {
@@ -21,22 +37,25 @@ function ProfileContent() {
         // Get user ID from localStorage
         const userDataStr = localStorage.getItem('velric_user');
         if (!userDataStr) {
-          throw new Error('User not authenticated');
+          showUserDataError('User not authenticated');
+          return;
         }
 
         const localUser = JSON.parse(userDataStr);
         const userId = localUser.id;
 
         if (!userId) {
-          throw new Error('User ID not found');
+          showUserDataError('User ID not found');
+          return;
         }
 
         // Fetch user data from API
         const response = await fetch(`/api/user/${userId}`);
         const result = await response.json();
 
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to fetch user data');
+        if (!response.ok || !result.success) {
+          showUserDataError(result.error || 'Failed to fetch user data');
+          return;
         }
 
         // Format user data for ProfileCard
@@ -53,16 +72,7 @@ function ProfileContent() {
         });
       } catch (err: any) {
         console.error('Error fetching user data:', err);
-        setError(err.message || 'Failed to load user data');
-        
-        // Fallback to mock data on error
-        setUserData({
-          name: "User",
-          email: "user@example.com",
-          avatar: "/assets/default-avatar.png",
-          status: "Loading...",
-          statusDescription: "Unable to load user data",
-        });
+        showUserDataError(err?.message);
       } finally {
         setIsLoading(false);
       }
@@ -70,6 +80,16 @@ function ProfileContent() {
 
     fetchUserData();
   }, []);
+
+  useEffect(() => {
+    if (!isSnackbarVisible) return;
+
+    const timer = setTimeout(() => {
+      setIsSnackbarVisible(false);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [isSnackbarVisible]);
 
   const [surveyData, setSurveyData] = useState<any>(null);
   const [isLoadingSurvey, setIsLoadingSurvey] = useState(true);
@@ -230,6 +250,39 @@ function ProfileContent() {
 
         {/* Main Content */}
         <div className="relative z-10 pt-16">
+          <AnimatePresence>
+            {isSnackbarVisible && snackbarMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="fixed top-24 right-6 z-[60] max-w-sm rounded-2xl border border-purple-500/30 bg-gradient-to-r from-[#1a0b2e]/95 via-[#16213e]/95 to-[#0f3460]/95 p-4 shadow-2xl shadow-purple-900/40"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/20 text-red-300">
+                    !
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-white">{snackbarMessage}</p>
+                  </div>
+                  <button
+                    onClick={() => setIsSnackbarVisible(false)}
+                    className="text-white/50 transition hover:text-white"
+                    aria-label="Dismiss error"
+                  >
+                    &times;
+                  </button>
+                </div>
+                <motion.div
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 4.5, ease: "linear" }}
+                  className="mt-3 h-1 rounded-full bg-gradient-to-r from-red-400 via-purple-400 to-cyan-400"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

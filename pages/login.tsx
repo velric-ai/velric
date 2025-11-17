@@ -4,16 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Login() {
   const router = useRouter();
+  const { login, isLoading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -21,25 +22,14 @@ export default function Login() {
       ...prev,
       [name]: value,
     }));
-    // Clear error when user starts typing
-    if (error) setError("");
   };
 
   const validateForm = () => {
-    if (!formData.email) {
-      setError("Email is required");
+    // Basic validation - errors will be shown in snackbar via AuthContext
+    if (!formData.email || !formData.email.includes("@")) {
       return false;
     }
-    if (!formData.email.includes("@")) {
-      setError("Please enter a valid email address");
-      return false;
-    }
-    if (!formData.password) {
-      setError("Password is required");
-      return false;
-    }
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (!formData.password || formData.password.length < 6) {
       return false;
     }
     return true;
@@ -48,51 +38,32 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      // Validation errors will be handled by form's required attributes
+      // For better UX, we could show snackbar for validation errors too
+      return;
+    }
 
     setIsLoading(true);
-    setError("");
 
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+    // Call login - it won't throw, will return null on error and show snackbar
+    const authenticatedUser = await login({
+      email: formData.email,
+      password: formData.password,
+    });
 
-      if (formData.email && formData.password.length >= 6) {
-        // Check for existing role in localStorage (for returning users)
-        const existingUserDataString = localStorage.getItem("velric_user");
-        const existingUserData = existingUserDataString
-          ? JSON.parse(existingUserDataString)
-          : {};
-        const storedRole = existingUserData.role || null; // Retrieve existing role if available
-
-        // Create new user data structure
-        let userData = {
-          email: formData.email,
-          name: formData.email.split("@")[0],
-          loginTime: new Date().toISOString(),
-          onboarded: true,
-          role: storedRole, // Preserve the stored role
-        };
-
-        localStorage.setItem("velric_user", JSON.stringify(userData));
-
-        // Conditional Redirection based on saved role
-        if (storedRole === "professional") {
-          router.push("/user-dashboard");
-        } else if (storedRole === "recruiter") {
-          router.push("/recruiter-dashboard");
-        } else {
-          // No role selected yet, go to role selection layer
-          router.push("/select-role");
-        }
+    // Only redirect if login was successful (user is not null)
+    if (authenticatedUser) {
+      if (authenticatedUser.isRecruiter) {
+        router.push("/recruiter-dashboard");
       } else {
-        setError("Invalid email or password");
+        router.push("/user-dashboard");
       }
-    } catch (err) {
-      setError("Login failed. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
+    // If login failed, error is already shown in snackbar via AuthContext
+    // No need to handle error here - just reset loading state
+    
+    setIsLoading(false);
   };
 
   return (
@@ -137,17 +108,6 @@ export default function Login() {
             className="bg-[#1C1C1E] rounded-2xl p-8 border border-white/10"
           >
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Error Message */}
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm"
-                >
-                  {error}
-                </motion.div>
-              )}
-
               {/* Email Field */}
               <div>
                 <label
@@ -218,10 +178,10 @@ export default function Login() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || authLoading}
                 className="w-full bg-gradient-to-r from-[#9333EA] to-[#06B6D4] text-white py-3 rounded-lg font-semibold hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                {isLoading ? (
+                {isLoading || authLoading ? (
                   <div className="flex items-center justify-center">
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
                     Signing In...

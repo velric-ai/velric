@@ -4,6 +4,7 @@ export interface SignupData {
   email: string;
   password: string;
   confirmPassword: string;
+  isRecruiter: boolean;
 }
 
 export interface LoginData {
@@ -16,6 +17,7 @@ export interface User {
   email: string;
   name: string;
   onboarded: boolean;
+  isRecruiter?: boolean;
   createdAt?: string;
   surveyCompletedAt?: string | null;
   profileComplete?: boolean;
@@ -40,7 +42,10 @@ export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (data: LoginData) => Promise<void>;
+  login: (data: LoginData) => Promise<User | null>;
   signup: (data: SignupData) => Promise<SignupResponse>;
   logout: () => void;
+  snackbarMessage: string | null;
+  isSnackbarVisible: boolean;
+  hideSnackbar: () => void;
 }
