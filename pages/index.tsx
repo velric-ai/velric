@@ -7,6 +7,11 @@ import Footer from "@/components/Footer";
 
 
 import InteractiveAIVisual from "@/components/InteractiveAIVisual";
+import dynamic from "next/dynamic";
+
+const VelricGlobe = dynamic(() => import("@/components/VelricGlobe"), {
+  ssr: false,
+});
 import HumanAIConnection from "@/components/HumanAIConnection";
 import InteractiveDashboard from "@/components/InteractiveDashboard";
 import MissionFlow from "@/components/MissionFlow";
@@ -226,7 +231,7 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
           >
             <div className="w-full max-w-md">
-              <InteractiveAIVisual />
+              <VelricGlobe />
             </div>
           </motion.div>
         </section>
