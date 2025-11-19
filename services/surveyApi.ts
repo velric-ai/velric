@@ -113,14 +113,8 @@ export async function submitSurveyData(
       strength_areas: formData.strengthAreas.value,
       learning_preference: formData.learningPreference.value,
       portfolio: {
-        file: formData.portfolio.file
-          ? {
-              name: formData.portfolio.file.name,
-              size: formData.portfolio.file.size,
-              type: formData.portfolio.file.type,
-            }
-          : null,
-        url: formData.portfolio.url || null,
+        file: formData.portfolio.uploadedFilename || null,
+        url: formData.portfolio.uploadedUrl || formData.portfolio.url || null,
       },
       experience_summary: formData.experienceSummary.value,
       platform_connections: formData.platformConnections,
@@ -286,29 +280,51 @@ export async function uploadPortfolioFile(
       throw new ValidationError("Unsupported file type");
 
     const fileName = `${Date.now()}_${file.name}`;
-    const { data, error } = await supabase.storage
+    
+    console.log("[uploadPortfolioFile] Starting upload:", {
+      fileName,
+      fileSize: file.size,
+      fileType: file.type
+    });
+
+    // Add timeout wrapper
+    const uploadPromise = supabase.storage
       .from("portfolio_uploads")
       .upload(fileName, file, {
         upsert: false,
         contentType: file.type,
       });
 
-    if (error) throw new AppError("Upload failed: " + error.message);
+    // Create a timeout promise
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Upload timeout after 30 seconds")), 30000)
+    );
+
+    const { data, error } = await Promise.race([uploadPromise, timeoutPromise]) as any;
+
+    if (error) {
+      console.error("[uploadPortfolioFile] Supabase error:", error);
+      throw new AppError("Upload failed: " + error.message);
+    }
+
+    console.log("[uploadPortfolioFile] Upload successful, fetching public URL");
 
     const { data: urlData } = supabase.storage
       .from("portfolio_uploads")
       .getPublicUrl(fileName);
 
+    console.log("[uploadPortfolioFile] Public URL:", urlData.publicUrl);
+
     return {
       success: true,
       filename: file.name,
-      url: urlData.publicUrl, // fixed destructuring
+      url: urlData.publicUrl,
       size: file.size,
       type: file.type,
       uploadedAt: new Date().toISOString(),
     };
   } catch (error: any) {
-    console.error("Upload error:", error);
+    console.error("[uploadPortfolioFile] Upload error:", error);
     throw new AppError(error.message || "Failed to upload file");
   }
 }
@@ -491,18 +507,16 @@ export async function submitSurveyData(formData: SurveyFormData): Promise<Survey
     }
 
     // Prepare submission payload
-    const submissionPayload = {
+    const submissionPayload: SurveySubmissionPayload = {
       fullName: formData.fullName.value,
       educationLevel: formData.educationLevel.value,
       industry: formData.industry.value,
       missionFocus: formData.missionFocus.value,
       strengthAreas: formData.strengthAreas.value,
       learningPreference: formData.learningPreference.value,
-      portfolioFile: formData.portfolio.file ? {
-        filename: formData.portfolio.file.name,
-        size: formData.portfolio.file.size,
-        type: formData.portfolio.file.type,
-        url: formData.portfolio.filePreview || ''
+      portfolioFile: formData.portfolio.uploadedUrl ? {
+        filename: formData.portfolio.uploadedFilename || 'resume',
+        url: formData.portfolio.uploadedUrl
       } : null,
       portfolioUrl: formData.portfolio.url || null,
       experienceSummary: formData.experienceSummary.value || null,
@@ -532,6 +546,23 @@ export async function submitSurveyData(formData: SurveyFormData): Promise<Survey
     };
 
     // Log submission attempt
+    console.log('[submitSurvey] Portfolio data from form:', {
+      uploadedUrl: formData.portfolio.uploadedUrl,
+      uploadedFilename: formData.portfolio.uploadedFilename,
+      url: formData.portfolio.url,
+      file: formData.portfolio.file?.name,
+    });
+    
+    console.log('[submitSurvey] Creating portfolioFile:', {
+      hasUploadedUrl: !!formData.portfolio.uploadedUrl,
+      portfolioFile: submissionPayload.portfolioFile,
+    });
+    
+    console.log('[submitSurvey] Full submission payload (portfolio only):', {
+      portfolioFile: submissionPayload.portfolioFile,
+      portfolioUrl: submissionPayload.portfolioUrl,
+    });
+    
     console.log('Submitting survey data:', {
       timestamp: new Date().toISOString(),
       userId: getAuthToken(),

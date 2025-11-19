@@ -2,7 +2,7 @@ import Head from "next/head";
 import DashboardNavigation from "@/components/dashboard/DashboardNavigation";
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { StaticMission } from "@/data/staticMissions";
 import { ArrowLeft, Clock, TrendingUp, Users, Star } from "lucide-react";
@@ -19,6 +19,23 @@ export default function MissionsPage() {
   const [previewGenerating, setPreviewGenerating] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [userSurveyData, setUserSurveyData] = useState<any>(null);
+  const [surveyLoaded, setSurveyLoaded] = useState(false);
+  const hasGenerated = useRef(false);
+  const surveyFetchAttempts = useRef(0);
+
+  const buildPayload = (count: number) => {
+    if (!userSurveyData) {
+      throw new Error('Survey data not loaded');
+    }
+    const missionFocus = Array.isArray(userSurveyData.mission_focus) ? userSurveyData.mission_focus : [];
+    const strengthAreas = Array.isArray(userSurveyData.strength_areas) ? userSurveyData.strength_areas : [];
+    let interests = [...missionFocus, ...strengthAreas];
+    const industry = userSurveyData.industry;
+    const difficulty = userSurveyData.metadata?.difficulty || 'Intermediate';
+    const userBackground = userSurveyData.experience_summary || `${userSurveyData.education_level || ''} ${industry || ''}`.trim();
+    if (!interests.length && industry) interests = [industry];
+    return { userBackground, interests, industry, difficulty, count };
+  };
 
   // Get logged-in user data
   useEffect(() => {
@@ -26,27 +43,39 @@ export default function MissionsPage() {
     if (userDataStr) {
       try {
         const user = JSON.parse(userDataStr);
-        setUserId(user.id);
+        setUserId(user.id || user.user_id || null);
       } catch (error) {
         console.error('Error parsing user data:', error);
       }
+    } else {
+      setUserId(null);
+      setSurveyLoaded(true);
     }
   }, []);
 
-  // Fetch user survey data when userId is available
+  // Fetch user survey data when userId is available, with retries
   useEffect(() => {
     const fetchUserSurveyData = async () => {
       if (!userId) return;
-
       try {
         const response = await fetch(`/api/survey/${userId}`);
         const result = await response.json();
-        
         if (result.success && result.surveyData) {
           setUserSurveyData(result.surveyData);
+          setSurveyLoaded(true);
+          return;
         }
       } catch (error) {
         console.error('Error fetching user survey data:', error);
+      }
+      if (surveyFetchAttempts.current < 5) {
+        surveyFetchAttempts.current += 1;
+        setTimeout(fetchUserSurveyData, 800);
+      } else {
+        setSurveyLoaded(true);
+        if (!userSurveyData) {
+          router.replace('/onboard/survey?redirect=/missions');
+        }
       }
     };
 
@@ -54,50 +83,29 @@ export default function MissionsPage() {
   }, [userId]);
 
   useEffect(() => {
-    if (userId) {
-      fetchAndGenerateMissions();
-    }
-  }, [userId, userSurveyData]);
+    if (hasGenerated.current) return;
+    if (!surveyLoaded) return;
+    if (!userSurveyData) return;
+    fetchAndGenerateMissions();
+    hasGenerated.current = true;
+  }, [surveyLoaded, userSurveyData]);
+
+  // Show gentle message only if survey stays unavailable after waiting
+  useEffect(() => {
+    if (!surveyLoaded || userSurveyData) return;
+    const t = setTimeout(() => {
+      setError('Please complete the survey to generate missions.');
+      setLoading(false);
+    }, 5000);
+    return () => clearTimeout(t);
+  }, [surveyLoaded, userSurveyData]);
 
   const fetchAndGenerateMissions = async () => {
     try {
       setLoading(true);
       setError('');
       
-      // Prepare payload based on logged-in user's survey data
-      let payload: any = {
-        count: 5
-      };
-
-      if (userSurveyData) {
-        // Use real user survey data
-        payload = {
-          userBackground: userSurveyData.experience_summary || 
-            `Developer with ${userSurveyData.education_level || 'some'} education, interested in ${userSurveyData.industry || 'Technology'}.`,
-          interests: userSurveyData.mission_focus || userSurveyData.strength_areas || ['Technology'],
-          industry: userSurveyData.industry || 'Technology',
-          difficulty: userSurveyData.metadata?.difficulty || 'Intermediate',
-          count: 5
-        };
-      } else if (userId) {
-        // User is logged in but no survey data - use basic defaults
-        payload = {
-          userBackground: 'Developer looking to improve skills and build projects.',
-          interests: ['Technology', 'Web Development'],
-          industry: 'Technology',
-          difficulty: 'Intermediate',
-          count: 5
-        };
-      } else {
-        // No user logged in - use generic defaults
-        payload = {
-          userBackground: 'Motivated developer interested in web and AI, familiar with React/Next.js and Node.js.',
-          interests: ['AI', 'SaaS', 'Productivity', 'Web Development'],
-          industry: 'SaaS',
-          difficulty: 'Intermediate',
-          count: 5
-        };
-      }
+      const payload = buildPayload(5);
 
       // Generate missions with user data using existing generate API
       const generateResponse = await fetch('/api/missions/generate', {
@@ -114,17 +122,7 @@ export default function MissionsPage() {
           return;
         }
       }
-      
-      // Fallback: Get existing missions from database
-      const response = await fetch('/api/missions');
-      const data = await response.json();
-      
-      if (data.success) {
-        setMissions(data.missions);
-        setSource(data.source);
-      } else {
-        setError('Failed to load missions');
-      }
+      setError('Failed to generate missions from survey responses');
     } catch (error) {
       console.error('Error fetching missions:', error);
       setError('Failed to load missions');
@@ -160,28 +158,7 @@ export default function MissionsPage() {
       setError('');
       
       // Use logged-in user's survey data for mission generation
-      let payload: any = {
-        count: 3,
-      };
-
-      if (userSurveyData) {
-        payload = {
-          userBackground: userSurveyData.experience_summary || 
-            `Developer with ${userSurveyData.education_level || 'some'} education, interested in ${userSurveyData.industry || 'Technology'}.`,
-          interests: userSurveyData.mission_focus || userSurveyData.strength_areas || ['Technology'],
-          industry: userSurveyData.industry || 'Technology',
-          difficulty: userSurveyData.metadata?.difficulty || 'Intermediate',
-          count: 3,
-        };
-      } else {
-        payload = {
-          userBackground: 'Ambitious developer focused on web and AI. Comfortable with React/Next.js and Node.js.',
-          interests: ['AI','SaaS','Productivity'],
-          industry: 'SaaS',
-          difficulty: 'Intermediate',
-          count: 3,
-        };
-      }
+      const payload = buildPayload(3);
 
       const resp = await fetch('/api/admin/generate-missions', {
         method: 'POST',
@@ -207,28 +184,7 @@ export default function MissionsPage() {
       setError('');
       
       // Use logged-in user's survey data for mission generation
-      let payload: any = {
-        count: 3,
-      };
-
-      if (userSurveyData) {
-        payload = {
-          userBackground: userSurveyData.experience_summary || 
-            `Developer with ${userSurveyData.education_level || 'some'} education, interested in ${userSurveyData.industry || 'Technology'}.`,
-          interests: userSurveyData.mission_focus || userSurveyData.strength_areas || ['Technology'],
-          industry: userSurveyData.industry || 'Technology',
-          difficulty: userSurveyData.metadata?.difficulty || 'Intermediate',
-          count: 3,
-        };
-      } else {
-        payload = {
-          userBackground: 'Ambitious developer focused on web and AI. Comfortable with React/Next.js and Node.js.',
-          interests: ['AI','SaaS','Productivity'],
-          industry: 'SaaS',
-          difficulty: 'Intermediate',
-          count: 3,
-        };
-      }
+      const payload = buildPayload(3);
 
       const resp = await fetch('/api/missions/generate', {
         method: 'POST',

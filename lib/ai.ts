@@ -1,7 +1,7 @@
 // lib/ai.ts
 import { MissionTemplate } from "@/types";
 import { StaticMission } from "@/data/staticMissions";
-import { storeAIGeneratedMission } from "@/lib/supabaseClient";
+import { storeAIGeneratedMission, supabase } from "@/lib/supabaseClient";
 import OpenAI from "openai";
 
 // Initialize OpenAI client
@@ -25,82 +25,70 @@ if (typeof window === "undefined" && process.env.OPENAI_API_KEY) {
 
 // Enhanced prompt template for comprehensive mission generation
 export const COMPREHENSIVE_MISSION_PROMPT = `
-You are an expert career coach and technical mentor who creates realistic, engaging coding missions based on actual industry scenarios. Generate a comprehensive mission that feels like a real project from a top-tier company.
+You are an expert career coach and mentor who creates realistic, engaging missions based on actual industry scenarios. Generate a comprehensive mission that feels like a real project from a top-tier company.
 
 CONTEXT:
 - User Background: {userBackground}
 - Interests: {interests}
 - Industry Focus: {industry}
 - Difficulty Level: {difficulty}
-- Time Estimate: {timeEstimate}
+- Time Estimate: less than 1 hours
+
+CLASSIFY USER:
+1. Determine if the user profile is TECHNICAL or NON-TECHNICAL using the context above.
+2. TECHNICAL indicators: programming, software, engineering, devops, data engineering, machine learning.
+3. NON-TECHNICAL indicators: product management, UX research/design, marketing, operations, strategy, sales, business analytics (non-programming).
+4. Tailor the mission accordingly:
+   - Technical: implementation-focused mission with code, architecture, testing, deployment.
+   - Non-technical: non-coding mission such as product strategy, research, analytics, go-to-market, process optimization.
 
 REQUIREMENTS:
 Generate a single, detailed mission with the following structure. Make it as comprehensive and detailed as the example missions you might find at companies like Google, Meta, or top startups.
 
 MISSION OUTPUT (JSON):
 {
-  "title": "Engaging, specific mission title that sounds like a real company project (e.g., 'Build AI-Powered Code Review Assistant' or 'Design Microservices Architecture for E-commerce Platform')",
-  "description": "Detailed 3-4 sentence description explaining the scenario, business impact, technical challenges, and what the user will accomplish. Include specific metrics or business goals.",
-  "field": "Primary field (e.g., 'Frontend Development', 'Backend Engineering', 'Full Stack', 'Data Science', 'DevOps', 'Mobile Development', 'AI/ML Engineering')",
+  "title": "Engaging, specific mission title",
+  "description": "Detailed 3-4 sentence description explaining scenario, impact, constraints, and outcome",
+  "field": "Match classification: Technical ('Frontend Development', 'Backend Engineering', 'Full Stack', 'Data Science', 'DevOps', 'Mobile', 'AI/ML') or Non-technical ('Product Management', 'UX Research', 'Marketing Strategy', 'Operations', 'Business Analytics')",
   "difficulty": "Beginner|Intermediate|Advanced",
-  "timeEstimate": "Realistic time estimate matching complexity (e.g., '4-6 hours', '2-3 days', '1-2 weeks')",
-  "category": "Specific category (e.g., 'Web Development', 'API Design', 'Data Analysis', 'Machine Learning', 'System Architecture')",
-  "company": "Realistic company name that fits the industry (can be fictional but sounds authentic)",
-  "context": "Detailed 4-5 sentence background explaining: the company's current situation, specific business constraints, why this project is critical now, what happens if it's not completed, and how it fits into broader company goals. Include specific numbers, deadlines, or business metrics.",
-  "skills": ["6-8 specific technical skills needed, ranging from languages to frameworks to tools"],
-  "industries": ["2-3 relevant industries this mission applies to"],
+  "timeEstimate": "Realistic time estimate",
+  "category": "Aligned with classification (Technical: Web/API/ML/Architecture; Non-technical: Product Strategy/User Research/Go-to-Market/Operations)",
+  "company": "Realistic company name",
+  "context": "4-5 sentences of urgent business context with metrics/timelines",
+  "skills": ["6-8 skills aligned with classification (Technical: languages/frameworks/tools; Non-technical: product discovery, stakeholder management, experimentation design, KPIs, market research, analytics)"] ,
+  "industries": ["2-3 relevant industries"],
   "tasks": [
-    "Minimum 5-7 specific, actionable tasks that the user must complete. Each task should be:
-    - Specific and measurable (e.g., 'Implement JWT authentication with 2FA support' not 'Add authentication')
-    - Include technical details (e.g., 'Design database schema with proper indexing for 1M+ users')
-    - Have clear deliverables (e.g., 'Create comprehensive API documentation with OpenAPI 3.0 spec')
-    - Build progressively in complexity
-    - Include testing, documentation, and deployment aspects"
+    "5-7 actionable tasks tailored to classification.",
+    "Technical: implementation steps with measurable criteria (performance, security, tests, deployment)",
+    "Non-technical: discovery, research, analysis, stakeholder alignment, experiment design, KPI definition, roadmap, reporting"
   ],
   "objectives": [
-    "3-4 clear, specific learning objectives that align with career growth:
-    - Technical skills the user will master
-    - Industry best practices they'll learn
-    - Real-world experience they'll gain
-    - Career-relevant competencies they'll develop"
+    "3-4 learning objectives aligned with career growth"
   ],
   "resources": [
-    "4-6 realistic resources/tools/constraints available:
-    - Specific datasets, APIs, or services (e.g., 'Access to Stripe API sandbox environment')
-    - Tools and platforms (e.g., 'AWS credits for cloud infrastructure')
-    - Sample code or existing systems (e.g., 'Legacy codebase with 50K+ lines to refactor')
-    - Team support (e.g., 'Senior architect available for weekly code reviews')
-    - Documentation and guidelines (e.g., 'Company's microservices architecture patterns')
-    - Realistic constraints (e.g., 'Must maintain 99.9% uptime during migration')"
+    "4-6 resources aligned with classification (Technical: datasets/APIs/cloud/codebase/guidelines; Non-technical: interview pool/analytics dashboards/market reports/stakeholder access/experiment tools/templates)"
   ],
   "evaluationMetrics": [
-    "4-6 specific, measurable criteria for evaluating success:
-    - Performance benchmarks (e.g., 'API response time under 200ms for 95% of requests')
-    - Quality standards (e.g., 'Code coverage above 85% with integration tests')
-    - Business metrics (e.g., 'Reduce user onboarding time by 40%')
-    - Technical requirements (e.g., 'Handle 10K concurrent users without degradation')
-    - Security standards (e.g., 'Pass OWASP security scan with zero high-risk vulnerabilities')
-    - User experience metrics (e.g., 'Mobile app receives 4.5+ star rating in testing')"
+    "4-6 measurable criteria aligned with classification",
+    "Technical: performance, reliability, coverage, scalability, security",
+    "Non-technical: customer impact (NPS, conversion), research validity, roadmap clarity, stakeholder alignment, KPI movement"
   ]
 }
 
 CRITICAL GUIDELINES:
-1. COMPANY CONTEXT MUST BE URGENT AND SPECIFIC: Include real business pressures like "Series B funding requires 10x user growth in 6 months" or "Compliance audit in 8 weeks requires GDPR implementation"
-
-2. TASKS MUST BE COMPREHENSIVE: Each task should feel like a real sprint story with acceptance criteria. Include setup, implementation, testing, documentation, and deployment phases.
-
-3. TECHNICAL DEPTH: Match the difficulty level - Beginner tasks focus on fundamentals, Advanced tasks involve system design, scalability, and complex integrations.
-
-4. BUSINESS IMPACT: Every mission should clearly articulate why this work matters to the company's success, with specific metrics or deadlines.
-
-5. REAL-WORLD CONSTRAINTS: Include realistic limitations like legacy system integration, budget constraints, regulatory requirements, or technical debt.
+1. COMPANY CONTEXT MUST BE URGENT AND SPECIFIC.
+2. TASKS MUST BE COMPREHENSIVE and include acceptance criteria.
+3. TECHNICAL DEPTH must match difficulty.
+4. BUSINESS IMPACT must be explicit and measurable.
+5. REAL-WORLD CONSTRAINTS must be included.
+ 6. STRICT INDUSTRY ALIGNMENT: Use the provided {industry} directly. Do not drift to unrelated domains (e.g., avoid generic AI/SaaS if industry is Customer Support). Company context, tasks, skills, and metrics must be native to the given industry.
 
 EXAMPLES OF EXCELLENT COMPANY CONTEXTS:
-- "StreamingCorp's video platform crashes during peak hours (8-10 PM), losing $50K/hour in ad revenue. The current CDN can't handle 2M concurrent users, and a major sports event next month will triple traffic."
-- "FinTechStart must implement PCI compliance before their Series A investor due diligence in 6 weeks, or risk losing $10M funding. Current payment processing stores sensitive data insecurely."
-- "HealthcareAI's patient data pipeline processes 500K records daily but takes 6 hours to complete, delaying critical treatment decisions. Doctors need real-time insights to improve patient outcomes."
+- "StreamingCorp's video platform crashes during peak hours, losing $50K/hour in ad revenue. A major event next month will triple traffic."
+- "FinTechStart must implement PCI compliance before investor due diligence in 6 weeks or risk losing $10M funding."
+- "HealthcareAI's data pipeline processes 500K records daily but takes 6 hours, delaying treatment decisions."
 
-Generate a mission that reads like it came from a real company's high-priority project backlog, with the depth and detail of actual enterprise software development.
+Generate a mission that reads like it came from a real company's high-priority project backlog, with the depth and detail of actual enterprise work.
 `;
 
 // Production-ready prompt template for AI mission generation (legacy)
@@ -309,6 +297,241 @@ export async function generateAndStoreMissions(
   }
 
   return generatedMissionIds;
+}
+
+/**
+ * Download a resume/portfolio file from Supabase storage and return its content.
+ * If the file is a text-like file it will return `text`, otherwise it returns `base64`.
+ */
+export async function fetchFileFromSupabase(
+  bucket: string,
+  path: string
+): Promise<{ text?: string; base64?: string; mimeType?: string } | null> {
+  try {
+    const { data, error } = await supabase.storage.from(bucket).download(path);
+    if (error) {
+      console.error("Error downloading file from Supabase:", error);
+      return null;
+    }
+
+    // `data` is a ReadableStream/Blob depending on environment. Convert to ArrayBuffer then Buffer.
+    // In Node, `data.arrayBuffer` may not exist; handle Buffer case as well.
+    let arrayBuffer: ArrayBuffer;
+
+    // @ts-ignore
+    if (typeof data.arrayBuffer === "function") {
+      // Blob in browser / polyfilled response
+      // @ts-ignore
+      arrayBuffer = await data.arrayBuffer();
+    } else if (data instanceof Buffer) {
+      // Node Buffer
+      arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+    } else if (typeof (data as any).read === "function") {
+      // Node Readable stream: accumulate
+      const chunks: Buffer[] = [];
+      for await (const chunk of data as any) {
+        chunks.push(Buffer.from(chunk));
+      }
+      const buf = Buffer.concat(chunks);
+      arrayBuffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+    } else {
+      // Fallback: try to convert to text directly
+      try {
+        // @ts-ignore
+        const text = await data.text();
+        return { text };
+      } catch (e) {
+        console.warn("Unable to convert downloaded data to text directly", e);
+        return null;
+      }
+    }
+
+    const buffer = Buffer.from(arrayBuffer as ArrayBuffer);
+
+    // Try to detect text by looking for UTF-8 printable characters
+    const likelyText = buffer.slice(0, 1024).toString("utf8");
+    const isText = /[\x00-\x08\x0E-\x1F]/.test(likelyText) === false;
+
+    if (isText) {
+      return { text: buffer.toString("utf8") };
+    }
+
+    return { base64: buffer.toString("base64") };
+  } catch (error) {
+    console.error("fetchFileFromSupabase error:", error);
+    return null;
+  }
+}
+
+/**
+ * Use OpenAI to parse a resume (either text or base64 binary) into a structured JSON object.
+ */
+export async function parseResumeWithOpenAI(
+  resumePayload: { text?: string; base64?: string },
+  options?: { filename?: string }
+): Promise<any | null> {
+  if (!openai) {
+    console.warn("OpenAI not configured - cannot parse resume via AI");
+    return null;
+  }
+
+  const system = `You are a resume parser. Given a resume in plain text or a base64-encoded binary (PDF/DOCX), extract a clean JSON resume with the following schema:\n{\n  "name": string|null,\n  "email": string|null,\n  "phone": string|null,\n  "location": string|null,\n  "summary": string|null,\n  "skills": [string],\n  "experiences": [{"company","title","startDate","endDate","description"}],\n  "education": [{"institution","degree","startDate","endDate","description"}],\n  "projects": [{"name","description","technologies"}],\n  "links": {"portfolio":string|null,"github":string|null,"linkedin":string|null}\n}\nOnly return valid JSON with these keys. If a field is not present, use null or empty array/object as appropriate.`;
+
+  // Build user content
+  let content = "";
+  if (resumePayload.text) {
+    content = `RESUME_TEXT:\n${resumePayload.text}`;
+  } else if (resumePayload.base64) {
+    content = `RESUME_BASE64 (base64-encoded file):\n${resumePayload.base64}\n\nNote: the file may be a PDF/DOCX. Extract the textual content and parse.`;
+  } else {
+    return null;
+  }
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: content },
+      ],
+      temperature: 0.0,
+      max_tokens: 2000,
+    });
+
+    const response = completion.choices[0]?.message?.content;
+    if (!response) return null;
+
+    const cleaned = response.replace(/^```(?:json)?/im, "").replace(/```$/m, "").trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/m);
+    const jsonText = jsonMatch ? jsonMatch[0] : cleaned;
+    try {
+      const parsed = JSON.parse(jsonText);
+      return parsed;
+    } catch (e) {
+      console.error("Failed to parse JSON from OpenAI response", e);
+      return null;
+    }
+  } catch (error) {
+    console.error("parseResumeWithOpenAI error:", error);
+    return null;
+  }
+}
+
+/**
+ * High-level helper: fetch resume from Supabase storage, parse to JSON via OpenAI, then generate & store missions.
+ * Returns generated mission IDs and the parsed resume JSON (if available).
+ */
+export async function fetchParseAndGenerateMissionsFromStorage(options: {
+  bucket?: string;
+  path: string; // path within the bucket
+  interests?: string[];
+  industry?: string;
+  difficulty?: "Beginner" | "Intermediate" | "Advanced";
+  count?: number;
+}): Promise<{ missionIds: string[]; parsedResume?: any } | { error: string }> {
+  const bucket = options.bucket || "portfolio_uploads";
+  const path = options.path;
+
+  const file = await fetchFileFromSupabase(bucket, path);
+  if (!file) return { error: "Failed to download file from Supabase" };
+
+  // If file is a PDF or DOCX, extract text server-side first using pdfjs/mammoth
+  const lower = path.toLowerCase();
+  if (lower.endsWith(".pdf") || lower.endsWith(".docx")) {
+    try {
+      let buffer: Buffer | null = null;
+      if (file.base64) {
+        buffer = Buffer.from(file.base64, "base64");
+      } else if (file.text) {
+        buffer = Buffer.from(file.text, "utf8");
+      }
+
+      if (buffer) {
+        if (lower.endsWith(".pdf")) {
+          try {
+            // @ts-ignore - dynamic import of pdfjs-dist (dev dependency may not have types)
+            const pdfjsMod: any = await import("pdfjs-dist/legacy/build/pdf.js");
+            const pdfjsLib: any = pdfjsMod && (pdfjsMod.default || pdfjsMod);
+            const loadingTask: any = pdfjsLib.getDocument({ data: buffer });
+            const pdf = await loadingTask.promise;
+            let extracted = "";
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const content = await page.getTextContent();
+              const pageText = content.items.map((it: any) => it.str || "").join(" ");
+              extracted += pageText + "\n";
+            }
+            file.text = extracted;
+          } catch (pdfErr) {
+            console.warn("PDF text extraction failed, falling back to base64 send:", pdfErr);
+          }
+        } else if (lower.endsWith(".docx")) {
+          try {
+            // @ts-ignore - dynamic import of mammoth (may not have types)
+            const mammothMod: any = await import("mammoth");
+            const mammothLib: any = mammothMod && (mammothMod.default || mammothMod);
+            const res = await mammothLib.extractRawText({ buffer });
+            file.text = res.value;
+          } catch (docErr) {
+            console.warn("DOCX text extraction failed, falling back to base64 send:", docErr);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Error during file text extraction:", err);
+    }
+  }
+
+  // Try to parse via OpenAI if available
+  const parsed = await parseResumeWithOpenAI(file, { filename: path });
+
+  // Log that parsed JSON (if any) will be used for mission generation
+  if (parsed) {
+    console.log("[Resume Parser] Parsed JSON resume created — now using it to generate missions along with survey data:", {
+      parsedResumePreview: {
+        name: parsed.name || null,
+        email: parsed.email || null,
+        skills: (parsed.skills || []).slice(0, 10),
+      },
+      interests: options.interests || [],
+      industry: options.industry || parsed?.industries?.[0] || "Technology",
+      difficulty: options.difficulty || "Intermediate",
+    });
+  }
+
+  // Build a fallback userBackground string from parsed JSON or raw text
+  let userBackground = "";
+  if (parsed) {
+    userBackground = parsed.summary || "";
+    if (!userBackground) {
+      // concat recent experience titles and skills
+      const expText = (parsed.experiences || [])
+        .map((e: any) => `${e.title || ""} at ${e.company || ""}`)
+        .join("; ");
+      const skills = (parsed.skills || []).slice(0, 10).join(", ");
+      userBackground = [expText, skills].filter(Boolean).join(" | ");
+    }
+  } else if (file.text) {
+    userBackground = file.text.substring(0, 4000);
+  } else {
+    userBackground = "";
+  }
+
+  const interests = options.interests || [];
+  const industry = options.industry || (parsed?.industries?.[0] || "Technology");
+  const difficulty = options.difficulty || "Intermediate";
+  const count = options.count || 3;
+
+  // Use existing generation pipeline
+  const missionIds = await generateAndStoreMissions(
+    userBackground,
+    interests,
+    industry,
+    difficulty,
+    count
+  );
+
+  return { missionIds, parsedResume: parsed || null };
 }
 
 // Fallback mission generation for when OpenAI is not available

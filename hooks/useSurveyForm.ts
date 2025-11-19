@@ -88,6 +88,8 @@ const initialFormData: SurveyFormData = {
     url: "",
     urlError: null,
     uploadStatus: null,
+    uploadedUrl: null,
+    uploadedFilename: null,
   },
 
   // Step 6: Platform Connections (Optional)
@@ -271,6 +273,8 @@ useEffect(() => {
           url: "",
           urlError: null,
           uploadStatus: null,
+          uploadedUrl: null,
+          uploadedFilename: null,
         },
         // Step 6: Platform Connections (Optional)
         platformConnections: {
@@ -514,6 +518,18 @@ useEffect(() => {
         isSubmitting: false,
         isDraft: false,
       }));
+
+      // Mark survey as completed in local storage for route guards
+      try {
+        const userDataStr = localStorage.getItem("velric_user");
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          userData.surveyCompleted = true;
+          userData.onboarded = true;
+          userData.surveyCompletedAt = new Date().toISOString();
+          localStorage.setItem("velric_user", JSON.stringify(userData));
+        }
+      } catch {}
 
       setTimeout(() => {
         router.push("/user-dashboard");

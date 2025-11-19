@@ -209,7 +209,8 @@ export function ProtectedSurveyRoute({ children }: { children: React.ReactNode }
         });
         
         // If user is onboarded, survey is already completed
-        if (userData.onboarded === true) {
+        // Allow access if survey not completed, even if onboarded flag was toggled
+        if (userData.onboarded === true && userData.surveyCompleted === true) {
           console.log('⚠️ Survey guard - user already completed survey, redirecting to dashboard');
           router.replace('/user-dashboard');
           return;
