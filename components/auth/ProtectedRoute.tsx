@@ -278,9 +278,23 @@ export function ProtectedDashboardRoute({ children }: { children: React.ReactNod
           surveyCompleted: userData.surveyCompleted
         });
         
-        // If user is a recruiter accessing recruiter dashboard, skip onboarding check
-        if (isRecruiter && currentPath === '/recruiter-dashboard') {
-          console.log('✅ Dashboard guard - recruiter accessing recruiter dashboard, allowing access');
+        // Check if accessing recruiter routes
+        const isRecruiterRoute = currentPath.startsWith('/recruiter');
+        
+        // If accessing recruiter routes, must be a recruiter
+        if (isRecruiterRoute && !isRecruiter) {
+          console.log('❌ Dashboard guard - non-recruiter trying to access recruiter route, redirecting');
+          if (userData.onboarded === true) {
+            router.replace('/user-dashboard');
+          } else {
+            router.replace('/onboard/survey');
+          }
+          return;
+        }
+        
+        // If user is a recruiter accessing recruiter routes, allow access
+        if (isRecruiter && isRecruiterRoute) {
+          console.log('✅ Dashboard guard - recruiter accessing recruiter route, allowing access');
           setShouldRender(true);
           setIsChecking(false);
           return;

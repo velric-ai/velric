@@ -5,174 +5,11 @@ import { Filter, Search, Bookmark, BookmarkCheck, MapPin, Briefcase, GraduationC
 import { ProtectedDashboardRoute } from "@/components/auth/ProtectedRoute";
 import { useRouter } from "next/router";
 import RecruiterNavbar from "@/components/recruiter/RecruiterNavbar";
+import { getAllFilterClusters, getClusterById } from "@/lib/skillClusters";
+import { Candidate, mockCandidates } from "@/lib/mockCandidates";
 
-type Candidate = {
-  id: string;
-  name: string;
-  velricScore: number;
-  domain: string;
-  location?: string;
-  email?: string;
-  linkedin?: string;
-  github?: string;
-  about?: string;
-  subscores: {
-    technical: number;
-    collaboration: number;
-    reliability: number;
-  };
-  skills: string[];
-  missions: Array<{ name: string; status: "completed" | "in-progress"; description?: string }>;
-  experience?: Array<{
-    title: string;
-    company: string;
-    duration: string;
-    description: string;
-  }>;
-  education?: Array<{
-    degree: string;
-    school: string;
-    year: string;
-  }>;
-  strengths: string[];
-  weaknesses: string[];
-};
-
-const mockCandidates: Candidate[] = [
-  {
-    id: "cand-1",
-    name: "Ava Thompson",
-    velricScore: 92,
-    domain: "Frontend",
-    location: "San Francisco, CA",
-    email: "ava.thompson@example.com",
-    linkedin: "linkedin.com/in/avathompson",
-    github: "github.com/avathompson",
-    about: "Passionate frontend developer with 5+ years of experience building scalable web applications. Specialized in React, TypeScript, and modern UI/UX design. Love creating pixel-perfect interfaces and optimizing user experiences.",
-    subscores: { technical: 94, collaboration: 88, reliability: 90 },
-    skills: ["React", "TypeScript", "TailwindCSS", "Next.js", "GraphQL", "Figma"],
-    missions: [
-      { name: "Revamp Dashboard UI", status: "completed", description: "Redesigned entire dashboard with modern UI components and improved accessibility" },
-      { name: "Design System Audit", status: "completed", description: "Created comprehensive design system documentation and component library" },
-    ],
-    experience: [
-      {
-        title: "Senior Frontend Developer",
-        company: "TechCorp Inc.",
-        duration: "2021 - Present",
-        description: "Lead frontend development for multiple product lines. Built reusable component libraries, improved performance by 40%, and mentored junior developers."
-      },
-      {
-        title: "Frontend Developer",
-        company: "StartupXYZ",
-        duration: "2019 - 2021",
-        description: "Developed customer-facing web applications using React and Redux. Collaborated with design team to implement responsive UIs."
-      }
-    ],
-    education: [
-      {
-        degree: "B.S. Computer Science",
-        school: "Stanford University",
-        year: "2019"
-      }
-    ],
-    strengths: ["Pixel-perfect execution", "Great communication", "Team leadership"],
-    weaknesses: ["Needs backend exposure"],
-  },
-  {
-    id: "cand-2",
-    name: "Leo Martinez",
-    velricScore: 88,
-    domain: "Backend",
-    location: "New York, NY",
-    email: "leo.martinez@example.com",
-    linkedin: "linkedin.com/in/leomartinez",
-    github: "github.com/leomartinez",
-    about: "Backend engineer specializing in distributed systems and microservices architecture. Expert in Node.js, PostgreSQL, and cloud infrastructure. Passionate about writing clean, maintainable code and building scalable solutions.",
-    subscores: { technical: 90, collaboration: 82, reliability: 91 },
-    skills: ["Node.js", "PostgreSQL", "Supabase", "AWS", "Docker", "Kubernetes"],
-    missions: [
-      { name: "Real-time Notifications API", status: "completed", description: "Built high-performance notification system handling 1M+ requests/day" },
-      { name: "Billing Service Refactor", status: "in-progress", description: "Migrating legacy billing system to microservices architecture" },
-    ],
-    experience: [
-      {
-        title: "Backend Engineer",
-        company: "CloudScale Systems",
-        duration: "2020 - Present",
-        description: "Design and implement microservices architecture. Optimized database queries reducing latency by 60%. Led migration to Kubernetes."
-      },
-      {
-        title: "Software Engineer",
-        company: "DataFlow Inc.",
-        duration: "2018 - 2020",
-        description: "Developed RESTful APIs and database schemas. Implemented caching strategies improving response times by 50%."
-      }
-    ],
-    education: [
-      {
-        degree: "M.S. Software Engineering",
-        school: "MIT",
-        year: "2018"
-      }
-    ],
-    strengths: ["Scalable architecture", "Test coverage", "Performance optimization"],
-    weaknesses: ["Frontend handoff delays"],
-  },
-  {
-    id: "cand-3",
-    name: "Maya Patel",
-    velricScore: 81,
-    domain: "Data",
-    location: "Seattle, WA",
-    email: "maya.patel@example.com",
-    linkedin: "linkedin.com/in/mayapatel",
-    github: "github.com/mayapatel",
-    about: "Data engineer and analyst with expertise in building data pipelines and generating actionable insights. Proficient in Python, SQL, and modern data stack tools. Strong background in statistical analysis and machine learning.",
-    subscores: { technical: 85, collaboration: 78, reliability: 80 },
-    skills: ["Python", "Airflow", "dbt", "SQL", "Pandas", "Tableau"],
-    missions: [
-      { name: "Customer Churn Insights", status: "completed", description: "Developed predictive model identifying at-risk customers with 85% accuracy" },
-      { name: "Usage Forecast Model", status: "completed", description: "Built time-series forecasting model for resource planning" },
-    ],
-    experience: [
-      {
-        title: "Data Engineer",
-        company: "Analytics Pro",
-        duration: "2021 - Present",
-        description: "Build and maintain ETL pipelines processing 100GB+ daily. Create dashboards and reports for business stakeholders. Optimize data warehouse queries."
-      },
-      {
-        title: "Data Analyst",
-        company: "Insight Labs",
-        duration: "2019 - 2021",
-        description: "Performed statistical analysis and created visualizations. Wrote SQL queries and Python scripts for data processing."
-      }
-    ],
-    education: [
-      {
-        degree: "B.S. Data Science",
-        school: "University of Washington",
-        year: "2019"
-      }
-    ],
-    strengths: ["Sharp analytical reports", "Clear stakeholder updates", "Data modeling"],
-    weaknesses: ["Prefers async communication"],
-  },
-];
-
-const domainFilters = ["All", "Frontend", "Backend", "Data"];
-const skillsFilters = [
-  "React",
-  "TypeScript",
-  "TailwindCSS",
-  "Node.js",
-  "PostgreSQL",
-  "Supabase",
-  "Python",
-  "Airflow",
-  "dbt",
-];
+// Get all available clusters for filtering
+const availableClusters = getAllFilterClusters();
 
 function CandidatesPageContent() {
   const router = useRouter();
@@ -183,7 +20,7 @@ function CandidatesPageContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [domainFilter, setDomainFilter] = useState("All");
   const [scoreRange, setScoreRange] = useState<[number, number]>([70, 100]);
-  const [skillFilters, setSkillFilters] = useState<string[]>([]);
+  const [clusterFilters, setClusterFilters] = useState<string[]>([]); // Changed from skillFilters
 
   const filteredCandidates = useMemo(() => {
     return mockCandidates.filter((candidate) => {
@@ -191,7 +28,11 @@ function CandidatesPageContent() {
         candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         candidate.skills.some((skill) =>
           skill.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        ) ||
+        candidate.clusters.core_stack.some(clusterId => {
+          const cluster = getClusterById(clusterId);
+          return cluster?.name.toLowerCase().includes(searchQuery.toLowerCase());
+        });
 
       const matchesDomain =
         domainFilter === "All" || candidate.domain === domainFilter;
@@ -200,23 +41,28 @@ function CandidatesPageContent() {
         candidate.velricScore >= scoreRange[0] &&
         candidate.velricScore <= scoreRange[1];
 
-      const matchesSkills =
-        skillFilters.length === 0 ||
-        skillFilters.every((skill) => candidate.skills.includes(skill));
+      // Filter by clusters: candidate must have at least one of the selected clusters
+      const matchesClusters =
+        clusterFilters.length === 0 ||
+        clusterFilters.some(clusterId => 
+          candidate.clusters.core_stack.includes(clusterId) ||
+          candidate.clusters.domain_tags.includes(clusterId) ||
+          candidate.clusters.strength_tags.includes(clusterId)
+        );
 
-      return matchesSearch && matchesDomain && matchesScore && matchesSkills;
+      return matchesSearch && matchesDomain && matchesScore && matchesClusters;
     });
-  }, [domainFilter, scoreRange, searchQuery, skillFilters]);
+  }, [domainFilter, scoreRange, searchQuery, clusterFilters]);
 
   const selectedCandidate = filteredCandidates.find(
     (candidate) => candidate.id === selectedCandidateId
   );
 
-  const toggleSkillFilter = (skill: string) => {
-    setSkillFilters((prev) =>
-      prev.includes(skill)
-        ? prev.filter((item) => item !== skill)
-        : [...prev, skill]
+  const toggleClusterFilter = (clusterId: string) => {
+    setClusterFilters((prev) =>
+      prev.includes(clusterId)
+        ? prev.filter((item) => item !== clusterId)
+        : [...prev, clusterId]
     );
   };
 
@@ -376,7 +222,7 @@ function CandidatesPageContent() {
                   onClick={() => {
                     setDomainFilter("All");
                     setScoreRange([70, 100]);
-                    setSkillFilters([]);
+                    setClusterFilters([]);
                     setSearchQuery("");
                   }}
                 >
@@ -457,22 +303,27 @@ function CandidatesPageContent() {
 
               <div>
                 <label className="text-xs text-white/60 mb-1 block">
-                  Skills
+                  Skill Clusters
                 </label>
-                <div className="flex flex-wrap gap-2">
-                  {skillsFilters.map((skill) => (
-                    <button
-                      key={skill}
-                      onClick={() => toggleSkillFilter(skill)}
-                      className={`px-3 py-1 rounded-full text-xs border ${
-                        skillFilters.includes(skill)
-                          ? "bg-cyan-500/20 border-cyan-400 text-white"
-                          : "border-white/10 text-white/60 hover:border-white/30"
-                      }`}
-                    >
-                      {skill}
-                    </button>
-                  ))}
+                <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto custom-scroll">
+                  {availableClusters.map((cluster) => {
+                    const isSelected = clusterFilters.includes(cluster.id);
+                    return (
+                      <button
+                        key={cluster.id}
+                        onClick={() => toggleClusterFilter(cluster.id)}
+                        className={`px-3 py-1 rounded-full text-xs border transition-all ${
+                          isSelected
+                            ? "bg-cyan-500/20 border-cyan-400 text-white"
+                            : "border-white/10 text-white/60 hover:border-white/30"
+                        }`}
+                        style={isSelected ? { borderColor: cluster.color } : {}}
+                        title={cluster.parent ? `Subtopic of ${getClusterById(cluster.parent)?.name}` : 'High-level cluster'}
+                      >
+                        {cluster.name}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </motion.div>
@@ -657,19 +508,73 @@ function CandidatesPageContent() {
                     </div>
                   )}
 
-                  {/* Skills Section */}
+                  {/* Skill Clusters Section */}
                   <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-                    <h3 className="text-xl font-semibold mb-4">Skills</h3>
-                    <div className="flex flex-wrap gap-3">
-                      {selectedCandidate.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-4 py-2 rounded-full text-sm bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-400/40 text-white font-medium"
-                        >
-                          {skill}
-                        </span>
-                      ))}
+                    <h3 className="text-xl font-semibold mb-4">Core Expertise</h3>
+                    <div className="flex flex-wrap gap-3 mb-4">
+                      {selectedCandidate.clusters.core_stack.slice(0, 6).map((clusterId) => {
+                        const cluster = getClusterById(clusterId);
+                        if (!cluster) return null;
+                        return (
+                          <span
+                            key={clusterId}
+                            className="px-4 py-2 rounded-full text-sm border text-white font-medium"
+                            style={{
+                              background: `${cluster.color}20`,
+                              borderColor: `${cluster.color}60`,
+                            }}
+                          >
+                            {cluster.name}
+                          </span>
+                        );
+                      })}
                     </div>
+                    {selectedCandidate.clusters.domain_tags.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-medium text-white/80 mb-2">Domain Expertise</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedCandidate.clusters.domain_tags.map((domainId) => {
+                            const cluster = getClusterById(domainId);
+                            if (!cluster) return null;
+                            return (
+                              <span
+                                key={domainId}
+                                className="px-3 py-1 rounded-full text-xs border text-white/70"
+                                style={{
+                                  background: `${cluster.color}15`,
+                                  borderColor: `${cluster.color}40`,
+                                }}
+                              >
+                                {cluster.name}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {selectedCandidate.clusters.strength_tags.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium text-white/80 mb-2">Key Strengths</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedCandidate.clusters.strength_tags.slice(0, 4).map((strengthId) => {
+                            const cluster = getClusterById(strengthId);
+                            if (!cluster) return null;
+                            return (
+                              <span
+                                key={strengthId}
+                                className="px-3 py-1 rounded-full text-xs border text-white/70"
+                                style={{
+                                  background: `${cluster.color}15`,
+                                  borderColor: `${cluster.color}40`,
+                                }}
+                              >
+                                {cluster.name}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Missions/Projects Section */}
