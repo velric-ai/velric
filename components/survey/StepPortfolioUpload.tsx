@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { uploadPortfolioFile } from "../../services/surveyApi";
 import { validatePortfolioFile, validatePortfolioUrl } from "../../utils/surveyValidation";
+import { extractTextFromPDFWithProgress } from "../../lib/pdfParser";
 
 interface StepPortfolioUploadProps {
   formData: any;
@@ -36,6 +37,7 @@ export function StepPortfolioUpload({
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadMethod, setUploadMethod] = useState<'file' | 'url' | null>(null);
   const [urlInput, setUrlInput] = useState(formData.portfolio.url || '');
+  const [isPdfParsing, setIsPdfParsing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const portfolio = formData.portfolio;
@@ -81,8 +83,47 @@ export function StepPortfolioUpload({
       }
     });
 
+    // If it's a PDF, extract text on the client-side
+    let pdfText: string | null = null;
+    if (file.type === 'application/pdf') {
+      try {
+        setIsPdfParsing(true);
+        console.log('[StepPortfolioUpload] Starting client-side PDF parsing...');
+        
+        pdfText = await extractTextFromPDFWithProgress(file, (progress) => {
+          console.log(`[StepPortfolioUpload] PDF parsing progress: ${progress}%`);
+          // You can update UI here if needed
+        });
+
+        console.log('[StepPortfolioUpload] PDF parsing completed. Text length:', pdfText.length);
+        
+        // Store the parsed PDF text in form data
+        updateFormData((prevFormData: any) => ({
+          ...prevFormData,
+          portfolio: {
+            ...prevFormData.portfolio,
+            parsedPdfText: pdfText
+          }
+        }));
+      } catch (parseError) {
+        console.error('[StepPortfolioUpload] PDF parsing error:', parseError);
+        updateFormData((prevFormData: any) => ({
+          ...prevFormData,
+          portfolio: {
+            ...prevFormData.portfolio,
+            fileError: `PDF parsing failed: ${(parseError as Error).message}`,
+            uploadStatus: 'error'
+          }
+        }));
+        setIsPdfParsing(false);
+        return;
+      } finally {
+        setIsPdfParsing(false);
+      }
+    }
+
     try {
-      // Upload file
+      // Upload file to Supabase
       const result = await uploadPortfolioFile(file, (progress) => {
         updateFormData((prevFormData: any) => ({
           ...prevFormData,
@@ -99,7 +140,7 @@ export function StepPortfolioUpload({
         size: result.size
       });
 
-      // Update with success AND store the Supabase URL
+      // Update with success AND store the Supabase URL and parsed text
       updateFormData((prevFormData: any) => ({
         ...prevFormData,
         portfolio: {
@@ -108,11 +149,12 @@ export function StepPortfolioUpload({
           fileProgress: 100,
           fileError: null,
           uploadedFilename: result.filename,
-          uploadedUrl: result.url
+          uploadedUrl: result.url,
+          parsedPdfText: pdfText  // Store the parsed PDF text
         }
       }));
 
-      console.log('[StepPortfolioUpload] Form data updated with uploaded file info');
+      console.log('[StepPortfolioUpload] Form data updated with uploaded file info and parsed PDF text');
 
     } catch (error) {
       console.error('File upload error:', error);

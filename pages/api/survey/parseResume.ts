@@ -1,44 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "@/lib/supabaseClient";
 import { OpenAI } from "openai";
-import * as pdfjsLib from "pdfjs-dist";
-
-// ⚠️ Required: Worker file for pdfjs-dist
-//pdfjsLib.GlobalWorkerOptions.workerSrc = require("pdfjs-dist/build/pdf.worker.js");
-
-// ---------------------------------------------------------------------
-// Extract text from PDF using pdfjs-dist
-// ---------------------------------------------------------------------
-async function extractTextFromPDF(uint8Array: Uint8Array): Promise<string> {
-  const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
-  const pdf = await loadingTask.promise;
-
-  let fullText = "";
-
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-
-    const text = content.items
-      .map((item: any) => ("str" in item ? item.str : ""))
-      .join(" ");
-
-    fullText += text + "\n";
-  }
-
-  return fullText;
-}
-
-// ---------------------------------------------------------------------
-// Download PDF from URL → return text
-// ---------------------------------------------------------------------
-async function fetchPdfText(url: string): Promise<string> {
-  const response = await fetch(url);
-  const arrayBuffer = await response.arrayBuffer();
-  const uint8Array = new Uint8Array(arrayBuffer);
-
-  return await extractTextFromPDF(uint8Array);
-}
 
 // ---------------------------------------------------------------------
 // Parse PDF text with OpenAI → structured JSON
@@ -65,39 +27,28 @@ async function parseResumeTextWithAI(text: string) {
 
 // ---------------------------------------------------------------------
 // API Route Handler
+// Accepts raw text from client-side PDF parsing
+// Sends to OpenAI for structured JSON parsing
+// Stores result in survey_responses resume_json column
 // ---------------------------------------------------------------------
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { surveyResponseId } = req.body;
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
 
+    const { surveyResponseId, pdfText } = req.body;
+
+    // 1️⃣ Validate inputs
     if (!surveyResponseId) {
       return res.status(400).json({ error: "Missing surveyResponseId" });
     }
 
-    // 1️⃣ Load portfolio from Supabase
-    const { data, error } = await supabase
-      .from("survey_responses")
-      .select("portfolio")
-      .eq("id", surveyResponseId)
-      .single();
-
-    if (error || !data?.portfolio?.url) {
-      console.error("Portfolio fetch error:", error);
-      return res.status(404).json({ error: "Portfolio not found" });
+    if (!pdfText || typeof pdfText !== "string") {
+      return res.status(400).json({ error: "Missing or invalid pdfText. PDF should be parsed on client-side." });
     }
 
-    const pdfUrl = data.portfolio.url;
-
-    // 2️⃣ Extract text from PDF
-    let pdfText: string;
-    try {
-      pdfText = await fetchPdfText(pdfUrl);
-    } catch (err) {
-      console.error("PDF reading error:", err);
-      return res.status(500).json({ error: "Failed to read PDF", details: String(err) });
-    }
-
-    // 3️⃣ Parse resume into structured JSON
+    // 2️⃣ Parse resume text into structured JSON using OpenAI
     let resumeJson: any;
     try {
       resumeJson = await parseResumeTextWithAI(pdfText);
@@ -109,12 +60,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // 4️⃣ Update Supabase with structured JSON
+    // 3️⃣ Update Supabase with structured JSON
     try {
-      await supabase
+      const { error: updateError } = await supabase
         .from("survey_responses")
         .update({ resume_json: resumeJson })
         .eq("id", surveyResponseId);
+
+      if (updateError) {
+        throw updateError;
+      }
     } catch (err) {
       console.error("Supabase update error:", err);
       return res.status(500).json({
@@ -123,8 +78,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // 5️⃣ Return result
-    return res.status(200).json({ resume_json: resumeJson });
+    // 4️⃣ Return result
+    return res.status(200).json({ 
+      success: true,
+      message: "Resume parsed and stored successfully",
+      resume_json: resumeJson 
+    });
   } catch (err) {
     console.error("Server error:", err);
     return res.status(500).json({ error: "Unexpected server error", details: String(err) });

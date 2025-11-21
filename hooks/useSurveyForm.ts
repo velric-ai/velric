@@ -4,6 +4,7 @@ import {
   submitSurveyData,
   SurveyFormData,
   uploadPortfolioFile,
+  parseResumeWithAI,
 } from "../services/surveyApi";
 import { validateStep } from "../utils/surveyValidation";
 import {
@@ -470,16 +471,21 @@ useEffect(() => {
   // Import the parseResumeAndStore function
   // (You may need to add this import at the top of the file)
   // import { parseResumeAndStore } from "../services/surveyApi";
-  const parseResumeAndStore = async (surveyResponseId: string) => {
+  const parseResumeAndStore = async (surveyResponseId: string, pdfText?: string) => {
     try {
-      const response = await fetch("/api/survey/parseResume", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ surveyResponseId }),
-      });
-      return await response.json();
+      // If we have parsed PDF text from client-side parsing, use the new flow
+      if (pdfText) {
+        console.log("[useSurveyForm] Calling parseResumeWithAI with client-parsed PDF text");
+        const result = await parseResumeWithAI(surveyResponseId, pdfText);
+        return result;
+      } else {
+        // Fallback: old method (if needed)
+        console.log("[useSurveyForm] No PDF text provided, skipping resume parsing");
+        return null;
+      }
     } catch (err) {
-      console.error("Resume parsing failed:", err);
+      console.error("[useSurveyForm] Resume parsing failed:", err);
+      // Don't throw - let survey submission continue even if resume parsing fails
       return null;
     }
   };
@@ -530,10 +536,17 @@ useEffect(() => {
       // Call API
       const result: SurveySubmissionResponse = await submitSurveyData(submissionData);
 
-      // If survey response has an id, trigger resume parsing
+      // If survey response has an id, trigger resume parsing with client-parsed PDF text
       let surveyResponseId = result?.profile?.surveyData?.id;
       if (result.success && surveyResponseId) {
-        await parseResumeAndStore(surveyResponseId);
+        // Get the parsed PDF text from form data if available
+        const pdfText = (formData.portfolio as any)?.parsedPdfText;
+        if (pdfText) {
+          console.log("[submitSurvey] Parsing resume with client-extracted PDF text...");
+          await parseResumeAndStore(surveyResponseId, pdfText);
+        } else {
+          console.log("[submitSurvey] No parsed PDF text available, skipping resume parsing");
+        }
       }
 
       const surveyStateStr = localStorage.getItem("velric_survey_state");
