@@ -10,11 +10,27 @@
   USE_DUMMY_DATA = "false"
   NEXT_PUBLIC_SUPABASE_URL = "https://yzszgcnuxpkvxueivbyx.supabase.co"
 
+# Increase timeout for long-running API functions
+[[functions]]
+  node_bundler = "esbuild"
+  [functions.node]
+    zisi = true
+
+[functions]
+  directory = "pages/api"
+  node_bundler = "esbuild"
+
 # Redirect all requests to Next.js
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Set function timeout for API endpoints (max 26s on standard plans, 900s on pro)
+[[headers]]
+  for = "/api/missions/generate"
+  [headers.values]
+    X-Netlify-Timeout = "26"
 
 # Headers for security and performance
 [[headers]]

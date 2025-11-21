@@ -108,11 +108,17 @@ export default function MissionsPage() {
       const payload = buildPayload(5);
 
       // Generate missions with user data using existing generate API
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second client timeout
+
       const generateResponse = await fetch('/api/missions/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       if (generateResponse.ok) {
         const generateData = await generateResponse.json();
@@ -123,9 +129,13 @@ export default function MissionsPage() {
         }
       }
       setError('Failed to generate missions from survey responses');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching missions:', error);
-      setError('Failed to load missions');
+      if (error.name === 'AbortError') {
+        setError('Mission generation is taking longer than expected. Please try again.');
+      } else {
+        setError('Failed to load missions');
+      }
     } finally {
       setLoading(false);
     }
