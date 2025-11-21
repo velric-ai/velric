@@ -25,70 +25,87 @@ if (typeof window === "undefined" && process.env.OPENAI_API_KEY) {
 
 // Enhanced prompt template for comprehensive mission generation
 export const COMPREHENSIVE_MISSION_PROMPT = `
-You are an expert career coach and mentor who creates realistic, engaging missions based on actual industry scenarios. Generate a comprehensive mission that feels like a real project from a top-tier company.
+You are an expert career coach and mentor who creates realistic, engaging missions based on actual industry scenarios and individual professional profiles. Generate a comprehensive mission that feels like a real project from a top-tier company, specifically tailored to the user's actual experience and skills.
 
 CONTEXT:
 - User Background: {userBackground}
 - Interests: {interests}
 - Industry Focus: {industry}
 - Difficulty Level: {difficulty}
-- Time Estimate: less than 1 hours
+- Time Estimate: less than 2 hours
+- Resume Data: {resume_json}
+
+RESUME DATA INTEGRATION:
+The Resume Data above contains structured professional information including:
+- Technical skills, programming languages, and tools from the user's actual resume
+- Real work experience with companies and roles
+- Completed projects and their technologies
+- Educational background and certifications
+- Career trajectory and expertise areas
+
+USE THIS DATA TO:
+1. Create missions that leverage the user's ACTUAL existing skills and experience
+2. Build on their demonstrated expertise rather than generic interests
+3. Suggest next-level challenges that extend their proven capabilities
+4. Recommend technologies they've already worked with for familiarity
+5. Frame missions in the context of their career progression
 
 CLASSIFY USER:
-1. Determine if the user profile is TECHNICAL or NON-TECHNICAL using the context above.
-2. TECHNICAL indicators: programming, software, engineering, devops, data engineering, machine learning.
-3. NON-TECHNICAL indicators: product management, UX research/design, marketing, operations, strategy, sales, business analytics (non-programming).
+1. Determine if the user profile is TECHNICAL or NON-TECHNICAL using resume data and background above.
+2. TECHNICAL indicators: programming, software, engineering, devops, data engineering, machine learning skills in resume.
+3. NON-TECHNICAL indicators: product management, UX research/design, marketing, operations, strategy, sales in resume/background.
 4. Tailor the mission accordingly:
-   - Technical: implementation-focused mission with code, architecture, testing, deployment.
+   - Technical: implementation-focused mission with code, architecture, testing, deployment using technologies from their resume.
    - Non-technical: non-coding mission such as product strategy, research, analytics, go-to-market, process optimization.
 
 REQUIREMENTS:
-Generate a single, detailed mission with the following structure. Make it as comprehensive and detailed as the example missions you might find at companies like Google, Meta, or top startups.
+Generate a single, detailed mission with the following structure. Make it as comprehensive and detailed as the example missions you might find at companies like Google, Meta, or top startups. CRUCIALLY: Use the user's resume data to make the mission highly personalized to their skill level and experience.
 
 MISSION OUTPUT (JSON):
 {
-  "title": "Engaging, specific mission title",
-  "description": "Detailed 3-4 sentence description explaining scenario, impact, constraints, and outcome",
-  "field": "Match classification: Technical ('Frontend Development', 'Backend Engineering', 'Full Stack', 'Data Science', 'DevOps', 'Mobile', 'AI/ML') or Non-technical ('Product Management', 'UX Research', 'Marketing Strategy', 'Operations', 'Business Analytics')",
-  "difficulty": "Beginner|Intermediate|Advanced",
+  "title": "Engaging, specific mission title directly related to user's resume skills and experience",
+  "description": "Detailed 3-4 sentence description explaining scenario, impact, constraints, and outcome. Reference user's relevant experience/skills from resume.",
+  "field": "Match classification: Technical (use technologies from user's resume like 'Backend Engineering with Node.js', 'Frontend Development with React', etc.) or Non-technical",
+  "difficulty": "Beginner|Intermediate|Advanced - Must match user's experience level from resume",
   "timeEstimate": "Realistic time estimate",
-  "category": "Aligned with classification (Technical: Web/API/ML/Architecture; Non-technical: Product Strategy/User Research/Go-to-Market/Operations)",
-  "company": "Realistic company name",
-  "context": "4-5 sentences of urgent business context with metrics/timelines",
-  "skills": ["6-8 skills aligned with classification (Technical: languages/frameworks/tools; Non-technical: product discovery, stakeholder management, experimentation design, KPIs, market research, analytics)"] ,
-  "industries": ["2-3 relevant industries"],
+  "category": "Aligned with classification and user's demonstrated experience",
+  "company": "Realistic company name in user's industry focus",
+  "context": "4-5 sentences of urgent business context with metrics/timelines. Reference industry-specific challenges relevant to user's background.",
+  "skills": ["6-8 skills directly from or building on user's resume (prioritize technologies they've already used, add complementary skills)"],
+  "industries": ["2-3 relevant industries - PRIMARY: {industry}, SECONDARY: industries from user's resume experience"],
   "tasks": [
-    "5-7 actionable tasks tailored to classification.",
-    "Technical: implementation steps with measurable criteria (performance, security, tests, deployment)",
+    "5-7 actionable tasks tailored to classification and user's actual experience level.",
+    "Technical: implementation steps using technologies from their resume, with measurable criteria (performance, security, tests, deployment)",
     "Non-technical: discovery, research, analysis, stakeholder alignment, experiment design, KPI definition, roadmap, reporting"
   ],
   "objectives": [
-    "3-4 learning objectives aligned with career growth"
+    "3-4 learning objectives aligned with career growth and building on their existing expertise. Add a context why this mission is generated like due to their Intrest,Industry focus,resume Data or something else "
   ],
   "resources": [
-    "4-6 resources aligned with classification (Technical: datasets/APIs/cloud/codebase/guidelines; Non-technical: interview pool/analytics dashboards/market reports/stakeholder access/experiment tools/templates)"
+    "4-6 resources aligned with classification and user's tech stack from resume (Technical: docs for their tech stack, cloud platforms they know, similar codebases; Non-technical: interview pools, analytics dashboards, market research)"
   ],
   "evaluationMetrics": [
-    "4-6 measurable criteria aligned with classification",
-    "Technical: performance, reliability, coverage, scalability, security",
+    "4-6 measurable criteria aligned with classification and user's professional standards",
+    "Technical: performance, reliability, coverage, scalability, security (using their tech stack)",
     "Non-technical: customer impact (NPS, conversion), research validity, roadmap clarity, stakeholder alignment, KPI movement"
   ]
 }
 
 CRITICAL GUIDELINES:
-1. COMPANY CONTEXT MUST BE URGENT AND SPECIFIC.
-2. TASKS MUST BE COMPREHENSIVE and include acceptance criteria.
-3. TECHNICAL DEPTH must match difficulty.
-4. BUSINESS IMPACT must be explicit and measurable.
-5. REAL-WORLD CONSTRAINTS must be included.
- 6. STRICT INDUSTRY ALIGNMENT: Use the provided {industry} directly. Do not drift to unrelated domains (e.g., avoid generic AI/SaaS if industry is Customer Support). Company context, tasks, skills, and metrics must be native to the given industry.
+1. LEVERAGE RESUME DATA: Use user's actual skills, experience, and projects to create highly personalized missions.
+2. SKILL CONTINUITY: Build missions that extend existing skills rather than random unrelated technologies.
+3. COMPANY CONTEXT MUST BE URGENT, SPECIFIC, and relevant to user's industry experience.
+4. TASKS MUST BE COMPREHENSIVE, include acceptance criteria, and use user's proven tech stack.
+5. TECHNICAL DEPTH must match user's actual difficulty level from resume/background.
+6. BUSINESS IMPACT must be explicit, measurable, and relatable to user's industry.
+7. REAL-WORLD CONSTRAINTS must be included.
+8. STRICT INDUSTRY ALIGNMENT: Use provided {industry} as PRIMARY focus, but honor user's demonstrated expertise from resume.
+9. TECHNOLOGY STACK: Prioritize technologies from user's resume; add complementary tools for skill progression.
 
-EXAMPLES OF EXCELLENT COMPANY CONTEXTS:
-- "StreamingCorp's video platform crashes during peak hours, losing $50K/hour in ad revenue. A major event next month will triple traffic."
-- "FinTechStart must implement PCI compliance before investor due diligence in 6 weeks or risk losing $10M funding."
-- "HealthcareAI's data pipeline processes 500K records daily but takes 6 hours, delaying treatment decisions."
 
-Generate a mission that reads like it came from a real company's high-priority project backlog, with the depth and detail of actual enterprise work.
+DO NOT CREATE GENERIC MISSIONS - Make every mission specific to this user's actual professional profile.
+
+Generate a mission that reads like it came from a real company's high-priority project backlog, specifically designed for this user's skill level and experience. Use their resume data as the foundation for relevance and personalization.
 `;
 
 // Production-ready prompt template for AI mission generation (legacy)
@@ -141,7 +158,8 @@ export async function generateComprehensiveMission(
   interests: string[],
   industry: string,
   difficulty: "Beginner" | "Intermediate" | "Advanced",
-  timeEstimate: string
+  timeEstimate: string,
+  resumeData?: any
 ): Promise<StaticMission> {
   if (!openai) {
     console.warn("OpenAI not configured. Using fallback generation.");
@@ -155,6 +173,42 @@ export async function generateComprehensiveMission(
   }
 
   try {
+    // Format resume data for the prompt
+    let resumeDataStr = "";
+    if (resumeData) {
+      try {
+        // If resumeData is a string (JSON), parse it
+        const parsed = typeof resumeData === 'string' ? JSON.parse(resumeData) : resumeData;
+        
+        // Build a readable resume summary for the prompt
+        const parts = [];
+        if (parsed.summary) parts.push(`Summary: ${parsed.summary}`);
+        if (parsed.skills && Array.isArray(parsed.skills)) {
+          parts.push(`Skills: ${parsed.skills.join(', ')}`);
+        }
+        if (parsed.experiences && Array.isArray(parsed.experiences)) {
+          const expList = parsed.experiences.map((e: any) => 
+            `${e.title || 'Role'} at ${e.company || 'Company'}${e.startDate ? ` (${e.startDate}-${e.endDate || 'Present'})` : ''}`
+          ).join('; ');
+          parts.push(`Experiences: ${expList}`);
+        }
+        if (parsed.projects && Array.isArray(parsed.projects)) {
+          parts.push(`Projects: ${parsed.projects.map((p: any) => p.name).join(', ')}`);
+        }
+        if (parsed.education && Array.isArray(parsed.education)) {
+          const eduList = parsed.education.map((ed: any) =>
+            `${ed.degree || 'Degree'} in ${ed.field || 'Field'} from ${ed.institution || 'Institution'}`
+          ).join('; ');
+          parts.push(`Education: ${eduList}`);
+        }
+        
+        resumeDataStr = parts.join(' | ');
+      } catch (e) {
+        console.warn('Failed to parse resume data:', e);
+        resumeDataStr = String(resumeData).substring(0, 500);
+      }
+    }
+
     const prompt = COMPREHENSIVE_MISSION_PROMPT.replace(
       "{userBackground}",
       userBackground
@@ -162,7 +216,8 @@ export async function generateComprehensiveMission(
       .replace("{interests}", interests.join(", "))
       .replace("{industry}", industry)
       .replace("{difficulty}", difficulty)
-      .replace("{timeEstimate}", timeEstimate);
+      .replace("{timeEstimate}", timeEstimate)
+      .replace("{resumeData}", resumeDataStr || "No resume data provided");
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -170,7 +225,7 @@ export async function generateComprehensiveMission(
         {
           role: "system",
           content:
-            "You are an expert technical career coach and mission designer. Generate comprehensive, realistic coding missions based on actual industry scenarios. Return valid JSON only.",
+            "You are an expert technical career coach and mission designer. Generate comprehensive, realistic coding missions based on actual industry scenarios and user's professional background. Return valid JSON only.",
         },
         {
           role: "user",
@@ -217,7 +272,7 @@ export async function generateComprehensiveMission(
       });
     }
 
-    console.log("[AI Mission Generation] Parsed mission data:", {
+    console.log("[AI Mission Generation] Parsed mission data with resume:", {
       title: parsedMission.title,
       difficulty: parsedMission.difficulty,
       timeEstimate: parsedMission.timeEstimate,
@@ -276,8 +331,7 @@ export async function generateAndStoreMissions(
         interests,
         industry,
         difficulty,
-        `${Math.floor(Math.random() * 8) + 2}-${
-          Math.floor(Math.random() * 8) + 6
+        `${Math.floor(Math.random() * 8) + 2}-${Math.floor(Math.random() * 8) + 6
         } hours`
       );
 
@@ -1151,8 +1205,8 @@ function createPersonalizedPrompt(
     availability_hours_per_week >= 10
       ? "4-6 hours"
       : availability_hours_per_week >= 5
-      ? "2-4 hours"
-      : "1-2 hours";
+        ? "2-4 hours"
+        : "1-2 hours";
 
   // Select relevant company projects
   const relevantProjects = companyProjects.slice(0, 3);
@@ -1172,24 +1226,24 @@ USER PROFILE:
 
 REAL COMPANY PROJECTS TO INSPIRE FROM:
 ${relevantProjects
-  .map(
-    (project) => `
+      .map(
+        (project) => `
 - Company: ${project.company_name}
 - Project: ${project.project_title}
 - Description: ${project.project_description}
 - Technologies: ${project.technologies_used?.join(", ")}
 - Business Context: ${project.business_context}
 `
-  )
-  .join("\n")}
+      )
+      .join("\n")}
 
 REQUIREMENTS:
 1. Generate exactly ${count} unique missions
 2. Each mission should be inspired by the company projects above but personalized to the user's profile
 3. Difficulty should match: ${experience_level}
 4. Include technologies from user's known languages: ${programming_languages.join(
-    ", "
-  )}
+        ", "
+      )}
 5. Time estimate should be: ${timeEstimate}
 6. Focus on industries: ${industry_preferences.join(", ") || "Technology"}
 
@@ -1309,11 +1363,10 @@ export function generateMissionsFromResume(
         timeLimit: `${3 + Math.floor(rng() * 5)} days`,
         submissions: Math.floor(rng() * 200) + 50,
         details: {
-          overview: `${
-            mission.description
-          } This comprehensive challenge will test your skills in ${customizedSkills
-            .slice(0, 2)
-            .join(" and ")} while building real-world solutions.`,
+          overview: `${mission.description
+            } This comprehensive challenge will test your skills in ${customizedSkills
+              .slice(0, 2)
+              .join(" and ")} while building real-world solutions.`,
           requirements: generateRequirements(
             mission.title,
             customizedSkills,

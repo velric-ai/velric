@@ -197,29 +197,45 @@ useEffect(() => {
   checkForNewSignup();
 }, []);
 
-  const updateFormData = useCallback((updates: Partial<SurveyFormData>) => {
-    setFormData((prevState) => {
-      const newState = {
-        ...prevState,
-        ...updates,
-        updatedAt: Date.now(),
-      };
+  const updateFormData = useCallback(
+    (
+      updates:
+        | Partial<SurveyFormData>
+        | ((prevState: SurveyFormData) => Partial<SurveyFormData>)
+    ) => {
+      setFormData((prevState) => {
+        const resolvedUpdates =
+          typeof updates === "function" ? updates(prevState) : updates;
 
-      if (updates !== prevState) {
+        if (
+          !resolvedUpdates ||
+          typeof resolvedUpdates !== "object" ||
+          Object.keys(resolvedUpdates).length === 0
+        ) {
+          return prevState;
+        }
+
+        const newState = {
+          ...prevState,
+          ...resolvedUpdates,
+          updatedAt: Date.now(),
+        };
+
         newState.interactions = [
           ...prevState.interactions,
           {
             timestamp: Date.now(),
             step: prevState.currentStep,
             action: "field_update",
-            data: updates,
+            data: resolvedUpdates,
           },
         ];
-      }
 
-      return newState;
-    });
-  }, []);
+        return newState;
+      });
+    },
+    []
+  );
 
   const updateFieldData = useCallback((fieldName: string, fieldData: any) => {
     setFormData((prevState) => ({
@@ -451,6 +467,23 @@ useEffect(() => {
     [formData]
   );
 
+  // Import the parseResumeAndStore function
+  // (You may need to add this import at the top of the file)
+  // import { parseResumeAndStore } from "../services/surveyApi";
+  const parseResumeAndStore = async (surveyResponseId: string) => {
+    try {
+      const response = await fetch("/api/survey/parseResume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ surveyResponseId }),
+      });
+      return await response.json();
+    } catch (err) {
+      console.error("Resume parsing failed:", err);
+      return null;
+    }
+  };
+
   const submitSurvey = useCallback(async () => {
     if (formData.isSubmitting) {
       console.warn("Survey submission already in progress");
@@ -497,6 +530,12 @@ useEffect(() => {
       // Call API
       const result: SurveySubmissionResponse = await submitSurveyData(submissionData);
 
+      // If survey response has an id, trigger resume parsing
+      let surveyResponseId = result?.profile?.surveyData?.id;
+      if (result.success && surveyResponseId) {
+        await parseResumeAndStore(surveyResponseId);
+      }
+
       const surveyStateStr = localStorage.getItem("velric_survey_state");
       const surveyState = surveyStateStr ? JSON.parse(surveyStateStr) : {};
       const finalSurveyState = {
@@ -531,9 +570,8 @@ useEffect(() => {
         }
       } catch {}
 
-      setTimeout(() => {
-        router.push("/user-dashboard");
-      }, 2000);
+      // Route to dashboard after parsing is complete
+      router.push("/user-dashboard");
     } catch (error) {
       console.error("❌ Survey submission error:", error);
 
