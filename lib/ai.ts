@@ -475,6 +475,7 @@ export async function parseResumeWithOpenAI(
  * High-level helper: fetch resume from Supabase storage, parse to JSON via OpenAI, then generate & store missions.
  * Returns generated mission IDs and the parsed resume JSON (if available).
  */
+/** 
 export async function fetchParseAndGenerateMissionsFromStorage(options: {
   bucket?: string;
   path: string; // path within the bucket
@@ -587,7 +588,7 @@ export async function fetchParseAndGenerateMissionsFromStorage(options: {
 
   return { missionIds, parsedResume: parsed || null };
 }
-
+*/
 // Fallback mission generation for when OpenAI is not available
 export function generateFallbackMission(
   userBackground: string,

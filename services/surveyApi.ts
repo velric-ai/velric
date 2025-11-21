@@ -329,6 +329,77 @@ export async function uploadPortfolioFile(
   }
 }
 
+/**
+ * Parse resume text using OpenAI
+ * This function expects the PDF to already be parsed into text on the client-side
+ * 
+ * @param surveyResponseId - The ID of the survey response record
+ * @param pdfText - The extracted text from the PDF (parsed on client-side)
+ * @returns Promise with resume_json structured data
+ */
+export async function parseResumeWithAI(
+  surveyResponseId: string,
+  pdfText: string
+): Promise<{
+  success: boolean;
+  message: string;
+  resume_json: any;
+}> {
+  try {
+    if (!surveyResponseId) {
+      throw new ValidationError("Survey response ID is required");
+    }
+
+    if (!pdfText || typeof pdfText !== "string") {
+      throw new ValidationError("PDF text is required and must be a string");
+    }
+
+    console.log("[parseResumeWithAI] Sending parsed PDF text to server", {
+      surveyResponseId,
+      textLength: pdfText.length,
+    });
+
+    const response = await fetch("/api/survey/parseResume", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        surveyResponseId,
+        pdfText,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error("[parseResumeWithAI] Error response:", result);
+      throw new ServerError(
+        result.error || result.message || "Failed to parse resume"
+      );
+    }
+
+    console.log("[parseResumeWithAI] Resume parsed successfully", {
+      resumeJson: result.resume_json,
+    });
+
+    return {
+      success: true,
+      message: result.message || "Resume parsed successfully",
+      resume_json: result.resume_json,
+    };
+  } catch (error: any) {
+    console.error("[parseResumeWithAI] Error:", error);
+
+    if (error instanceof ValidationError) throw error;
+    if (error instanceof ServerError) throw error;
+
+    throw new AppError(
+      error.message || "Failed to parse resume. Please try again."
+    );
+  }
+}
+
 /*
 // Type Definitions
 export interface SurveyFormData {
