@@ -601,7 +601,7 @@ export async function saveUserSurvey(
     industryPreferences?: string[];
     availabilityHoursPerWeek?: number;
     preferredProjectTypes?: string[];
-    resumeText?: string;
+    resume_json?: string;
   }
 ): Promise<void> {
   if (USE_DUMMY) {
@@ -618,7 +618,7 @@ export async function saveUserSurvey(
     industry_preferences: surveyData.industryPreferences,
     availability_hours_per_week: surveyData.availabilityHoursPerWeek,
     preferred_project_types: surveyData.preferredProjectTypes,
-    resume_text: surveyData.resumeText,
+    resume_text: surveyData.resume_json,
     completed_at: new Date().toISOString(),
   });
 

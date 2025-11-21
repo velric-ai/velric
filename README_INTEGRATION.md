@@ -14,7 +14,7 @@ The implementation includes:
 
 ## Quick Start (Dummy Mode)
 
-### 1. Install Dependencies
+### 1. Install Dependenciess
 
 ```bash
 npm install

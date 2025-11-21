@@ -247,6 +247,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       metadata
     } = req.body;
 
+    console.log('[Survey Submit] Full request body portfolioFile:', JSON.stringify(portfolioFile, null, 2));
+    console.log('[Survey Submit] Full request body portfolioUrl:', portfolioUrl);
+
     // Validation errors collection
     const errors: { [key: string]: string } = {};
 
@@ -303,6 +306,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get user ID from token (token is the user ID from localStorage)
     const userId = token;
 
+    // Extract filename from portfolio URL if provided
+    let portfolioFilename = null;
+    console.log('[Survey Submit] sanitizedData.portfolioFile:', JSON.stringify(sanitizedData.portfolioFile, null, 2));
+    
+    if (sanitizedData.portfolioFile?.url) {
+      // URL format: https://yzszgcnuxpkvxueivbyx.supabase.co/storage/v1/object/public/portfolio_uploads/1763534928307_HarshGupta_Resume.pdf
+      // Extract the filename part
+      try {
+        const urlParts = sanitizedData.portfolioFile.url.split('/');
+        portfolioFilename = urlParts[urlParts.length - 1]; // e.g., "1763534928307_HarshGupta_Resume.pdf"
+        console.log('[Survey Submit] ✅ Extracted portfolio filename from URL:', portfolioFilename);
+      } catch (e) {
+        console.warn('[Survey Submit] Failed to extract filename from portfolio URL', e);
+      }
+    } else {
+      console.log('[Survey Submit] ⚠️ No portfolio URL found in sanitizedData.portfolioFile');
+    }
+
     // Handle dummy mode
     if (USE_DUMMY) {
       const completedAt = new Date().toISOString();
@@ -330,7 +351,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       strength_areas: sanitizedData.strengthAreas,
       learning_preference: sanitizedData.learningPreference,
       portfolio: {
-        file: sanitizedData.portfolioFile,
+        file: portfolioFilename, // Store just the filename, not the full object
         url: sanitizedData.portfolioUrl,
       },
       experience_summary: sanitizedData.metadata?.experienceSummary || null,
@@ -338,6 +359,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       metadata: sanitizedData.metadata,
       created_at: new Date().toISOString(),
     };
+
+    console.log('[Survey Submit] Storing portfolio data:', {
+      portfolioFilename: portfolioFilename,
+      portfolioUrl: sanitizedData.portfolioUrl,
+      fullPayloadPortfolio: payload.portfolio,
+    });
 
     // Insert into Supabase survey_responses table
     const { data: surveyData, error: dbError } = await supabase
