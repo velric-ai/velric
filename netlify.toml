@@ -10,11 +10,13 @@
   USE_DUMMY_DATA = "false"
   NEXT_PUBLIC_SUPABASE_URL = "https://yzszgcnuxpkvxueivbyx.supabase.co"
 
+
 # Redirect all requests to Next.js
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
 
 # Headers for security and performance
 [[headers]]
