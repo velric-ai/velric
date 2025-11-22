@@ -352,21 +352,16 @@ const FeedbackPage: React.FC = () => {
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 pt-6">
                   <button
-                    onClick={() => {
-                      const target = submission?.mission_id
-                        ? `/missions/${submission.mission_id}`
-                        : "/";
-                      router.push(target);
-                    }}
+                    onClick={() => router.push("/user-dashboard")}
                     className="flex-1 bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] text-white font-bold text-[18px] py-4 px-8 rounded-2xl hover:scale-105 hover:shadow-[#6A0DAD]/30 hover:shadow-2xl transition-all duration-300 font-sora antialiased"
                   >
-                    Back to Mission
+                    Go back to user dashboard
                   </button>
                   <button
-                    onClick={() => router.push("/")}
+                    onClick={() => router.push("/analytics")}
                     className="flex-1 bg-[#1C1C1E] border border-[#6A0DAD]/30 text-[#F5F5F5] font-bold text-[18px] py-4 px-8 rounded-2xl hover:scale-105 hover:border-[#6A0DAD]/50 hover:bg-[#6A0DAD]/10 transition-all duration-300 font-sora antialiased"
                   >
-                    Back to Home
+                    Go to analytics
                   </button>
                 </div>
               </div>
