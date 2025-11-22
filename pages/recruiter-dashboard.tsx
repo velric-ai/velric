@@ -6,14 +6,17 @@ import {
   Users,
   Briefcase,
   Search,
+  Sparkles,
 } from "lucide-react";
 import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
 import { WelcomeMessage } from "../components/dashboard/WelcomeMessage";
 import RecruiterNavbar from "../components/recruiter/RecruiterNavbar";
+import AIJobMatchModal from "../components/recruiter/AIJobMatchModal";
 
 function RecruiterDashboardContent() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [isJobMatchOpen, setIsJobMatchOpen] = useState(false);
 
   // Check authentication
   useEffect(() => {
@@ -120,11 +123,38 @@ function RecruiterDashboardContent() {
             </h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Find Candidates Card */}
+              {/* AI Job Match Card */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: 0.2 }}
+                className="p-8 rounded-2xl cursor-pointer relative overflow-hidden"
+                style={{
+                  background: "rgba(255, 255, 255, 0.05)",
+                  backdropFilter: "blur(15px)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+                }}
+                onClick={() => setIsJobMatchOpen(true)}
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/20 to-cyan-500/20 rounded-full blur-2xl -mr-16 -mt-16" />
+                <div className="relative z-10">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center mb-4">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">AI Job Match</h2>
+                  <p className="text-white/70">
+                    Paste a job description and get AI-powered candidate matches ranked by fit.
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Find Candidates Card */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
                 className="p-8 rounded-2xl cursor-pointer"
                 style={{
                   background: "rgba(255, 255, 255, 0.05)",
@@ -138,7 +168,7 @@ function RecruiterDashboardContent() {
                 <h2 className="text-2xl font-bold mb-2">Find Candidates</h2>
                 <p className="text-white/70">
                   Search and filter top-ranked professionals by Velric Score
-                  and skills.
+                  and skill clusters.
                 </p>
               </motion.div>
 
@@ -188,6 +218,12 @@ function RecruiterDashboardContent() {
             </div>
           </motion.div>
         </div>
+
+        {/* AI Job Match Modal */}
+        <AIJobMatchModal
+          isOpen={isJobMatchOpen}
+          onClose={() => setIsJobMatchOpen(false)}
+        />
       </div>
     </>
   );

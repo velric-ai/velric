@@ -1,189 +1,131 @@
 import Head from "next/head";
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Filter, Search, Bookmark, BookmarkCheck, MapPin, Briefcase, GraduationCap, Mail, Linkedin, Github } from "lucide-react";
+import { Filter, Search, Bookmark, BookmarkCheck, MapPin, Mail, Linkedin, Github, X, SlidersHorizontal } from "lucide-react";
 import { ProtectedDashboardRoute } from "@/components/auth/ProtectedRoute";
 import { useRouter } from "next/router";
 import RecruiterNavbar from "@/components/recruiter/RecruiterNavbar";
+import { getClusterById } from "@/lib/skillClusters";
+import { Candidate, mockCandidates } from "@/lib/mockCandidates";
+import { getIndustryOptions } from "@/utils/surveyValidation";
 
-type Candidate = {
-  id: string;
-  name: string;
-  velricScore: number;
-  domain: string;
-  location?: string;
-  email?: string;
-  linkedin?: string;
-  github?: string;
-  about?: string;
-  subscores: {
-    technical: number;
-    collaboration: number;
-    reliability: number;
-  };
-  skills: string[];
-  missions: Array<{ name: string; status: "completed" | "in-progress"; description?: string }>;
-  experience?: Array<{
-    title: string;
-    company: string;
-    duration: string;
-    description: string;
-  }>;
-  education?: Array<{
-    degree: string;
-    school: string;
-    year: string;
-  }>;
-  strengths: string[];
-  weaknesses: string[];
+// All industries from survey form (Step 1)
+const allIndustries = [
+  "Technology & Software",
+  "Finance & Banking",
+  "Product Management",
+  "Healthcare & Medical",
+  "Marketing & Advertising",
+  "Education & Learning",
+  "Design & Creative",
+  "E-commerce & Retail",
+  "Data Science & Analytics",
+  "Startup Founder",
+  "Other"
+];
+
+// Domain filters use industries from survey
+const domainFilters = ["All", ...allIndustries];
+
+// Map candidate domain to survey industry for filtering
+const candidateDomainToIndustry: Record<string, string> = {
+  "Frontend": "Technology & Software",
+  "Backend": "Technology & Software",
+  "Data": "Data Science & Analytics",
+  "Marketing": "Marketing & Advertising",
+  "Finance": "Finance & Banking",
+  "General": "Other",
 };
 
-const mockCandidates: Candidate[] = [
-  {
-    id: "cand-1",
-    name: "Ava Thompson",
-    velricScore: 92,
-    domain: "Frontend",
-    location: "San Francisco, CA",
-    email: "ava.thompson@example.com",
-    linkedin: "linkedin.com/in/avathompson",
-    github: "github.com/avathompson",
-    about: "Passionate frontend developer with 5+ years of experience building scalable web applications. Specialized in React, TypeScript, and modern UI/UX design. Love creating pixel-perfect interfaces and optimizing user experiences.",
-    subscores: { technical: 94, collaboration: 88, reliability: 90 },
-    skills: ["React", "TypeScript", "TailwindCSS", "Next.js", "GraphQL", "Figma"],
-    missions: [
-      { name: "Revamp Dashboard UI", status: "completed", description: "Redesigned entire dashboard with modern UI components and improved accessibility" },
-      { name: "Design System Audit", status: "completed", description: "Created comprehensive design system documentation and component library" },
-    ],
-    experience: [
-      {
-        title: "Senior Frontend Developer",
-        company: "TechCorp Inc.",
-        duration: "2021 - Present",
-        description: "Lead frontend development for multiple product lines. Built reusable component libraries, improved performance by 40%, and mentored junior developers."
-      },
-      {
-        title: "Frontend Developer",
-        company: "StartupXYZ",
-        duration: "2019 - 2021",
-        description: "Developed customer-facing web applications using React and Redux. Collaborated with design team to implement responsive UIs."
-      }
-    ],
-    education: [
-      {
-        degree: "B.S. Computer Science",
-        school: "Stanford University",
-        year: "2019"
-      }
-    ],
-    strengths: ["Pixel-perfect execution", "Great communication", "Team leadership"],
-    weaknesses: ["Needs backend exposure"],
-  },
-  {
-    id: "cand-2",
-    name: "Leo Martinez",
-    velricScore: 88,
-    domain: "Backend",
-    location: "New York, NY",
-    email: "leo.martinez@example.com",
-    linkedin: "linkedin.com/in/leomartinez",
-    github: "github.com/leomartinez",
-    about: "Backend engineer specializing in distributed systems and microservices architecture. Expert in Node.js, PostgreSQL, and cloud infrastructure. Passionate about writing clean, maintainable code and building scalable solutions.",
-    subscores: { technical: 90, collaboration: 82, reliability: 91 },
-    skills: ["Node.js", "PostgreSQL", "Supabase", "AWS", "Docker", "Kubernetes"],
-    missions: [
-      { name: "Real-time Notifications API", status: "completed", description: "Built high-performance notification system handling 1M+ requests/day" },
-      { name: "Billing Service Refactor", status: "in-progress", description: "Migrating legacy billing system to microservices architecture" },
-    ],
-    experience: [
-      {
-        title: "Backend Engineer",
-        company: "CloudScale Systems",
-        duration: "2020 - Present",
-        description: "Design and implement microservices architecture. Optimized database queries reducing latency by 60%. Led migration to Kubernetes."
-      },
-      {
-        title: "Software Engineer",
-        company: "DataFlow Inc.",
-        duration: "2018 - 2020",
-        description: "Developed RESTful APIs and database schemas. Implemented caching strategies improving response times by 50%."
-      }
-    ],
-    education: [
-      {
-        degree: "M.S. Software Engineering",
-        school: "MIT",
-        year: "2018"
-      }
-    ],
-    strengths: ["Scalable architecture", "Test coverage", "Performance optimization"],
-    weaknesses: ["Frontend handoff delays"],
-  },
-  {
-    id: "cand-3",
-    name: "Maya Patel",
-    velricScore: 81,
-    domain: "Data",
-    location: "Seattle, WA",
-    email: "maya.patel@example.com",
-    linkedin: "linkedin.com/in/mayapatel",
-    github: "github.com/mayapatel",
-    about: "Data engineer and analyst with expertise in building data pipelines and generating actionable insights. Proficient in Python, SQL, and modern data stack tools. Strong background in statistical analysis and machine learning.",
-    subscores: { technical: 85, collaboration: 78, reliability: 80 },
-    skills: ["Python", "Airflow", "dbt", "SQL", "Pandas", "Tableau"],
-    missions: [
-      { name: "Customer Churn Insights", status: "completed", description: "Developed predictive model identifying at-risk customers with 85% accuracy" },
-      { name: "Usage Forecast Model", status: "completed", description: "Built time-series forecasting model for resource planning" },
-    ],
-    experience: [
-      {
-        title: "Data Engineer",
-        company: "Analytics Pro",
-        duration: "2021 - Present",
-        description: "Build and maintain ETL pipelines processing 100GB+ daily. Create dashboards and reports for business stakeholders. Optimize data warehouse queries."
-      },
-      {
-        title: "Data Analyst",
-        company: "Insight Labs",
-        duration: "2019 - 2021",
-        description: "Performed statistical analysis and created visualizations. Wrote SQL queries and Python scripts for data processing."
-      }
-    ],
-    education: [
-      {
-        degree: "B.S. Data Science",
-        school: "University of Washington",
-        year: "2019"
-      }
-    ],
-    strengths: ["Sharp analytical reports", "Clear stakeholder updates", "Data modeling"],
-    weaknesses: ["Prefers async communication"],
-  },
-];
-
-const domainFilters = ["All", "Frontend", "Backend", "Data"];
-const skillsFilters = [
-  "React",
-  "TypeScript",
-  "TailwindCSS",
-  "Node.js",
-  "PostgreSQL",
-  "Supabase",
-  "Python",
-  "Airflow",
-  "dbt",
-];
+// Check if a candidate matches an industry option
+function candidateMatchesIndustryOption(candidate: Candidate, industryOption: string): boolean {
+  const optionLower = industryOption.toLowerCase();
+  
+  // Check if candidate's skills match
+  const skillsMatch = candidate.skills.some(skill => {
+    const skillLower = skill.toLowerCase();
+    return optionLower.includes(skillLower) || skillLower.includes(optionLower);
+  });
+  
+  // Check if candidate's clusters match
+  const clustersMatch = candidate.clusters.core_stack.some(clusterId => {
+    const cluster = getClusterById(clusterId);
+    if (!cluster) return false;
+    const clusterNameLower = cluster.name.toLowerCase();
+    // Check if cluster name appears in option or vice versa
+    if (optionLower.includes(clusterNameLower) || clusterNameLower.includes(optionLower)) {
+      return true;
+    }
+    // Check if any cluster keyword matches
+    return cluster.keywords.some(keyword => 
+      optionLower.includes(keyword.toLowerCase()) || 
+      keyword.toLowerCase().includes(optionLower)
+    );
+  });
+  
+  // Check domain tags and strength tags
+  const tagsMatch = [
+    ...candidate.clusters.domain_tags,
+    ...candidate.clusters.strength_tags
+  ].some(tagId => {
+    const cluster = getClusterById(tagId);
+    if (!cluster) return false;
+    const clusterNameLower = cluster.name.toLowerCase();
+    return optionLower.includes(clusterNameLower) || clusterNameLower.includes(optionLower);
+  });
+  
+  // Direct keyword matching for specific options
+  const keywordMatches = [
+    // Technology options
+    (optionLower.includes('frontend') || optionLower.includes('react') || optionLower.includes('vue') || optionLower.includes('angular')) && 
+      (candidate.domain === 'Frontend' || candidate.skills.some(s => ['react', 'vue', 'angular', 'typescript', 'javascript'].some(tech => s.toLowerCase().includes(tech)))),
+    (optionLower.includes('backend') || optionLower.includes('node') || optionLower.includes('python') || optionLower.includes('java')) && 
+      (candidate.domain === 'Backend' || candidate.skills.some(s => ['node', 'python', 'java', 'postgresql', 'api'].some(tech => s.toLowerCase().includes(tech)))),
+    optionLower.includes('full stack') && (candidate.skills.length > 5 || (candidate.domain === 'Frontend' || candidate.domain === 'Backend')),
+    (optionLower.includes('ai') || optionLower.includes('machine learning')) && 
+      candidate.skills.some(s => ['ai', 'ml', 'tensorflow', 'pytorch', 'neural', 'deep learning'].some(tech => s.toLowerCase().includes(tech))),
+    optionLower.includes('devops') && candidate.skills.some(s => ['docker', 'kubernetes', 'aws', 'ci/cd', 'terraform'].some(tech => s.toLowerCase().includes(tech))),
+    optionLower.includes('mobile') && candidate.skills.some(s => ['react native', 'swift', 'kotlin', 'flutter', 'ios', 'android'].some(tech => s.toLowerCase().includes(tech))),
+    // Data options
+    optionLower.includes('data engineering') && (candidate.domain === 'Data' || candidate.skills.some(s => ['airflow', 'dbt', 'etl', 'pipeline'].some(tech => s.toLowerCase().includes(tech)))),
+    (optionLower.includes('data analytics') || optionLower.includes('business analytics')) && 
+      (candidate.domain === 'Data' || candidate.skills.some(s => ['sql', 'tableau', 'analytics', 'pandas'].some(tech => s.toLowerCase().includes(tech)))),
+    // Finance options
+    optionLower.includes('investment banking') && (candidate.domain === 'Finance' || candidate.skills.some(s => ['investment', 'banking', 'm&a', 'capital'].some(tech => s.toLowerCase().includes(tech)))),
+    optionLower.includes('quantitative') && (candidate.domain === 'Finance' || candidate.skills.some(s => ['quant', 'quantitative', 'trading', 'risk'].some(tech => s.toLowerCase().includes(tech)))),
+    // Marketing options
+    (optionLower.includes('growth marketing') || optionLower.includes('growth')) && 
+      (candidate.domain === 'Marketing' || candidate.skills.some(s => ['growth', 'marketing', 'acquisition'].some(tech => s.toLowerCase().includes(tech)))),
+    (optionLower.includes('content marketing') || optionLower.includes('content strategy')) && 
+      (candidate.domain === 'Marketing' || candidate.skills.some(s => ['content', 'strategy', 'marketing'].some(tech => s.toLowerCase().includes(tech)))),
+    optionLower.includes('social media') && 
+      (candidate.domain === 'Marketing' || candidate.skills.some(s => ['social', 'media', 'ugc'].some(tech => s.toLowerCase().includes(tech)))),
+  ].some(Boolean);
+  
+  return skillsMatch || clustersMatch || tagsMatch || keywordMatches;
+}
 
 function CandidatesPageContent() {
   const router = useRouter();
-  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(
-    mockCandidates[0].id
-  );
   const [savedCandidates, setSavedCandidates] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [domainFilter, setDomainFilter] = useState("All");
   const [scoreRange, setScoreRange] = useState<[number, number]>([70, 100]);
-  const [skillFilters, setSkillFilters] = useState<string[]>([]);
+  const [clusterFilters, setClusterFilters] = useState<string[]>([]); // Now stores industry option strings
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Get industry options (clusters) based on selected domain/industry
+  const availableIndustryOptions = useMemo(() => {
+    if (domainFilter === "All") {
+      // If "All" is selected, show options from all industries
+      const allOptions: string[] = [];
+      allIndustries.forEach(industry => {
+        allOptions.push(...getIndustryOptions(industry));
+      });
+      return [...new Set(allOptions)];
+    }
+    return getIndustryOptions(domainFilter);
+  }, [domainFilter]);
 
   const filteredCandidates = useMemo(() => {
     return mockCandidates.filter((candidate) => {
@@ -191,32 +133,36 @@ function CandidatesPageContent() {
         candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         candidate.skills.some((skill) =>
           skill.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        ) ||
+        candidate.clusters.core_stack.some(clusterId => {
+          const cluster = getClusterById(clusterId);
+          return cluster?.name.toLowerCase().includes(searchQuery.toLowerCase());
+        });
 
+      // Match domain: if industry is selected, check if candidate's domain maps to that industry
       const matchesDomain =
-        domainFilter === "All" || candidate.domain === domainFilter;
+        domainFilter === "All" || 
+        candidateDomainToIndustry[candidate.domain] === domainFilter ||
+        candidate.domain === domainFilter;
 
       const matchesScore =
         candidate.velricScore >= scoreRange[0] &&
         candidate.velricScore <= scoreRange[1];
 
-      const matchesSkills =
-        skillFilters.length === 0 ||
-        skillFilters.every((skill) => candidate.skills.includes(skill));
+      // Filter by industry options (clusters): candidate must match at least one selected option
+      const matchesClusters =
+        clusterFilters.length === 0 ||
+        clusterFilters.some(option => candidateMatchesIndustryOption(candidate, option));
 
-      return matchesSearch && matchesDomain && matchesScore && matchesSkills;
+      return matchesSearch && matchesDomain && matchesScore && matchesClusters;
     });
-  }, [domainFilter, scoreRange, searchQuery, skillFilters]);
+  }, [domainFilter, scoreRange, searchQuery, clusterFilters]);
 
-  const selectedCandidate = filteredCandidates.find(
-    (candidate) => candidate.id === selectedCandidateId
-  );
-
-  const toggleSkillFilter = (skill: string) => {
-    setSkillFilters((prev) =>
-      prev.includes(skill)
-        ? prev.filter((item) => item !== skill)
-        : [...prev, skill]
+  const toggleClusterFilter = (option: string) => {
+    setClusterFilters((prev) =>
+      prev.includes(option)
+        ? prev.filter((item) => item !== option)
+        : [...prev, option]
     );
   };
 
@@ -231,6 +177,24 @@ function CandidatesPageContent() {
       return next;
     });
   };
+
+  const resetFilters = () => {
+    setDomainFilter("All");
+    setScoreRange([70, 100]);
+    setClusterFilters([]);
+    setSearchQuery("");
+  };
+
+  // Clear cluster filters when domain changes
+  const handleDomainChange = (domain: string) => {
+    setDomainFilter(domain);
+    setClusterFilters([]); // Clear cluster filters when domain changes
+  };
+
+  const activeFiltersCount = 
+    (domainFilter !== "All" ? 1 : 0) +
+    (scoreRange[0] !== 70 || scoreRange[1] !== 100 ? 1 : 0) +
+    clusterFilters.length;
 
   return (
     <>
@@ -258,484 +222,343 @@ function CandidatesPageContent() {
         
         <header className="relative z-10 pt-16 border-b border-white/10 bg-black/30 backdrop-blur-lg">
           <div className="max-w-7xl mx-auto px-6 py-6">
-            <p className="text-sm text-white/60">Recruiter • Talent Search</p>
-            <h1 className="text-3xl font-bold">Search Candidates</h1>
-          </div>
-        </header>
-
-        <main className="relative z-10 max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Left: Candidate List */}
-          <section className="xl:col-span-1 bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold flex items-center space-x-2">
-                <Search className="w-5 h-5 text-cyan-400" />
-                <span>Candidate List</span>
-              </h2>
-              <span className="text-xs text-white/50">
-                {filteredCandidates.length} results
-              </span>
-            </div>
-
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="flex-1">
+            <p className="text-sm text-white/60 mb-2">Recruiter • Talent Search</p>
+            <h1 className="text-3xl font-bold mb-6">Search Candidates</h1>
+            
+            {/* Search and Filter Bar */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                  placeholder="Search by name or skill"
+                  className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent"
+                  placeholder="Search by name, skill, or cluster..."
                 />
               </div>
-              <div className="px-3 py-2 rounded-2xl bg-white/5 border border-white/10 text-xs text-white/70">
-                {scoreRange[0]} - {scoreRange[1]}
-              </div>
+              
+              <motion.button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`relative px-4 py-3 rounded-xl border transition-all flex items-center gap-2 ${
+                  showFilters
+                    ? "bg-purple-500/20 border-purple-400 text-white"
+                    : "bg-white/5 border-white/10 text-white/70 hover:border-white/30 hover:text-white"
+                }`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <SlidersHorizontal className="w-5 h-5" />
+                <span className="font-medium">Filters</span>
+                {activeFiltersCount > 0 && (
+                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-cyan-400 text-black text-xs font-bold rounded-full flex items-center justify-center">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </motion.button>
             </div>
+          </div>
+        </header>
 
-            <div className="space-y-3 max-h-[560px] overflow-y-auto pr-1 custom-scroll">
+        {/* Filter Panel */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="relative z-10 border-b border-white/10 bg-black/40 backdrop-blur-lg overflow-hidden"
+            >
+              <div className="max-w-7xl mx-auto px-6 py-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold flex items-center space-x-2">
+                    <Filter className="w-5 h-5 text-purple-400" />
+                    <span>Filter Options</span>
+                  </h2>
+                  <div className="flex items-center gap-3">
+                    {activeFiltersCount > 0 && (
+                      <button
+                        onClick={resetFilters}
+                        className="text-xs text-white/50 hover:text-white/80 transition-colors"
+                      >
+                        Reset All
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowFilters(false)}
+                      className="p-1 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      <X className="w-4 h-4 text-white/60" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Domain Filter */}
+                  <div>
+                    <label className="text-xs text-white/60 mb-3 block font-medium">
+                      Domain
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {domainFilters.map((domain) => (
+                        <button
+                          key={domain}
+                          onClick={() => handleDomainChange(domain)}
+                          className={`px-3 py-1.5 rounded-full text-xs border transition-all ${
+                            domainFilter === domain
+                              ? "bg-purple-500/20 border-purple-400 text-white"
+                              : "border-white/10 text-white/60 hover:border-white/30"
+                          }`}
+                        >
+                          {domain}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Velric Score Range */}
+                  <div>
+                    <label className="text-xs text-white/60 mb-3 block font-medium">
+                      Velric Score Range: {scoreRange[0]} - {scoreRange[1]}
+                    </label>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="number"
+                          min={0}
+                          max={scoreRange[1]}
+                          value={scoreRange[0]}
+                          onChange={(e) =>
+                            setScoreRange([Number(e.target.value), scoreRange[1]])
+                          }
+                          className="w-20 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                        />
+                        <span className="text-white/40">to</span>
+                        <input
+                          type="number"
+                          min={scoreRange[0]}
+                          max={100}
+                          value={scoreRange[1]}
+                          onChange={(e) =>
+                            setScoreRange([scoreRange[0], Number(e.target.value)])
+                          }
+                          className="w-20 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                        />
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={scoreRange[0]}
+                          onChange={(e) =>
+                            setScoreRange([Number(e.target.value), scoreRange[1]])
+                          }
+                          className="flex-1 accent-cyan-400"
+                        />
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={scoreRange[1]}
+                          onChange={(e) =>
+                            setScoreRange([scoreRange[0], Number(e.target.value)])
+                          }
+                          className="flex-1 accent-cyan-400"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Industry Options (Clusters) - Filtered by Domain */}
+                  <div>
+                    <label className="text-xs text-white/60 mb-3 block font-medium">
+                      Specializations {domainFilter !== "All" && `(${domainFilter})`}
+                    </label>
+                    {availableIndustryOptions.length === 0 ? (
+                      <p className="text-xs text-white/40">Select an industry to see specializations</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto custom-scroll p-1">
+                        {availableIndustryOptions.map((option) => {
+                          const isSelected = clusterFilters.includes(option);
+                          return (
+                            <button
+                              key={option}
+                              onClick={() => toggleClusterFilter(option)}
+                              className={`px-3 py-1.5 rounded-full text-xs border transition-all whitespace-nowrap ${
+                                isSelected
+                                  ? "bg-cyan-500/20 border-cyan-400 text-white"
+                                  : "border-white/10 text-white/60 hover:border-white/30"
+                              }`}
+                            >
+                              {option}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Main Content - Candidate Grid */}
+        <main className="relative z-10 max-w-7xl mx-auto px-6 py-10">
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-sm text-white/60">
+              Showing <span className="text-white font-semibold">{filteredCandidates.length}</span> candidate{filteredCandidates.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+
+          {filteredCandidates.length === 0 ? (
+            <div className="p-12 text-center rounded-2xl bg-white/5 border border-white/10">
+              <p className="text-white/60 mb-2">No candidates found</p>
+              <p className="text-sm text-white/40">Try adjusting your search or filters</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <AnimatePresence>
-                {filteredCandidates.map((candidate) => {
-                  const isSelected = candidate.id === selectedCandidateId;
+                {filteredCandidates.map((candidate, index) => {
                   const isSaved = savedCandidates.has(candidate.id);
                   return (
-                    <motion.button
+                    <motion.div
                       key={candidate.id}
-                      layout
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      onClick={() => setSelectedCandidateId(candidate.id)}
-                      className={`w-full text-left p-4 rounded-2xl border transition-all ${
-                        isSelected
-                          ? "bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border-white/30"
-                          : "bg-white/5 border-white/10 hover:border-white/20"
-                      }`}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-xl hover:border-cyan-400/30 transition-all hover:scale-[1.02]"
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <p className="font-semibold">{candidate.name}</p>
-                          <p className="text-xs text-white/60">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-white mb-1">
+                            {candidate.name}
+                          </h3>
+                          <p className="text-sm text-white/60 mb-2">
                             {candidate.domain}
                           </p>
+                          {candidate.location && (
+                            <div className="flex items-center text-xs text-white/50">
+                              <MapPin className="w-3 h-3 mr-1" />
+                              {candidate.location}
+                            </div>
+                          )}
                         </div>
-                        <div className="text-right">
-                          <p className="text-sm text-white/60">Velric Score</p>
-                          <p className="text-xl font-bold text-cyan-300">
-                            {candidate.velricScore}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-white/60">
-                        <span>
-                          Tech {candidate.subscores.technical}% • Collab{" "}
-                          {candidate.subscores.collaboration}%
-                        </span>
                         <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleSaveCandidate(candidate.id);
-                          }}
-                          className={`flex items-center text-xs space-x-1 ${
-                            isSaved ? "text-yellow-300" : "text-white/50"
+                          onClick={() => toggleSaveCandidate(candidate.id)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            isSaved
+                              ? "text-yellow-400 bg-yellow-400/10"
+                              : "text-white/40 hover:text-yellow-400 hover:bg-white/5"
                           }`}
                         >
                           {isSaved ? (
-                            <>
-                              <BookmarkCheck className="w-3 h-3" />
-                              <span>Saved</span>
-                            </>
+                            <BookmarkCheck className="w-5 h-5" />
                           ) : (
-                            <>
-                              <Bookmark className="w-3 h-3" />
-                              <span>Save</span>
-                            </>
+                            <Bookmark className="w-5 h-5" />
                           )}
                         </button>
                       </div>
-                    </motion.button>
+
+                      {/* Velric Score */}
+                      <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-white/60 mb-1">Velric Score</p>
+                            <p className="text-3xl font-bold text-cyan-300">
+                              {candidate.velricScore}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-white/60">Subscores</p>
+                            <p className="text-sm text-white/80">
+                              Tech: {candidate.subscores.technical}%
+                            </p>
+                            <p className="text-sm text-white/80">
+                              Collab: {candidate.subscores.collaboration}%
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Core Clusters */}
+                      <div className="mb-4">
+                        <p className="text-xs text-white/60 mb-2">Core Expertise</p>
+                        <div className="flex flex-wrap gap-2">
+                          {candidate.clusters.core_stack.slice(0, 4).map((clusterId) => {
+                            const cluster = getClusterById(clusterId);
+                            if (!cluster) return null;
+                            return (
+                              <span
+                                key={clusterId}
+                                className="px-2 py-1 rounded-lg text-xs border"
+                                style={{
+                                  background: `${cluster.color}20`,
+                                  borderColor: `${cluster.color}60`,
+                                }}
+                              >
+                                {cluster.name}
+                              </span>
+                            );
+                          })}
+                          {candidate.clusters.core_stack.length > 4 && (
+                            <span className="px-2 py-1 rounded-lg text-xs text-white/60 border border-white/10">
+                              +{candidate.clusters.core_stack.length - 4}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* About Preview */}
+                      {candidate.about && (
+                        <p className="text-sm text-white/70 line-clamp-2 mb-4">
+                          {candidate.about}
+                        </p>
+                      )}
+
+                      {/* Contact Links */}
+                      <div className="flex items-center gap-3 pt-4 border-t border-white/10">
+                        {candidate.email && (
+                          <a
+                            href={`mailto:${candidate.email}`}
+                            className="flex items-center gap-1 text-xs text-white/60 hover:text-cyan-400 transition-colors"
+                          >
+                            <Mail className="w-4 h-4" />
+                            <span>Email</span>
+                          </a>
+                        )}
+                        {candidate.linkedin && (
+                          <a
+                            href={`https://${candidate.linkedin}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-xs text-white/60 hover:text-cyan-400 transition-colors"
+                          >
+                            <Linkedin className="w-4 h-4" />
+                            <span>LinkedIn</span>
+                          </a>
+                        )}
+                        {candidate.github && (
+                          <a
+                            href={`https://${candidate.github}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-xs text-white/60 hover:text-purple-400 transition-colors"
+                          >
+                            <Github className="w-4 h-4" />
+                            <span>GitHub</span>
+                          </a>
+                        )}
+                      </div>
+                    </motion.div>
                   );
                 })}
               </AnimatePresence>
             </div>
-          </section>
-
-          {/* Right: Filters + Profile */}
-          <section className="xl:col-span-2 space-y-6">
-            <motion.div
-              className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold flex items-center space-x-2">
-                  <Filter className="w-5 h-5 text-purple-400" />
-                  <span>Filters</span>
-                </h2>
-                <button
-                  className="text-xs text-white/50 hover:text-white/80"
-                  onClick={() => {
-                    setDomainFilter("All");
-                    setScoreRange([70, 100]);
-                    setSkillFilters([]);
-                    setSearchQuery("");
-                  }}
-                >
-                  Reset
-                </button>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs text-white/60 mb-1 block">
-                    Domain
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {domainFilters.map((domain) => (
-                      <button
-                        key={domain}
-                        onClick={() => setDomainFilter(domain)}
-                        className={`px-3 py-1 rounded-full text-xs border ${
-                          domainFilter === domain
-                            ? "bg-purple-500/20 border-purple-400 text-white"
-                            : "border-white/10 text-white/60 hover:border-white/30"
-                        }`}
-                      >
-                        {domain}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs text-white/60 mb-1 block">
-                    Velric Score Range
-                  </label>
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="number"
-                      min={0}
-                      max={scoreRange[1]}
-                      value={scoreRange[0]}
-                      onChange={(e) =>
-                        setScoreRange([Number(e.target.value), scoreRange[1]])
-                      }
-                      className="w-16 px-2 py-1 bg-white/5 border border-white/10 rounded text-sm"
-                    />
-                    <input
-                      type="range"
-                      min={60}
-                      max={100}
-                      value={scoreRange[0]}
-                      onChange={(e) =>
-                        setScoreRange([Number(e.target.value), scoreRange[1]])
-                      }
-                      className="w-full accent-cyan-400"
-                    />
-                    <input
-                      type="range"
-                      min={60}
-                      max={100}
-                      value={scoreRange[1]}
-                      onChange={(e) =>
-                        setScoreRange([scoreRange[0], Number(e.target.value)])
-                      }
-                      className="w-full accent-cyan-400"
-                    />
-                    <input
-                      type="number"
-                      min={scoreRange[0]}
-                      max={100}
-                      value={scoreRange[1]}
-                      onChange={(e) =>
-                        setScoreRange([scoreRange[0], Number(e.target.value)])
-                      }
-                      className="w-16 px-2 py-1 bg-white/5 border border-white/10 rounded text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-white/60 mb-1 block">
-                  Skills
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {skillsFilters.map((skill) => (
-                    <button
-                      key={skill}
-                      onClick={() => toggleSkillFilter(skill)}
-                      className={`px-3 py-1 rounded-full text-xs border ${
-                        skillFilters.includes(skill)
-                          ? "bg-cyan-500/20 border-cyan-400 text-white"
-                          : "border-white/10 text-white/60 hover:border-white/30"
-                      }`}
-                    >
-                      {skill}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-
-            {selectedCandidate ? (
-              <motion.div
-                key={selectedCandidate.id}
-                className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden backdrop-blur-xl"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                {/* LinkedIn-style Header Banner */}
-                <div className="relative h-48 bg-gradient-to-r from-purple-600/30 to-cyan-600/30">
-                  <div className="absolute bottom-0 left-8 transform translate-y-1/2">
-                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-400 to-cyan-400 border-4 border-black/50 flex items-center justify-center text-4xl font-bold text-white">
-                      {selectedCandidate.name.charAt(0)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Profile Header Content */}
-                <div className="pt-20 px-8 pb-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h2 className="text-3xl font-bold mb-1">
-                        {selectedCandidate.name}
-                      </h2>
-                      <p className="text-lg text-white/80 mb-2">
-                        {selectedCandidate.domain} Developer
-                      </p>
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-white/60">
-                        {selectedCandidate.location && (
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="w-4 h-4" />
-                            <span>{selectedCandidate.location}</span>
-                          </div>
-                        )}
-                        {selectedCandidate.email && (
-                          <div className="flex items-center space-x-1">
-                            <Mail className="w-4 h-4" />
-                            <span>{selectedCandidate.email}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-3 mt-3">
-                        {selectedCandidate.linkedin && (
-                          <a
-                            href={`https://${selectedCandidate.linkedin}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center space-x-1 text-cyan-400 hover:text-cyan-300 transition-colors"
-                          >
-                            <Linkedin className="w-4 h-4" />
-                            <span className="text-sm">LinkedIn</span>
-                          </a>
-                        )}
-                        {selectedCandidate.github && (
-                          <a
-                            href={`https://${selectedCandidate.github}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center space-x-1 text-purple-400 hover:text-purple-300 transition-colors"
-                          >
-                            <Github className="w-4 h-4" />
-                            <span className="text-sm">GitHub</span>
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => toggleSaveCandidate(selectedCandidate.id)}
-                      className={`px-6 py-2.5 rounded-full text-sm font-medium border transition-all ${
-                        savedCandidates.has(selectedCandidate.id)
-                          ? "border-yellow-400 text-yellow-300 bg-yellow-400/10"
-                          : "border-white/20 text-white/80 hover:border-white/40"
-                      }`}
-                    >
-                      {savedCandidates.has(selectedCandidate.id) ? (
-                        <span className="flex items-center space-x-2">
-                          <BookmarkCheck className="w-4 h-4" />
-                          <span>Saved</span>
-                        </span>
-                      ) : (
-                        <span className="flex items-center space-x-2">
-                          <Bookmark className="w-4 h-4" />
-                          <span>Save Candidate</span>
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Main Content Sections */}
-                <div className="px-8 pb-8 space-y-6">
-                  {/* Velric Score Section */}
-                  <div className="p-6 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <p className="text-xs text-white/60 mb-1">Velric Score</p>
-                        <p className="text-5xl font-bold text-cyan-300">
-                          {selectedCandidate.velricScore}
-                        </p>
-                        <p className="text-sm text-white/60 mt-1">Top {100 - selectedCandidate.velricScore}% of candidates</p>
-                      </div>
-                    </div>
-                    <div className="space-y-3 mt-4">
-                      {Object.entries(selectedCandidate.subscores).map(
-                        ([label, value]) => (
-                          <div key={label}>
-                            <div className="flex items-center justify-between text-sm text-white/80 mb-1 capitalize">
-                              <span className="font-medium">{label}</span>
-                              <span className="text-cyan-300 font-semibold">{value}%</span>
-                            </div>
-                            <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full"
-                                style={{ width: `${value}%` }}
-                              />
-                            </div>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-
-                  {/* About Section */}
-                  {selectedCandidate.about && (
-                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-                      <h3 className="text-xl font-semibold mb-3">About</h3>
-                      <p className="text-white/80 leading-relaxed">
-                        {selectedCandidate.about}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Experience Section */}
-                  {selectedCandidate.experience && selectedCandidate.experience.length > 0 && (
-                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-                      <h3 className="text-xl font-semibold mb-4 flex items-center space-x-2">
-                        <Briefcase className="w-5 h-5 text-purple-400" />
-                        <span>Experience</span>
-                      </h3>
-                      <div className="space-y-6">
-                        {selectedCandidate.experience.map((exp, idx) => (
-                          <div key={idx} className="border-l-2 border-purple-500/30 pl-4">
-                            <h4 className="text-lg font-semibold text-white mb-1">
-                              {exp.title}
-                            </h4>
-                            <p className="text-purple-300 font-medium mb-1">
-                              {exp.company}
-                            </p>
-                            <p className="text-sm text-white/60 mb-2">{exp.duration}</p>
-                            <p className="text-white/70 text-sm leading-relaxed">
-                              {exp.description}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Education Section */}
-                  {selectedCandidate.education && selectedCandidate.education.length > 0 && (
-                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-                      <h3 className="text-xl font-semibold mb-4 flex items-center space-x-2">
-                        <GraduationCap className="w-5 h-5 text-cyan-400" />
-                        <span>Education</span>
-                      </h3>
-                      <div className="space-y-4">
-                        {selectedCandidate.education.map((edu, idx) => (
-                          <div key={idx}>
-                            <h4 className="text-lg font-semibold text-white mb-1">
-                              {edu.degree}
-                            </h4>
-                            <p className="text-cyan-300 font-medium mb-1">
-                              {edu.school}
-                            </p>
-                            <p className="text-sm text-white/60">{edu.year}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Skills Section */}
-                  <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-                    <h3 className="text-xl font-semibold mb-4">Skills</h3>
-                    <div className="flex flex-wrap gap-3">
-                      {selectedCandidate.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-4 py-2 rounded-full text-sm bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-400/40 text-white font-medium"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Missions/Projects Section */}
-                  <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-                    <h3 className="text-xl font-semibold mb-4">Recent Missions</h3>
-                    <div className="space-y-4">
-                      {selectedCandidate.missions.map((mission, idx) => (
-                        <div
-                          key={idx}
-                          className="p-4 rounded-xl bg-white/5 border border-white/10"
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-semibold text-white">{mission.name}</h4>
-                            <span
-                              className={`text-xs px-3 py-1 rounded-full font-medium ${
-                                mission.status === "completed"
-                                  ? "bg-green-500/20 text-green-300 border border-green-500/30"
-                                  : "bg-yellow-500/20 text-yellow-200 border border-yellow-500/30"
-                              }`}
-                            >
-                              {mission.status.replace("-", " ")}
-                            </span>
-                          </div>
-                          {mission.description && (
-                            <p className="text-sm text-white/70 mt-2">
-                              {mission.description}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Strengths & Focus Areas */}
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-                      <h3 className="text-lg font-semibold mb-3 text-green-300">Strengths</h3>
-                      <ul className="space-y-2">
-                        {selectedCandidate.strengths.map((item, idx) => (
-                          <li key={idx} className="flex items-start space-x-2 text-white/80">
-                            <span className="text-green-400 mt-1">✓</span>
-                            <span className="text-sm">{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-                      <h3 className="text-lg font-semibold mb-3 text-yellow-300">Focus Areas</h3>
-                      <ul className="space-y-2">
-                        {selectedCandidate.weaknesses.map((item, idx) => (
-                          <li key={idx} className="flex items-start space-x-2 text-white/80">
-                            <span className="text-yellow-400 mt-1">→</span>
-                            <span className="text-sm">{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ) : (
-              <div className="p-10 text-center text-white/60 border border-dashed border-white/10 rounded-3xl">
-                Select a candidate to view details.
-              </div>
-            )}
-          </section>
+          )}
         </main>
       </div>
     </>
