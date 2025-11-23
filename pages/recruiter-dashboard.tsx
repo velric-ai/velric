@@ -12,11 +12,13 @@ import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
 import { WelcomeMessage } from "../components/dashboard/WelcomeMessage";
 import RecruiterNavbar from "../components/recruiter/RecruiterNavbar";
 import AIJobMatchModal from "../components/recruiter/AIJobMatchModal";
+import ScheduleInterviewModal from "../components/recruiter/ScheduleInterviewModal";
 
 function RecruiterDashboardContent() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isJobMatchOpen, setIsJobMatchOpen] = useState(false);
+  const [isScheduleInterviewOpen, setIsScheduleInterviewOpen] = useState(false);
 
   // Check authentication
   useEffect(() => {
@@ -194,26 +196,31 @@ function RecruiterDashboardContent() {
                 </p>
               </motion.div>
 
-              {/* Placeholder Card */}
+              {/* Schedule Interview Card */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: 0.4 }}
-                className="p-8 rounded-2xl"
+                className="p-8 rounded-2xl cursor-pointer relative overflow-hidden"
                 style={{
                   background: "rgba(255, 255, 255, 0.05)",
                   backdropFilter: "blur(15px)",
                   border: "1px solid rgba(255, 255, 255, 0.1)",
                   boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
                 }}
+                onClick={() => setIsScheduleInterviewOpen(true)}
+                whileHover={{ scale: 1.02 }}
               >
-                <Users className="w-8 h-8 text-yellow-400 mb-4" />
-                <h2 className="text-2xl font-bold mb-2">
-                  Pipeline Analytics
-                </h2>
-                <p className="text-white/70">
-                  Track your hiring funnel metrics and candidate engagement.
-                </p>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-500/20 to-green-500/20 rounded-full blur-2xl -mr-16 -mt-16" />
+                <div className="relative z-10">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-green-500 flex items-center justify-center mb-4">
+                    <Users className="w-6 h-6 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">Schedule Interview</h2>
+                  <p className="text-white/70">
+                    Use AI to search and find candidates, then schedule interviews directly.
+                  </p>
+                </div>
               </motion.div>
             </div>
           </motion.div>
@@ -223,6 +230,12 @@ function RecruiterDashboardContent() {
         <AIJobMatchModal
           isOpen={isJobMatchOpen}
           onClose={() => setIsJobMatchOpen(false)}
+        />
+
+        {/* Schedule Interview Modal */}
+        <ScheduleInterviewModal
+          isOpen={isScheduleInterviewOpen}
+          onClose={() => setIsScheduleInterviewOpen(false)}
         />
       </div>
     </>

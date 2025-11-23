@@ -30,6 +30,12 @@ export interface SurveyFormData {
   fullName: { value: string; error: string | null; touched: boolean };
   educationLevel: { value: string; error: string | null; touched: boolean };
   industry: { value: string; error: string | null; touched: boolean };
+  interviewAvailability: {
+    value: Array<{ day: string; startTime: string; endTime: string }>;
+    timezone: string;
+    error: string | null;
+    touched: boolean;
+  };
   missionFocus: {
     value: string[];
     error: string | null;
@@ -117,6 +123,10 @@ export async function submitSurveyData(
         url: formData.portfolio.uploadedUrl || formData.portfolio.url || null,
       },
       experience_summary: formData.experienceSummary.value,
+      interview_availability: formData.interviewAvailability ? {
+        timeSlots: formData.interviewAvailability.value,
+        timezone: formData.interviewAvailability.timezone,
+      } : null,
       platform_connections: formData.platformConnections,
       metadata: {
         total_time_spent: Object.values(formData.timeSpentPerStep).reduce(

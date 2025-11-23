@@ -56,6 +56,12 @@ const initialFormData: SurveyFormData = {
     error: null,
     touched: false,
   },
+  interviewAvailability: {
+    value: [],
+    timezone: typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC",
+    error: null,
+    touched: false,
+  },
 
   // Step 2: Mission Questions (dynamic)
   missionFocus: {

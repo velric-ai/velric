@@ -1,0 +1,173 @@
+import type { NextApiRequest, NextApiResponse } from "next";
+import { supabase, USE_DUMMY } from "@/lib/supabaseClient";
+
+type ScheduleInterviewResponse =
+  | {
+      success: true;
+      interviewRequest: {
+        id: string;
+        candidate_id: string;
+        recruiter_id: string;
+        interview_type: string;
+        context: string;
+        duration: number;
+        preferred_date: string;
+        preferred_time: string;
+        message: string | null;
+        status: string;
+        created_at: string;
+      };
+      message: string;
+    }
+  | { success: false; error: string };
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<ScheduleInterviewResponse>
+) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
+    return res.status(405).json({
+      success: false,
+      error: "Method not allowed",
+    });
+  }
+
+  try {
+    // Get recruiter ID from request (should be from authenticated session)
+    // For now, we'll get it from the request body or try to extract from auth
+    const {
+      candidateId,
+      candidateName,
+      candidateEmail,
+      interviewType,
+      context,
+      duration,
+      preferredDate,
+      preferredTime,
+      message,
+    } = req.body;
+
+    // Validation
+    if (!candidateId) {
+      return res.status(400).json({
+        success: false,
+        error: "Candidate ID is required",
+      });
+    }
+
+    if (!interviewType || !context || !duration || !preferredDate || !preferredTime) {
+      return res.status(400).json({
+        success: false,
+        error: "All required fields must be provided",
+      });
+    }
+
+    // Get recruiter ID from request headers or body
+    // In production, this should come from the authenticated session
+    const recruiterId = req.body.recruiterId || req.headers["x-recruiter-id"];
+
+    if (!recruiterId && !USE_DUMMY) {
+      // Try to get from localStorage equivalent (in real app, use session/auth)
+      return res.status(401).json({
+        success: false,
+        error: "Recruiter authentication required",
+      });
+    }
+
+    // Handle dummy mode
+    if (USE_DUMMY) {
+      const mockInterviewRequest = {
+        id: `interview_${Date.now()}`,
+        candidate_id: candidateId,
+        recruiter_id: recruiterId || "recruiter_1",
+        interview_type: interviewType,
+        context: context,
+        duration: duration,
+        preferred_date: preferredDate,
+        preferred_time: preferredTime,
+        message: message || null,
+        status: "pending",
+        created_at: new Date().toISOString(),
+      };
+
+      return res.status(201).json({
+        success: true,
+        interviewRequest: mockInterviewRequest,
+        message: "Interview request created successfully",
+      });
+    }
+
+    // Validate date and time format
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    const timeRegex = /^\d{2}:\d{2}$/;
+
+    if (!dateRegex.test(preferredDate)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid date format. Use YYYY-MM-DD",
+      });
+    }
+
+    if (!timeRegex.test(preferredTime)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid time format. Use HH:MM",
+      });
+    }
+
+    // Create interview request record
+    const interviewRequestData = {
+      candidate_id: candidateId,
+      recruiter_id: recruiterId,
+      interview_type: interviewType,
+      context: context.trim(),
+      duration: parseInt(duration, 10),
+      preferred_date: preferredDate,
+      preferred_time: preferredTime,
+      message: message?.trim() || null,
+      status: "pending",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: interviewRequest, error: dbError } = await supabase
+      .from("interview_requests")
+      .insert([interviewRequestData])
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error("Supabase interview_requests insert error:", dbError);
+      return res.status(500).json({
+        success: false,
+        error: dbError.message || "Failed to create interview request",
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      interviewRequest: {
+        id: interviewRequest.id,
+        candidate_id: interviewRequest.candidate_id,
+        recruiter_id: interviewRequest.recruiter_id,
+        interview_type: interviewRequest.interview_type,
+        context: interviewRequest.context,
+        duration: interviewRequest.duration,
+        preferred_date: interviewRequest.preferred_date,
+        preferred_time: interviewRequest.preferred_time,
+        message: interviewRequest.message,
+        status: interviewRequest.status,
+        created_at: interviewRequest.created_at,
+      },
+      message: "Interview request created successfully",
+    });
+  } catch (err: any) {
+    console.error("/api/recruiter/schedule-interview error:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message || "Unknown error occurred",
+    });
+  }
+}
+
