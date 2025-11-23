@@ -988,13 +988,14 @@ export interface MissionWithDetails extends DatabaseMission {
 // Internal helper to insert a mission and all its detail tables
 async function insertMissionWithDetails(
   missionData: Omit<StaticMission, "id" | "status">,
-  options: { aiGenerated: boolean; generatedBy: string }
+  options: { aiGenerated: boolean; generatedBy: string; userId?: string }
 ): Promise<string> {
   if (USE_DUMMY) {
     await new Promise((resolve) => setTimeout(resolve, 100));
     const newId = `mission-${Date.now()}`;
     console.log("Would store mission in database:", {
       id: newId,
+      userId: options.userId,
       ...missionData,
     });
     return newId;
@@ -1005,9 +1006,10 @@ async function insertMissionWithDetails(
     let mission: any = null;
     let missionError: any = null;
 
-    // Attempt 1: full insert with all fields
+    // Attempt 1: full insert with all fields including user_id
     console.log("[Mission Storage] Attempting to store mission:", {
       title: missionData.title,
+      userId: options.userId,
       hasDifficulty: !!missionData.difficulty,
       difficulty: missionData.difficulty,
       hasTimeEstimate: !!missionData.timeEstimate,
@@ -1022,6 +1024,7 @@ async function insertMissionWithDetails(
       const res = await supabase
         .from("missions")
         .insert({
+          user_id: options.userId || null,
           title: missionData.title,
           description: missionData.description,
           field: missionData.field,
@@ -1041,7 +1044,7 @@ async function insertMissionWithDetails(
 
       if (!missionError) {
         console.log(
-          "[Mission Storage] ✅ Attempt 1 succeeded - stored with all fields"
+          "[Mission Storage] ✅ Attempt 1 succeeded - stored with all fields including user_id"
         );
       } else {
         console.warn(
@@ -1062,6 +1065,7 @@ async function insertMissionWithDetails(
       const res = await supabase
         .from("missions")
         .insert({
+          user_id: options.userId || null,
           title: missionData.title,
           description: missionData.description,
           field: missionData.field,
@@ -1096,6 +1100,7 @@ async function insertMissionWithDetails(
       const res = await supabase
         .from("missions")
         .insert({
+          user_id: options.userId || null,
           title: missionData.title,
           description: missionData.description,
           field: missionData.field,
@@ -1131,6 +1136,7 @@ async function insertMissionWithDetails(
       const res = await supabase
         .from("missions")
         .insert({
+          user_id: options.userId || null,
           title: missionData.title,
           description: missionData.description,
           field: missionData.field || "Technology",
@@ -1156,7 +1162,7 @@ async function insertMissionWithDetails(
 
     const missionId = mission.id;
     console.log(
-      `[Mission Storage] Successfully inserted mission ${missionId} into missions table`
+      `[Mission Storage] Successfully inserted mission ${missionId} into missions table for user ${options.userId}`
     );
 
     // Store skills (with error handling)
@@ -1343,11 +1349,13 @@ async function insertMissionWithDetails(
 
 // Store AI-generated mission in Supabase
 export async function storeAIGeneratedMission(
-  missionData: Omit<StaticMission, "id" | "status">
+  missionData: Omit<StaticMission, "id" | "status">,
+  userId?: string
 ): Promise<string> {
   return insertMissionWithDetails(missionData, {
     aiGenerated: true,
     generatedBy: "openai",
+    userId,
   });
 }
 
@@ -1670,6 +1678,161 @@ export async function getMissionByIdFromDB(
     // Fallback to static mission
     const { getMissionById } = await import("@/data/staticMissions");
     return getMissionById(id) || null;
+  }
+}
+
+// Get AI-generated missions for a specific user
+export async function getMissionsByUserId(userId: string): Promise<StaticMission[]> {
+  if (USE_DUMMY) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Return empty or static missions as fallback
+    return [];
+  }
+
+  try {
+    let missions: any = null;
+    let error: any = null;
+
+    // Attempt 1: Query missions with all details for specific user
+    {
+      const res = await supabase
+        .from("missions")
+        .select(
+          `
+          *,
+          mission_skills (
+            skills (id, name, category)
+          ),
+          mission_industries (
+            industries (id, name, description)
+          ),
+          mission_tasks (id, task_description, task_order, is_required),
+          mission_objectives (id, objective_description, objective_order),
+          mission_resources (id, resource_description, resource_type, resource_order),
+          mission_evaluation_metrics (id, metric_description, metric_weight, metric_order)
+        `
+        )
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .order("created_at", { ascending: true });
+      missions = res.data;
+      error = res.error;
+    }
+
+    // Retry without status filter if column missing
+    if (error && error.code === "42703") {
+      const res = await supabase
+        .from("missions")
+        .select(
+          `
+          *,
+          mission_skills (
+            skills (id, name, category)
+          ),
+          mission_industries (
+            industries (id, name, description)
+          ),
+          mission_tasks (id, task_description, task_order, is_required),
+          mission_objectives (id, objective_description, objective_order),
+          mission_resources (id, resource_description, resource_type, resource_order),
+          mission_evaluation_metrics (id, metric_description, metric_weight, metric_order)
+        `
+        )
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+      missions = res.data;
+      error = res.error;
+    }
+
+    // If relationship-based select fails, retry with plain select
+    if (error && error.code === "PGRST200") {
+      const res2 = await supabase
+        .from("missions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+      const plain = res2.data;
+      const plainErr = res2.error;
+      if (plainErr) throw plainErr;
+      return (plain || []).map(
+        (mission: any): StaticMission => ({
+          id: mission.id,
+          title: mission.title,
+          description: mission.description,
+          field: mission.field,
+          difficulty: mission.difficulty,
+          timeEstimate: mission.time_estimate,
+          category: mission.category,
+          company: mission.company,
+          context: mission.context,
+          status: "suggested",
+          skills: [],
+          industries: [],
+          tasks: [],
+          objectives: [],
+          resources: [],
+          evaluationMetrics: [],
+        })
+      );
+    }
+
+    if (error) throw error;
+
+    console.log(`[getMissionsByUserId] Retrieved ${missions?.length || 0} missions for user ${userId}`);
+
+    // Transform database format to StaticMission format
+    const transformedMissions = (missions || []).map(
+      (mission: any): StaticMission => ({
+        id: mission.id,
+        title: mission.title,
+        description: mission.description,
+        field: mission.field,
+        difficulty: mission.difficulty,
+        timeEstimate: mission.time_estimate,
+        category: mission.category,
+        company: mission.company,
+        context: mission.context,
+        status: "suggested",
+        skills: mission.mission_skills?.map((ms: any) => ms.skills.name) || [],
+        industries:
+          mission.mission_industries?.map((mi: any) => mi.industries.name) ||
+          [],
+        tasks:
+          mission.mission_tasks
+            ?.sort((a: any, b: any) => a.task_order - b.task_order)
+            ?.map((t: any) => t.task_description) || [],
+        objectives:
+          mission.mission_objectives
+            ?.sort((a: any, b: any) => a.objective_order - b.objective_order)
+            ?.map((o: any) => o.objective_description) || [],
+        resources:
+          mission.mission_resources
+            ?.sort((a: any, b: any) => a.resource_order - b.resource_order)
+            ?.map((r: any) => r.resource_description) || [],
+        evaluationMetrics:
+          mission.mission_evaluation_metrics
+            ?.sort((a: any, b: any) => a.metric_order - b.metric_order)
+            ?.map((m: any) => m.metric_description) || [],
+      })
+    );
+
+    // Sort by created_at ascending as primary, id ascending as secondary (for tiebreaker)
+    // This ensures consistent ordering even when missions are created in parallel
+    transformedMissions.sort((a: any, b: any) => {
+      const aCreated = missions.find((m: any) => m.id === a.id)?.created_at || '';
+      const bCreated = missions.find((m: any) => m.id === b.id)?.created_at || '';
+      
+      if (aCreated !== bCreated) {
+        return new Date(aCreated).getTime() - new Date(bCreated).getTime();
+      }
+      // If created_at is the same, use id as tiebreaker
+      return a.id.localeCompare(b.id);
+    });
+
+    return transformedMissions;
+  } catch (error) {
+    console.error("Error fetching missions for user from database:", error);
+    return [];
   }
 }
 

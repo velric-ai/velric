@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { ArrowLeft } from "lucide-react";
 
+
 const FeedbackPage: React.FC = () => {
   const router = useRouter();
   const { missionId } = router.query; // here missionId is actually the submission id
@@ -50,7 +51,7 @@ const FeedbackPage: React.FC = () => {
           {/* Back Button */}
           {submission?.mission_id && (
             <button
-              onClick={() => router.push(`/missions/${submission.mission_id}`)}
+              onClick={() => router.push(`/missions`)}
               className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8 group"
             >
               <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />

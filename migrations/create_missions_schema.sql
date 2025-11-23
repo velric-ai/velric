@@ -7,6 +7,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Create missions table
 CREATE TABLE IF NOT EXISTS missions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     field VARCHAR(100) NOT NULL,
@@ -113,6 +114,8 @@ CREATE INDEX IF NOT EXISTS idx_missions_category ON missions(category);
 CREATE INDEX IF NOT EXISTS idx_missions_company ON missions(company);
 CREATE INDEX IF NOT EXISTS idx_missions_status ON missions(status);
 CREATE INDEX IF NOT EXISTS idx_missions_created_at ON missions(created_at);
+CREATE INDEX IF NOT EXISTS idx_missions_user_id ON missions(user_id);
+CREATE INDEX IF NOT EXISTS idx_missions_user_id_created_at ON missions(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_user_missions_user_id ON user_missions(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_missions_status ON user_missions(status);
 CREATE INDEX IF NOT EXISTS idx_mission_tasks_mission_id ON mission_tasks(mission_id);

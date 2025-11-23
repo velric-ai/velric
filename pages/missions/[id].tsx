@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import { motion } from "framer-motion";
-import Navbar from "@/components/Navbar";
+import DashboardNavigation from "@/components/dashboard/DashboardNavigation";
 import Footer from "@/components/Footer";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { StaticMission } from "@/data/staticMissions";
@@ -175,7 +175,7 @@ export default function MissionDetailPage() {
           <title>Loading Mission | Velric</title>
         </Head>
         <main className="bg-[#0D0D0D] text-white min-h-screen">
-          <Navbar />
+          <DashboardNavigation activeTab="missions" />
           <div className="pt-24 flex justify-center items-center min-h-[60vh]">
             <LoadingSpinner size="lg" text="Loading mission details..." />
           </div>
@@ -192,7 +192,7 @@ export default function MissionDetailPage() {
           <title>Mission Not Found | Velric</title>
         </Head>
         <main className="bg-[#0D0D0D] text-white min-h-screen">
-          <Navbar />
+          <DashboardNavigation activeTab="missions" />
           <div className="pt-24 px-4 md:px-8 lg:px-16">
             <div className="max-w-4xl mx-auto text-center py-20">
               <motion.div
@@ -259,7 +259,7 @@ export default function MissionDetailPage() {
           ))}
         </div>
 
-        <Navbar />
+        <DashboardNavigation activeTab="missions" />
 
         {/* Back Button */}
         <section className="pt-24 pb-8 px-4 md:px-8 lg:px-16 relative z-10">
