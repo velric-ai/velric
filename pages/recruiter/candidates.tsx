@@ -1,13 +1,16 @@
 import Head from "next/head";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Filter, Search, Bookmark, BookmarkCheck, MapPin, Mail, Linkedin, Github, X, SlidersHorizontal } from "lucide-react";
+import { Filter, Search, Bookmark, BookmarkCheck, MapPin, Mail, Linkedin, Github, X, SlidersHorizontal, Calendar, Loader2 } from "lucide-react";
+import ScheduleInterviewFormModal from "@/components/recruiter/ScheduleInterviewFormModal";
 import { ProtectedDashboardRoute } from "@/components/auth/ProtectedRoute";
 import { useRouter } from "next/router";
 import RecruiterNavbar from "@/components/recruiter/RecruiterNavbar";
 import { getClusterById } from "@/lib/skillClusters";
-import { Candidate, mockCandidates } from "@/lib/mockCandidates";
+import { Candidate } from "@/lib/mockCandidates";
 import { getIndustryOptions } from "@/utils/surveyValidation";
+import { useSnackbar } from "@/contexts/SnackbarContext";
+import { useDebounce } from "@/hooks/useDebounce";
 
 // All industries from survey form (Step 1)
 const allIndustries = [
@@ -105,14 +108,88 @@ function candidateMatchesIndustryOption(candidate: Candidate, industryOption: st
   return skillsMatch || clustersMatch || tagsMatch || keywordMatches;
 }
 
+interface ApiCandidate {
+  id: string;
+  name: string;
+  email: string;
+  onboarded: boolean;
+  profile_complete: boolean;
+  velricScore?: number;
+  domain?: string;
+  location?: string;
+  industry?: string;
+  mission_focus?: string[];
+  strength_areas?: string[];
+  experience_summary?: string;
+  education_level?: string;
+  learning_preference?: string;
+  skills?: string[];
+  clusters?: string[];
+}
+
 function CandidatesPageContent() {
   const router = useRouter();
+  const { showSnackbar } = useSnackbar();
   const [savedCandidates, setSavedCandidates] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [domainFilter, setDomainFilter] = useState("All");
   const [scoreRange, setScoreRange] = useState<[number, number]>([70, 100]);
   const [clusterFilters, setClusterFilters] = useState<string[]>([]); // Now stores industry option strings
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState<{
+    id: string;
+    name: string;
+    email?: string;
+  } | null>(null);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [candidates, setCandidates] = useState<ApiCandidate[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [totalCandidates, setTotalCandidates] = useState(0);
+
+  // Debounce search query and filters to prevent excessive API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+  const debouncedDomainFilter = useDebounce(domainFilter, 300);
+  const debouncedScoreRange = useDebounce(scoreRange, 300);
+  const debouncedClusterFilters = useDebounce(clusterFilters, 300);
+
+  // Fetch candidates from API with debounced values
+  useEffect(() => {
+    const fetchCandidates = async () => {
+      setIsLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (debouncedSearchQuery) params.append("search", debouncedSearchQuery);
+        if (debouncedDomainFilter && debouncedDomainFilter !== "All") params.append("domain", debouncedDomainFilter);
+        params.append("minScore", debouncedScoreRange[0].toString());
+        params.append("maxScore", debouncedScoreRange[1].toString());
+        if (debouncedClusterFilters.length > 0) {
+          params.append("clusters", debouncedClusterFilters.join(","));
+        }
+        if (debouncedClusterFilters.length > 0) {
+          params.append("industry", debouncedClusterFilters.join(","));
+        }
+
+        const response = await fetch(`/api/recruiter/candidates?${params.toString()}`);
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.error || "Failed to fetch candidates");
+        }
+
+        setCandidates(result.candidates || []);
+        setTotalCandidates(result.total || 0);
+      } catch (err: any) {
+        console.error("Error fetching candidates:", err);
+        showSnackbar(err.message || "Failed to load candidates", "error");
+        setCandidates([]);
+        setTotalCandidates(0);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCandidates();
+  }, [debouncedSearchQuery, debouncedDomainFilter, debouncedScoreRange, debouncedClusterFilters, showSnackbar]);
 
   // Get industry options (clusters) based on selected domain/industry
   const availableIndustryOptions = useMemo(() => {
@@ -127,36 +204,77 @@ function CandidatesPageContent() {
     return getIndustryOptions(domainFilter);
   }, [domainFilter]);
 
-  const filteredCandidates = useMemo(() => {
-    return mockCandidates.filter((candidate) => {
-      const matchesSearch =
-        candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        candidate.skills.some((skill) =>
-          skill.toLowerCase().includes(searchQuery.toLowerCase())
-        ) ||
-        candidate.clusters.core_stack.some(clusterId => {
-          const cluster = getClusterById(clusterId);
-          return cluster?.name.toLowerCase().includes(searchQuery.toLowerCase());
+  // Convert API candidate to display format
+  const convertToDisplayCandidate = (apiCandidate: ApiCandidate): Candidate => {
+    // Generate mock clusters structure
+    const generateMockClusters = () => {
+      const coreStack: string[] = [];
+      const domainTags: string[] = [];
+      const strengthTags: string[] = [];
+      
+      // Map mission_focus to core_stack
+      if (apiCandidate.mission_focus && Array.isArray(apiCandidate.mission_focus)) {
+        apiCandidate.mission_focus.forEach((mf, idx) => {
+          coreStack.push(`cluster_${idx}_${mf.replace(/\s+/g, '_')}`);
         });
+      }
+      
+      // Map industry to domain_tags
+      if (apiCandidate.industry) {
+        domainTags.push(`tag_${apiCandidate.industry.replace(/\s+/g, '_')}`);
+      }
+      
+      // Map strength_areas to strength_tags
+      if (apiCandidate.strength_areas && Array.isArray(apiCandidate.strength_areas)) {
+        apiCandidate.strength_areas.forEach((sa, idx) => {
+          strengthTags.push(`strength_${idx}_${sa.replace(/\s+/g, '_')}`);
+        });
+      }
+      
+      return {
+        core_stack: coreStack.length > 0 ? coreStack : ["cluster_default"],
+        domain_tags: domainTags.length > 0 ? domainTags : [],
+        strength_tags: strengthTags.length > 0 ? strengthTags : [],
+        coverage_scores: {
+          core: coreStack.length > 0 ? 80 : 0,
+          domain: domainTags.length > 0 ? 70 : 0,
+          strength: strengthTags.length > 0 ? 75 : 0,
+        },
+      };
+    };
 
-      // Match domain: if industry is selected, check if candidate's domain maps to that industry
-      const matchesDomain =
-        domainFilter === "All" || 
-        candidateDomainToIndustry[candidate.domain] === domainFilter ||
-        candidate.domain === domainFilter;
+    return {
+      id: apiCandidate.id,
+      name: apiCandidate.name,
+      email: apiCandidate.email,
+      domain: apiCandidate.domain || "General",
+      velricScore: apiCandidate.velricScore || 0,
+      location: apiCandidate.location || "Not specified",
+      skills: apiCandidate.skills || [],
+      clusters: generateMockClusters(),
+      about: apiCandidate.experience_summary || "",
+      education: apiCandidate.education_level ? [{
+        degree: apiCandidate.education_level,
+        school: "Not specified",
+        year: "Not specified",
+      }] : [],
+      linkedin: "",
+      github: "",
+      subscores: {
+        technical: apiCandidate.velricScore ? Math.round(apiCandidate.velricScore * 0.4) : 0,
+        collaboration: apiCandidate.velricScore ? Math.round(apiCandidate.velricScore * 0.3) : 0,
+        reliability: apiCandidate.velricScore ? Math.round(apiCandidate.velricScore * 0.3) : 0,
+      },
+      missions: [],
+      strengths: apiCandidate.strength_areas || [],
+      weaknesses: [],
+    };
+  };
 
-      const matchesScore =
-        candidate.velricScore >= scoreRange[0] &&
-        candidate.velricScore <= scoreRange[1];
-
-      // Filter by industry options (clusters): candidate must match at least one selected option
-      const matchesClusters =
-        clusterFilters.length === 0 ||
-        clusterFilters.some(option => candidateMatchesIndustryOption(candidate, option));
-
-      return matchesSearch && matchesDomain && matchesScore && matchesClusters;
-    });
-  }, [domainFilter, scoreRange, searchQuery, clusterFilters]);
+  const filteredCandidates = useMemo(() => {
+    // API already handles filtering, but we can do additional client-side filtering if needed
+    return candidates.map(convertToDisplayCandidate);
+  }, [candidates]);
 
   const toggleClusterFilter = (option: string) => {
     setClusterFilters((prev) =>
@@ -482,6 +600,24 @@ function CandidatesPageContent() {
                             </p>
                           </div>
                         </div>
+                        {/* Schedule Interview Button */}
+                        <button
+                          onClick={() => {
+                            setSelectedCandidate({
+                              id: candidate.id,
+                              name: candidate.name,
+                              email: candidate.email,
+                            });
+                            setIsScheduleModalOpen(true);
+                          }}
+                          className="mt-3 w-full px-4 py-2 rounded-lg font-medium text-white transition-all flex items-center justify-center space-x-2"
+                          style={{
+                            background: "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                          }}
+                        >
+                          <Calendar className="w-4 h-4" />
+                          <span>Schedule Interview</span>
+                        </button>
                       </div>
 
                       {/* Core Clusters */}
@@ -560,6 +696,20 @@ function CandidatesPageContent() {
             </div>
           )}
         </main>
+
+        {/* Schedule Interview Form Modal */}
+        {selectedCandidate && (
+          <ScheduleInterviewFormModal
+            isOpen={isScheduleModalOpen}
+            onClose={() => {
+              setIsScheduleModalOpen(false);
+              setSelectedCandidate(null);
+            }}
+            candidateId={selectedCandidate.id}
+            candidateName={selectedCandidate.name}
+            candidateEmail={selectedCandidate.email}
+          />
+        )}
       </div>
     </>
   );
