@@ -85,10 +85,10 @@ export default function MissionsPage() {
   useEffect(() => {
     if (hasGenerated.current) return;
     if (!surveyLoaded) return;
-    if (!userSurveyData) return;
-    fetchAndGenerateMissions();
+    if (!userId) return;
+    fetchUserMissionsOrGenerate();
     hasGenerated.current = true;
-  }, [surveyLoaded, userSurveyData]);
+  }, [surveyLoaded, userId]);
 
   // Show gentle message only if survey stays unavailable after waiting
   useEffect(() => {
@@ -99,6 +99,41 @@ export default function MissionsPage() {
     }, 5000);
     return () => clearTimeout(t);
   }, [surveyLoaded, userSurveyData]);
+
+  const fetchUserMissionsOrGenerate = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // First, try to fetch existing missions for this user
+      console.log(`[Missions] Fetching existing missions for user: ${userId}`);
+      const fetchResponse = await fetch(`/api/missions/user?userId=${userId}`);
+      
+      if (fetchResponse.ok) {
+        const fetchData = await fetchResponse.json();
+        if (fetchData.success && fetchData.missions && fetchData.missions.length > 0) {
+          console.log(
+            `[Missions] Found ${fetchData.missions.length} existing missions for user ${userId}`
+          );
+          setMissions(fetchData.missions);
+          setSource('database');
+          setLoading(false);
+          return;
+        } else {
+          console.log(
+            `[Missions] No existing missions found for user ${userId}, will generate new ones`
+          );
+        }
+      }
+
+      // If no missions exist or fetch failed, generate new ones
+      await fetchAndGenerateMissions();
+    } catch (error) {
+      console.error('[Missions] Error in fetchUserMissionsOrGenerate:', error);
+      // Fall back to generating new missions
+      await fetchAndGenerateMissions();
+    }
+  };
 
   const fetchAndGenerateMissions = async () => {
     try {
@@ -111,10 +146,14 @@ export default function MissionsPage() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second client timeout
 
+      console.log(`[Missions] Generating new missions for user ${userId}`);
       const generateResponse = await fetch('/api/missions/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          userId, // Pass user ID to store with missions
+        }),
         signal: controller.signal
       });
       
@@ -123,6 +162,9 @@ export default function MissionsPage() {
       if (generateResponse.ok) {
         const generateData = await generateResponse.json();
         if (generateData.success && generateData.missions) {
+          console.log(
+            `[Missions] Generated ${generateData.missions.length} new missions for user ${userId}`
+          );
           setMissions(generateData.missions);
           setSource('database');
           return;
@@ -130,7 +172,7 @@ export default function MissionsPage() {
       }
       setError('Failed to generate missions from survey responses');
     } catch (error: any) {
-      console.error('Error fetching missions:', error);
+      console.error('Error generating missions:', error);
       if (error.name === 'AbortError') {
         setError('Mission generation is taking longer than expected. Please try again.');
       } else {
@@ -241,7 +283,7 @@ export default function MissionsPage() {
 
   const handleBackToDashboard = () => {
     console.log("Button clicked!");
-    router.push("/dashboard");
+    router.push("/user-dashboard");
   };
 
   if (loading) {
