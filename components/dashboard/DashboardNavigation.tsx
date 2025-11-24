@@ -8,8 +8,10 @@ import {
   User, 
   Settings,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  Bell
 } from 'lucide-react';
+import InterviewRequestsDropdown from './InterviewRequestsDropdown';
 
 interface DashboardNavigationProps {
   activeTab?: string;
@@ -21,6 +23,8 @@ export default function DashboardNavigation({
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showInterviewDropdown, setShowInterviewDropdown] = useState(false);
+  const [interviewRequestCount, setInterviewRequestCount] = useState(0);
 
   // Load user data
   useEffect(() => {
@@ -35,23 +39,51 @@ export default function DashboardNavigation({
     }
   }, []);
 
-  // Close dropdown when clicking outside
+  // Fetch interview request count
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchInterviewCount = async () => {
+      try {
+        const response = await fetch(`/api/user/interview-requests?userId=${user.id}`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            // Count all requests (not just pending) for notification badge
+            setInterviewRequestCount(result.count || 0);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching interview request count:", error);
+      }
+    };
+
+    fetchInterviewCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchInterviewCount, 30000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (showUserDropdown && !target.closest('.user-dropdown-container')) {
         setShowUserDropdown(false);
       }
+      if (showInterviewDropdown && !target.closest('.notification-dropdown-container')) {
+        setShowInterviewDropdown(false);
+      }
     };
 
-    if (showUserDropdown) {
+    if (showUserDropdown || showInterviewDropdown) {
       document.addEventListener('click', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [showUserDropdown]);
+  }, [showUserDropdown, showInterviewDropdown]);
 
   const handleLogout = () => {
     localStorage.removeItem("velric_user");
@@ -124,6 +156,54 @@ export default function DashboardNavigation({
 
         {/* Right Side - Profile & User Dropdown */}
         <div className="flex items-center space-x-4">
+          {/* Notification Bell */}
+          <div className="relative notification-dropdown-container">
+            <motion.button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowInterviewDropdown(!showInterviewDropdown);
+              }}
+              className="p-2 rounded-lg hover:bg-white/10 transition-colors relative"
+              title="Interview Requests"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Bell className="w-5 h-5 text-white/70 hover:text-white" />
+              {interviewRequestCount > 0 && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center"
+                >
+                  <span className="text-xs font-bold text-white">
+                    {interviewRequestCount > 9 ? "9+" : interviewRequestCount}
+                  </span>
+                </motion.div>
+              )}
+            </motion.button>
+            {showInterviewDropdown && user?.id && (
+              <InterviewRequestsDropdown
+                isOpen={showInterviewDropdown}
+                onClose={() => setShowInterviewDropdown(false)}
+                userId={user.id}
+                onUpdateCount={() => {
+                  // Refetch count after action
+                  fetch(`/api/user/interview-requests?userId=${user.id}`)
+                    .then((res) => res.json())
+                    .then((result) => {
+                      if (result.success) {
+                        const pendingCount = result.interviewRequests?.filter(
+                          (req: any) => req.status === "pending"
+                        ).length || 0;
+                        setInterviewRequestCount(pendingCount);
+                      }
+                    })
+                    .catch(console.error);
+                }}
+              />
+            )}
+          </div>
+
           {/* Profile Icon */}
           <motion.button
             onClick={() => router.push('/profile')}

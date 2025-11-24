@@ -11,6 +11,7 @@ import {
   ChevronDown,
   LogOut,
   User,
+  Inbox,
 } from "lucide-react";
 
 interface RecruiterNavbarProps {
@@ -32,6 +33,7 @@ export default function RecruiterNavbar({
     const path = router.pathname;
     if (path === "/recruiter-dashboard") return "dashboard";
     if (path === "/recruiter/candidates") return "candidates";
+    if (path === "/recruiter/inbox") return "inbox";
     if (path === "/recruiter/settings") return "settings";
     return "dashboard";
   };
@@ -90,6 +92,7 @@ export default function RecruiterNavbar({
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/recruiter-dashboard" },
     { id: "candidates", label: "Candidates", icon: Search, path: "/recruiter/candidates" },
+    { id: "inbox", label: "Inbox", icon: Inbox, path: "/recruiter/inbox" },
     { id: "settings", label: "Settings", icon: Settings, path: "/recruiter/settings" },
   ];
 
