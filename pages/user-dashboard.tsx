@@ -20,6 +20,21 @@ import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
 import { WelcomeMessage } from "../components/dashboard/WelcomeMessage";
 import DashboardNavigation from "../components/dashboard/DashboardNavigation";
 
+const formatDateTime = (value?: string | null) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 function UserDashboardContent() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -156,6 +171,10 @@ function UserDashboardContent() {
     ]
   };
 
+  const lastUpdatedDisplay =
+    formatDateTime(user?.updated_at || user?.updatedAt) ||
+    formatDateTime(dashboardData.lastUpdated);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{
@@ -283,15 +302,15 @@ function UserDashboardContent() {
                       >
                         <div className="flex items-center justify-center space-x-2 mb-2">
                           <Trophy className="w-5 h-5 text-yellow-400" />
-                          <span className="text-2xl font-bold text-white">Top {100 - dashboardData.percentile}%</span>
+                          <span className="text-2xl font-bold text-white">Top N/A</span>
                         </div>
                         <p className="text-white/60 text-sm">
-                          You&apos;re in the {dashboardData.percentile}th percentile
+                          You&apos;re in the N/A percentile
                         </p>
                       </div>
 
                       <p className="text-white/60 text-sm">
-                        Last updated: {dashboardData.lastUpdated}
+                        Last updated: {lastUpdatedDisplay || "N/A"}
                       </p>
                     </div>
                   </motion.div>

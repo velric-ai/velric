@@ -6,8 +6,6 @@ import ScheduleInterviewFormModal from "@/components/recruiter/ScheduleInterview
 import { ProtectedDashboardRoute } from "@/components/auth/ProtectedRoute";
 import { useRouter } from "next/router";
 import RecruiterNavbar from "@/components/recruiter/RecruiterNavbar";
-import { getClusterById } from "@/lib/skillClusters";
-import { Candidate } from "@/lib/mockCandidates";
 import { getIndustryOptions } from "@/utils/surveyValidation";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -31,81 +29,86 @@ const allIndustries = [
 const domainFilters = ["All", ...allIndustries];
 
 // Map candidate domain to survey industry for filtering
-const candidateDomainToIndustry: Record<string, string> = {
-  "Frontend": "Technology & Software",
-  "Backend": "Technology & Software",
-  "Data": "Data Science & Analytics",
-  "Marketing": "Marketing & Advertising",
-  "Finance": "Finance & Banking",
-  "General": "Other",
+const candidateDomainAliases: Record<string, string> = {
+  "frontend": "Technology & Software",
+  "frontend development": "Technology & Software",
+  "backend": "Technology & Software",
+  "backend development": "Technology & Software",
+  "full stack": "Technology & Software",
+  "data": "Data Science & Analytics",
+ "data analytics": "Data Science & Analytics",
+  "data science": "Data Science & Analytics",
+  "marketing": "Marketing & Advertising",
+  "growth marketing": "Marketing & Advertising",
+  "finance": "Finance & Banking",
+  "product management": "Product Management",
+  "healthcare": "Healthcare & Medical",
+  "education": "Education & Learning",
+  "design": "Design & Creative",
+  "e-commerce": "E-commerce & Retail",
+  "startup": "Startup Founder",
 };
 
+interface CandidateClustersDisplay {
+  core_stack: string[];
+  domain_tags: string[];
+  strength_tags: string[];
+}
+
+interface DisplayCandidate {
+  id: string;
+  name: string;
+  email?: string;
+  domain: string;
+  industry?: string;
+  velricScore: number;
+  location?: string;
+  skills: string[];
+  clusters: CandidateClustersDisplay;
+  about?: string;
+  linkedin?: string;
+  github?: string;
+}
+
 // Check if a candidate matches an industry option
-function candidateMatchesIndustryOption(candidate: Candidate, industryOption: string): boolean {
+function candidateMatchesIndustryOption(candidate: DisplayCandidate, industryOption: string): boolean {
   const optionLower = industryOption.toLowerCase();
-  
-  // Check if candidate's skills match
-  const skillsMatch = candidate.skills.some(skill => {
-    const skillLower = skill.toLowerCase();
-    return optionLower.includes(skillLower) || skillLower.includes(optionLower);
-  });
-  
-  // Check if candidate's clusters match
-  const clustersMatch = candidate.clusters.core_stack.some(clusterId => {
-    const cluster = getClusterById(clusterId);
-    if (!cluster) return false;
-    const clusterNameLower = cluster.name.toLowerCase();
-    // Check if cluster name appears in option or vice versa
-    if (optionLower.includes(clusterNameLower) || clusterNameLower.includes(optionLower)) {
-      return true;
-    }
-    // Check if any cluster keyword matches
-    return cluster.keywords.some(keyword => 
-      optionLower.includes(keyword.toLowerCase()) || 
-      keyword.toLowerCase().includes(optionLower)
-    );
-  });
-  
-  // Check domain tags and strength tags
-  const tagsMatch = [
-    ...candidate.clusters.domain_tags,
-    ...candidate.clusters.strength_tags
-  ].some(tagId => {
-    const cluster = getClusterById(tagId);
-    if (!cluster) return false;
-    const clusterNameLower = cluster.name.toLowerCase();
-    return optionLower.includes(clusterNameLower) || clusterNameLower.includes(optionLower);
-  });
-  
-  // Direct keyword matching for specific options
+
+  const skillsMatch = (candidate.skills || []).some((skill) =>
+    skill.toLowerCase().includes(optionLower)
+  );
+
+  const specializationSources = [
+    ...(candidate.clusters?.core_stack || []),
+    ...(candidate.clusters?.domain_tags || []),
+    ...(candidate.clusters?.strength_tags || []),
+    candidate.domain,
+    candidate.industry,
+  ].filter(Boolean) as string[];
+
+  const specializationMatch = specializationSources.some((spec) =>
+    spec.toLowerCase().includes(optionLower) || optionLower.includes(spec.toLowerCase())
+  );
+
   const keywordMatches = [
-    // Technology options
-    (optionLower.includes('frontend') || optionLower.includes('react') || optionLower.includes('vue') || optionLower.includes('angular')) && 
-      (candidate.domain === 'Frontend' || candidate.skills.some(s => ['react', 'vue', 'angular', 'typescript', 'javascript'].some(tech => s.toLowerCase().includes(tech)))),
-    (optionLower.includes('backend') || optionLower.includes('node') || optionLower.includes('python') || optionLower.includes('java')) && 
-      (candidate.domain === 'Backend' || candidate.skills.some(s => ['node', 'python', 'java', 'postgresql', 'api'].some(tech => s.toLowerCase().includes(tech)))),
-    optionLower.includes('full stack') && (candidate.skills.length > 5 || (candidate.domain === 'Frontend' || candidate.domain === 'Backend')),
-    (optionLower.includes('ai') || optionLower.includes('machine learning')) && 
-      candidate.skills.some(s => ['ai', 'ml', 'tensorflow', 'pytorch', 'neural', 'deep learning'].some(tech => s.toLowerCase().includes(tech))),
-    optionLower.includes('devops') && candidate.skills.some(s => ['docker', 'kubernetes', 'aws', 'ci/cd', 'terraform'].some(tech => s.toLowerCase().includes(tech))),
-    optionLower.includes('mobile') && candidate.skills.some(s => ['react native', 'swift', 'kotlin', 'flutter', 'ios', 'android'].some(tech => s.toLowerCase().includes(tech))),
-    // Data options
-    optionLower.includes('data engineering') && (candidate.domain === 'Data' || candidate.skills.some(s => ['airflow', 'dbt', 'etl', 'pipeline'].some(tech => s.toLowerCase().includes(tech)))),
-    (optionLower.includes('data analytics') || optionLower.includes('business analytics')) && 
-      (candidate.domain === 'Data' || candidate.skills.some(s => ['sql', 'tableau', 'analytics', 'pandas'].some(tech => s.toLowerCase().includes(tech)))),
-    // Finance options
-    optionLower.includes('investment banking') && (candidate.domain === 'Finance' || candidate.skills.some(s => ['investment', 'banking', 'm&a', 'capital'].some(tech => s.toLowerCase().includes(tech)))),
-    optionLower.includes('quantitative') && (candidate.domain === 'Finance' || candidate.skills.some(s => ['quant', 'quantitative', 'trading', 'risk'].some(tech => s.toLowerCase().includes(tech)))),
-    // Marketing options
-    (optionLower.includes('growth marketing') || optionLower.includes('growth')) && 
-      (candidate.domain === 'Marketing' || candidate.skills.some(s => ['growth', 'marketing', 'acquisition'].some(tech => s.toLowerCase().includes(tech)))),
-    (optionLower.includes('content marketing') || optionLower.includes('content strategy')) && 
-      (candidate.domain === 'Marketing' || candidate.skills.some(s => ['content', 'strategy', 'marketing'].some(tech => s.toLowerCase().includes(tech)))),
-    optionLower.includes('social media') && 
-      (candidate.domain === 'Marketing' || candidate.skills.some(s => ['social', 'media', 'ugc'].some(tech => s.toLowerCase().includes(tech)))),
+    (optionLower.includes("frontend") || optionLower.includes("react")) &&
+      (candidate.domain.toLowerCase().includes("frontend") ||
+        candidate.skills.some((s) => ["react", "typescript", "javascript"].some((tech) => s.toLowerCase().includes(tech)))),
+    (optionLower.includes("backend") || optionLower.includes("node")) &&
+      (candidate.domain.toLowerCase().includes("backend") ||
+        candidate.skills.some((s) => ["node", "python", "java", "api"].some((tech) => s.toLowerCase().includes(tech)))),
+    optionLower.includes("full stack") && candidate.skills.length > 5,
+    optionLower.includes("ai") &&
+      candidate.skills.some((s) => ["ai", "ml", "tensorflow", "pytorch"].some((tech) => s.toLowerCase().includes(tech))),
+    optionLower.includes("data") &&
+      (candidate.domain.toLowerCase().includes("data") ||
+        candidate.skills.some((s) => ["sql", "tableau", "pandas"].some((tech) => s.toLowerCase().includes(tech)))),
+    optionLower.includes("marketing") &&
+      (candidate.domain.toLowerCase().includes("marketing") ||
+        candidate.skills.some((s) => ["marketing", "growth", "content"].some((tech) => s.toLowerCase().includes(tech)))),
   ].some(Boolean);
-  
-  return skillsMatch || clustersMatch || tagsMatch || keywordMatches;
+
+  return skillsMatch || specializationMatch || keywordMatches;
 }
 
 interface ApiCandidate {
@@ -133,7 +136,7 @@ function CandidatesPageContent() {
   const [savedCandidates, setSavedCandidates] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [domainFilter, setDomainFilter] = useState("All");
-  const [scoreRange, setScoreRange] = useState<[number, number]>([70, 100]);
+  const [scoreRange, setScoreRange] = useState<[number, number]>([0, 10]);
   const [clusterFilters, setClusterFilters] = useState<string[]>([]); // Now stores industry option strings
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<{
@@ -163,10 +166,7 @@ function CandidatesPageContent() {
         params.append("minScore", debouncedScoreRange[0].toString());
         params.append("maxScore", debouncedScoreRange[1].toString());
         if (debouncedClusterFilters.length > 0) {
-          params.append("clusters", debouncedClusterFilters.join(","));
-        }
-        if (debouncedClusterFilters.length > 0) {
-          params.append("industry", debouncedClusterFilters.join(","));
+          params.append("specializations", debouncedClusterFilters.join(","));
         }
 
         const response = await fetch(`/api/recruiter/candidates?${params.toString()}`);
@@ -205,74 +205,40 @@ function CandidatesPageContent() {
   }, [domainFilter]);
 
   // Convert API candidate to display format
-  const convertToDisplayCandidate = (apiCandidate: ApiCandidate): Candidate => {
+  const convertToDisplayCandidate = (apiCandidate: ApiCandidate): DisplayCandidate => {
     // Generate mock clusters structure
     const generateMockClusters = () => {
-      const coreStack: string[] = [];
-      const domainTags: string[] = [];
-      const strengthTags: string[] = [];
-      
-      // Map mission_focus to core_stack
-      if (apiCandidate.mission_focus && Array.isArray(apiCandidate.mission_focus)) {
-        apiCandidate.mission_focus.forEach((mf, idx) => {
-          coreStack.push(`cluster_${idx}_${mf.replace(/\s+/g, '_')}`);
-        });
-      }
-      
-      // Map industry to domain_tags
-      if (apiCandidate.industry) {
-        domainTags.push(`tag_${apiCandidate.industry.replace(/\s+/g, '_')}`);
-      }
-      
-      // Map strength_areas to strength_tags
-      if (apiCandidate.strength_areas && Array.isArray(apiCandidate.strength_areas)) {
-        apiCandidate.strength_areas.forEach((sa, idx) => {
-          strengthTags.push(`strength_${idx}_${sa.replace(/\s+/g, '_')}`);
-        });
-      }
-      
       return {
-        core_stack: coreStack.length > 0 ? coreStack : ["cluster_default"],
-        domain_tags: domainTags.length > 0 ? domainTags : [],
-        strength_tags: strengthTags.length > 0 ? strengthTags : [],
-        coverage_scores: {
-          core: coreStack.length > 0 ? 80 : 0,
-          domain: domainTags.length > 0 ? 70 : 0,
-          strength: strengthTags.length > 0 ? 75 : 0,
-        },
+        core_stack: apiCandidate.mission_focus || [],
+        domain_tags: apiCandidate.industry ? [apiCandidate.industry] : [],
+        strength_tags: apiCandidate.strength_areas || [],
       };
     };
+
+    const displayDomain =
+      apiCandidate.domain ||
+      (apiCandidate.mission_focus && apiCandidate.mission_focus.length > 0
+        ? apiCandidate.mission_focus[0]
+        : apiCandidate.industry) ||
+      "General";
 
     return {
       id: apiCandidate.id,
       name: apiCandidate.name,
       email: apiCandidate.email,
-      domain: apiCandidate.domain || "General",
-      velricScore: apiCandidate.velricScore || 0,
-      location: apiCandidate.location || "Not specified",
+      domain: displayDomain,
+      industry: apiCandidate.industry,
+      velricScore: typeof apiCandidate.velricScore === "number" ? Number(apiCandidate.velricScore.toFixed(1)) : 0,
+      location: apiCandidate.location || undefined,
       skills: apiCandidate.skills || [],
       clusters: generateMockClusters(),
       about: apiCandidate.experience_summary || "",
-      education: apiCandidate.education_level ? [{
-        degree: apiCandidate.education_level,
-        school: "Not specified",
-        year: "Not specified",
-      }] : [],
-      linkedin: "",
-      github: "",
-      subscores: {
-        technical: apiCandidate.velricScore ? Math.round(apiCandidate.velricScore * 0.4) : 0,
-        collaboration: apiCandidate.velricScore ? Math.round(apiCandidate.velricScore * 0.3) : 0,
-        reliability: apiCandidate.velricScore ? Math.round(apiCandidate.velricScore * 0.3) : 0,
-      },
-      missions: [],
-      strengths: apiCandidate.strength_areas || [],
-      weaknesses: [],
+      linkedin: undefined,
+      github: undefined,
     };
   };
 
-  const filteredCandidates = useMemo(() => {
-    // API already handles filtering, but we can do additional client-side filtering if needed
+  const filteredCandidates = useMemo<DisplayCandidate[]>(() => {
     return candidates.map(convertToDisplayCandidate);
   }, [candidates]);
 
@@ -298,7 +264,7 @@ function CandidatesPageContent() {
 
   const resetFilters = () => {
     setDomainFilter("All");
-    setScoreRange([70, 100]);
+    setScoreRange([0, 10]);
     setClusterFilters([]);
     setSearchQuery("");
   };
@@ -311,7 +277,7 @@ function CandidatesPageContent() {
 
   const activeFiltersCount = 
     (domainFilter !== "All" ? 1 : 0) +
-    (scoreRange[0] !== 70 || scoreRange[1] !== 100 ? 1 : 0) +
+    (scoreRange[0] !== 0 || scoreRange[1] !== 10 ? 1 : 0) +
     clusterFilters.length;
 
   return (
@@ -343,8 +309,8 @@ function CandidatesPageContent() {
             <p className="text-sm text-white/60 mb-2">Recruiter • Talent Search</p>
             <h1 className="text-3xl font-bold mb-6">Search Candidates</h1>
             
-            {/* Search and Filter Bar */}
-            <div className="flex items-center gap-3">
+            {/* Search and Filtier Bar */}
+            <div className="flex tems-center gap-3">
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
                 <input
@@ -437,7 +403,7 @@ function CandidatesPageContent() {
                   {/* Velric Score Range */}
                   <div>
                     <label className="text-xs text-white/60 mb-3 block font-medium">
-                      Velric Score Range: {scoreRange[0]} - {scoreRange[1]}
+                      Velric Score Range: {scoreRange[0].toFixed(1)} - {scoreRange[1].toFixed(1)}
                     </label>
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
@@ -445,43 +411,51 @@ function CandidatesPageContent() {
                           type="number"
                           min={0}
                           max={scoreRange[1]}
+                          step={0.1}
                           value={scoreRange[0]}
-                          onChange={(e) =>
-                            setScoreRange([Number(e.target.value), scoreRange[1]])
-                          }
-                          className="w-20 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                          onChange={(e) => {
+                            const value = Math.max(0, Math.min(parseFloat(e.target.value) || 0, scoreRange[1]));
+                            setScoreRange([parseFloat(value.toFixed(1)), scoreRange[1]]);
+                          }}
+                          className="w-24 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
                         />
                         <span className="text-white/40">to</span>
                         <input
                           type="number"
                           min={scoreRange[0]}
-                          max={100}
+                          max={10}
+                          step={0.1}
                           value={scoreRange[1]}
-                          onChange={(e) =>
-                            setScoreRange([scoreRange[0], Number(e.target.value)])
-                          }
-                          className="w-20 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                          onChange={(e) => {
+                            const value = Math.min(10, Math.max(parseFloat(e.target.value) || 0, scoreRange[0]));
+                            setScoreRange([scoreRange[0], parseFloat(value.toFixed(1))]);
+                          }}
+                          className="w-24 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
                         />
                       </div>
                       <div className="flex items-center gap-4">
                         <input
                           type="range"
                           min={0}
-                          max={100}
+                          max={10}
+                          step={0.1}
                           value={scoreRange[0]}
-                          onChange={(e) =>
-                            setScoreRange([Number(e.target.value), scoreRange[1]])
-                          }
+                          onChange={(e) => {
+                            const value = Math.min(parseFloat(e.target.value), scoreRange[1]);
+                            setScoreRange([parseFloat(value.toFixed(1)), scoreRange[1]]);
+                          }}
                           className="flex-1 accent-cyan-400"
                         />
                         <input
                           type="range"
                           min={0}
-                          max={100}
+                          max={10}
+                          step={0.1}
                           value={scoreRange[1]}
-                          onChange={(e) =>
-                            setScoreRange([scoreRange[0], Number(e.target.value)])
-                          }
+                          onChange={(e) => {
+                            const value = Math.max(parseFloat(e.target.value), scoreRange[0]);
+                            setScoreRange([scoreRange[0], parseFloat(value.toFixed(1))]);
+                          }}
                           className="flex-1 accent-cyan-400"
                         />
                       </div>
@@ -585,18 +559,9 @@ function CandidatesPageContent() {
                       <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-xs text-white/60 mb-1">Velric Score</p>
-                            <p className="text-3xl font-bold text-cyan-300">
-                              {candidate.velricScore}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-white/60">Subscores</p>
-                            <p className="text-sm text-white/80">
-                              Tech: {candidate.subscores.technical}%
-                            </p>
-                            <p className="text-sm text-white/80">
-                              Collab: {candidate.subscores.collaboration}%
+                            <p className="text-xs text-white/60 mb-1">Velric Score (Avg mission score)</p>
+                            <p className="text-3xl font-bold text-cyan-300 flex items-baseline gap-1">
+                              {candidate.velricScore.toFixed(1)}
                             </p>
                           </div>
                         </div>
@@ -623,29 +588,25 @@ function CandidatesPageContent() {
                       {/* Core Clusters */}
                       <div className="mb-4">
                         <p className="text-xs text-white/60 mb-2">Core Expertise</p>
-                        <div className="flex flex-wrap gap-2">
-                          {candidate.clusters.core_stack.slice(0, 4).map((clusterId) => {
-                            const cluster = getClusterById(clusterId);
-                            if (!cluster) return null;
-                            return (
+                        {candidate.clusters.core_stack.length === 0 ? (
+                          <p className="text-xs text-white/50">No specializations listed</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {candidate.clusters.core_stack.slice(0, 4).map((label, idx) => (
                               <span
-                                key={clusterId}
-                                className="px-2 py-1 rounded-lg text-xs border"
-                                style={{
-                                  background: `${cluster.color}20`,
-                                  borderColor: `${cluster.color}60`,
-                                }}
+                                key={`${candidate.id}-core-${idx}`}
+                                className="px-2 py-1 rounded-lg text-xs border border-white/15 bg-white/5 text-white/80"
                               >
-                                {cluster.name}
+                                {label}
                               </span>
-                            );
-                          })}
-                          {candidate.clusters.core_stack.length > 4 && (
-                            <span className="px-2 py-1 rounded-lg text-xs text-white/60 border border-white/10">
-                              +{candidate.clusters.core_stack.length - 4}
-                            </span>
-                          )}
-                        </div>
+                            ))}
+                            {candidate.clusters.core_stack.length > 4 && (
+                              <span className="px-2 py-1 rounded-lg text-xs text-white/60 border border-white/10">
+                                +{candidate.clusters.core_stack.length - 4}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* About Preview */}

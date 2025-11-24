@@ -46,9 +46,7 @@ export default async function handler(
       domain,
       minScore,
       maxScore,
-      industry,
-      skills,
-      clusters,
+      specializations,
       limit = "50",
       offset = "0",
     } = req.query;
@@ -62,7 +60,7 @@ export default async function handler(
           email: "john@example.com",
           onboarded: true,
           profile_complete: true,
-          velricScore: 85,
+          velricScore: 8.5,
           domain: "Frontend Development",
           industry: "Technology",
           mission_focus: ["Frontend Development"],
@@ -79,7 +77,7 @@ export default async function handler(
           email: "jane@example.com",
           onboarded: true,
           profile_complete: true,
-          velricScore: 92,
+          velricScore: 9.2,
           domain: "Full Stack Development",
           industry: "Technology",
           mission_focus: ["Full Stack Development"],
@@ -113,12 +111,12 @@ export default async function handler(
 
       // Apply score filter
       if (minScore) {
-        const min = parseInt(minScore as string, 10);
+        const min = parseFloat(minScore as string);
         filtered = filtered.filter((c) => (c.velricScore || 0) >= min);
       }
       if (maxScore) {
-        const max = parseInt(maxScore as string, 10);
-        filtered = filtered.filter((c) => (c.velricScore || 100) <= max);
+        const max = parseFloat(maxScore as string);
+        filtered = filtered.filter((c) => (c.velricScore || 10) <= max);
       }
 
       return res.status(200).json({
@@ -175,33 +173,56 @@ export default async function handler(
       // Continue without survey data rather than failing
     }
 
-    // Create a map of user_id to survey data
-    const surveyMap = new Map(
-      (surveyData || []).map((s) => [s.user_id, s])
-    );
+    const { data: missionScores, error: missionError } = await supabase
+      .from("user_mission")
+      .select("user_id, velric_score")
+      .in("user_id", userIds)
+      .not("velric_score", "is", null);
 
-    // Step 3: Combine user and survey data
+    if (missionError) {
+      console.error("Error fetching mission grades:", missionError);
+    }
+
+    const surveyMap = new Map((surveyData || []).map((s) => [s.user_id, s]));
+
+    const missionScoreMap = new Map<
+      string,
+      { total: number; count: number }
+    >();
+
+    (missionScores || []).forEach((mission) => {
+      if (mission.velric_score === null || mission.velric_score === undefined) return;
+      const numericGrade =
+        typeof mission.velric_score === "number"
+          ? mission.velric_score
+          : parseFloat(mission.velric_score);
+      if (isNaN(numericGrade)) return;
+      const existing = missionScoreMap.get(mission.user_id) || { total: 0, count: 0 };
+      missionScoreMap.set(mission.user_id, {
+        total: existing.total + numericGrade,
+        count: existing.count + 1,
+      });
+    });
+
     let candidates: Candidate[] = users.map((user) => {
       const survey = surveyMap.get(user.id);
+      const missionScore = missionScoreMap.get(user.id);
+      const averageVelric =
+        missionScore && missionScore.count > 0
+          ? missionScore.total / missionScore.count
+          : null;
+      const velricScore =
+        averageVelric !== null ? parseFloat(averageVelric.toFixed(1)) : 0;
 
-      // Calculate Velric Score (simplified - you can enhance this)
-      let velricScore = 0;
-      if (survey) {
-        // Base score from profile completeness
-        if (user.profile_complete) velricScore += 20;
-        if (survey.industry) velricScore += 10;
-        if (survey.mission_focus && Array.isArray(survey.mission_focus) && survey.mission_focus.length > 0) velricScore += 20;
-        if (survey.strength_areas && Array.isArray(survey.strength_areas) && survey.strength_areas.length > 0) velricScore += 20;
-        if (survey.experience_summary) velricScore += 15;
-        if (survey.education_level) velricScore += 10;
-        if (survey.learning_preference) velricScore += 5;
-      }
-
-      // Get domain from mission_focus (first item)
       const domain =
         survey?.mission_focus && Array.isArray(survey.mission_focus) && survey.mission_focus.length > 0
           ? survey.mission_focus[0]
           : undefined;
+
+      const clusters = new Set<string>();
+      if (survey?.industry) clusters.add(survey.industry);
+      (survey?.mission_focus || []).forEach((item: string) => clusters.add(item));
+      (survey?.strength_areas || []).forEach((item: string) => clusters.add(item));
 
       return {
         id: user.id,
@@ -209,7 +230,7 @@ export default async function handler(
         email: user.email || "",
         onboarded: user.onboarded || false,
         profile_complete: user.profile_complete || false,
-        velricScore: Math.min(velricScore, 100),
+        velricScore,
         domain,
         industry: survey?.industry || undefined,
         mission_focus: survey?.mission_focus || undefined,
@@ -218,55 +239,48 @@ export default async function handler(
         education_level: survey?.education_level || undefined,
         learning_preference: survey?.learning_preference || undefined,
         skills: extractSkillsFromExperience(survey?.experience_summary),
-        clusters: survey?.industry ? [survey.industry] : undefined,
+        clusters: clusters.size ? Array.from(clusters) : undefined,
       };
     });
 
     // Step 4: Apply filters
-    // Domain filter
+    // Domain filter (industry-based)
     if (domain && typeof domain === "string" && domain !== "All") {
-      candidates = candidates.filter((c) => c.domain === domain);
+      const domainLower = domain.toLowerCase();
+      candidates = candidates.filter((c) => {
+        const candidateIndustry = c.industry?.toLowerCase();
+        if (candidateIndustry && candidateIndustry === domainLower) return true;
+        const alias =
+          c.domain && typeof c.domain === "string"
+            ? candidateDomainAlias(c.domain)
+            : undefined;
+        if (alias && alias.toLowerCase() === domainLower) return true;
+        return false;
+      });
     }
 
     // Score filter
     if (minScore) {
-      const min = parseInt(minScore as string, 10);
-      candidates = candidates.filter((c) => (c.velricScore || 0) >= min);
+      const min = parseFloat(minScore as string);
+      candidates = candidates.filter((c) => (c.velricScore ?? 0) >= min);
     }
     if (maxScore) {
-      const max = parseInt(maxScore as string, 10);
-      candidates = candidates.filter((c) => (c.velricScore || 100) <= max);
+      const max = parseFloat(maxScore as string);
+      candidates = candidates.filter((c) => (c.velricScore ?? 0) <= max);
     }
 
-    // Industry filter
-    if (industry && typeof industry === "string") {
-      const industries = Array.isArray(industry) ? industry : [industry];
-      candidates = candidates.filter((c) =>
-        industries.some((ind) => c.industry?.toLowerCase().includes(ind.toLowerCase()))
-      );
+    // Specialization filter (mission_focus) - already filtered at DB level, but double-check
+    if (specializations && typeof specializations === "string") {
+      const specializationList = specializations.split(",").map((s) => s.trim().toLowerCase());
+      candidates = candidates.filter((c) => {
+        if (!c.mission_focus || !Array.isArray(c.mission_focus)) return false;
+        return specializationList.some((spec) =>
+          c.mission_focus!.some((mf) => mf.toLowerCase().includes(spec))
+        );
+      });
     }
 
-    // Skills filter
-    if (skills && typeof skills === "string") {
-      const skillList = skills.split(",").map((s) => s.trim().toLowerCase());
-      candidates = candidates.filter((c) =>
-        c.skills?.some((skill) =>
-          skillList.some((s) => skill.toLowerCase().includes(s))
-        )
-      );
-    }
-
-    // Clusters filter (industry-based)
-    if (clusters && typeof clusters === "string") {
-      const clusterList = clusters.split(",").map((c) => c.trim().toLowerCase());
-      candidates = candidates.filter((c) =>
-        c.clusters?.some((cluster) =>
-          clusterList.some((cl) => cluster.toLowerCase().includes(cl))
-        )
-      );
-    }
-
-    // Additional search on combined data
+    // Search filter
     if (search && typeof search === "string" && search.trim()) {
       const searchLower = search.trim().toLowerCase();
       candidates = candidates.filter(
@@ -342,5 +356,32 @@ function extractSkillsFromExperience(experience?: string): string[] {
   );
 
   return foundSkills;
+}
+
+function candidateDomainAlias(domain?: string): string | undefined {
+  if (!domain) return undefined;
+  const key = domain.toLowerCase();
+  const map: Record<string, string> = {
+    frontend: "Technology & Software",
+    "frontend development": "Technology & Software",
+    "full stack": "Technology & Software",
+    backend: "Technology & Software",
+    "backend development": "Technology & Software",
+    "data science": "Data Science & Analytics",
+    "data analytics": "Data Science & Analytics",
+    "data engineering": "Data Science & Analytics",
+    marketing: "Marketing & Advertising",
+    "growth marketing": "Marketing & Advertising",
+    "product management": "Product Management",
+    finance: "Finance & Banking",
+    "investment banking": "Finance & Banking",
+    healthcare: "Healthcare & Medical",
+    education: "Education & Learning",
+    design: "Design & Creative",
+    ecommerce: "E-commerce & Retail",
+    "e-commerce": "E-commerce & Retail",
+    startup: "Startup Founder",
+  };
+  return map[key];
 }
 
