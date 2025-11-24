@@ -7,7 +7,6 @@ import { ProtectedDashboardRoute } from "@/components/auth/ProtectedRoute";
 import { useRouter } from "next/router";
 import RecruiterNavbar from "@/components/recruiter/RecruiterNavbar";
 import { getClusterById } from "@/lib/skillClusters";
-import { Candidate } from "@/lib/mockCandidates";
 import { getIndustryOptions } from "@/utils/surveyValidation";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -40,18 +39,38 @@ const candidateDomainToIndustry: Record<string, string> = {
   "General": "Other",
 };
 
+interface CandidateClustersDisplay {
+  core_stack: string[];
+  domain_tags: string[];
+  strength_tags: string[];
+}
+
+interface DisplayCandidate {
+  id: string;
+  name: string;
+  email?: string;
+  domain: string;
+  velricScore: number;
+  location?: string;
+  skills: string[];
+  clusters: CandidateClustersDisplay;
+  about?: string;
+  linkedin?: string;
+  github?: string;
+}
+
 // Check if a candidate matches an industry option
-function candidateMatchesIndustryOption(candidate: Candidate, industryOption: string): boolean {
+function candidateMatchesIndustryOption(candidate: DisplayCandidate, industryOption: string): boolean {
   const optionLower = industryOption.toLowerCase();
   
   // Check if candidate's skills match
-  const skillsMatch = candidate.skills.some(skill => {
+  const skillsMatch = (candidate.skills || []).some(skill => {
     const skillLower = skill.toLowerCase();
     return optionLower.includes(skillLower) || skillLower.includes(optionLower);
   });
   
   // Check if candidate's clusters match
-  const clustersMatch = candidate.clusters.core_stack.some(clusterId => {
+  const clustersMatch = (candidate.clusters?.core_stack || []).some(clusterId => {
     const cluster = getClusterById(clusterId);
     if (!cluster) return false;
     const clusterNameLower = cluster.name.toLowerCase();
@@ -68,8 +87,8 @@ function candidateMatchesIndustryOption(candidate: Candidate, industryOption: st
   
   // Check domain tags and strength tags
   const tagsMatch = [
-    ...candidate.clusters.domain_tags,
-    ...candidate.clusters.strength_tags
+    ...(candidate.clusters?.domain_tags || []),
+    ...(candidate.clusters?.strength_tags || [])
   ].some(tagId => {
     const cluster = getClusterById(tagId);
     if (!cluster) return false;
@@ -133,7 +152,7 @@ function CandidatesPageContent() {
   const [savedCandidates, setSavedCandidates] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [domainFilter, setDomainFilter] = useState("All");
-  const [scoreRange, setScoreRange] = useState<[number, number]>([70, 100]);
+  const [scoreRange, setScoreRange] = useState<[number, number]>([0, 10]);
   const [clusterFilters, setClusterFilters] = useState<string[]>([]); // Now stores industry option strings
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<{
@@ -205,7 +224,7 @@ function CandidatesPageContent() {
   }, [domainFilter]);
 
   // Convert API candidate to display format
-  const convertToDisplayCandidate = (apiCandidate: ApiCandidate): Candidate => {
+  const convertToDisplayCandidate = (apiCandidate: ApiCandidate): DisplayCandidate => {
     // Generate mock clusters structure
     const generateMockClusters = () => {
       const coreStack: string[] = [];
@@ -232,14 +251,9 @@ function CandidatesPageContent() {
       }
       
       return {
-        core_stack: coreStack.length > 0 ? coreStack : ["cluster_default"],
-        domain_tags: domainTags.length > 0 ? domainTags : [],
-        strength_tags: strengthTags.length > 0 ? strengthTags : [],
-        coverage_scores: {
-          core: coreStack.length > 0 ? 80 : 0,
-          domain: domainTags.length > 0 ? 70 : 0,
-          strength: strengthTags.length > 0 ? 75 : 0,
-        },
+        core_stack: coreStack.length > 0 ? coreStack : [],
+        domain_tags: domainTags,
+        strength_tags: strengthTags,
       };
     };
 
@@ -248,31 +262,17 @@ function CandidatesPageContent() {
       name: apiCandidate.name,
       email: apiCandidate.email,
       domain: apiCandidate.domain || "General",
-      velricScore: apiCandidate.velricScore || 0,
-      location: apiCandidate.location || "Not specified",
+      velricScore: typeof apiCandidate.velricScore === "number" ? Number(apiCandidate.velricScore.toFixed(1)) : 0,
+      location: apiCandidate.location || undefined,
       skills: apiCandidate.skills || [],
       clusters: generateMockClusters(),
       about: apiCandidate.experience_summary || "",
-      education: apiCandidate.education_level ? [{
-        degree: apiCandidate.education_level,
-        school: "Not specified",
-        year: "Not specified",
-      }] : [],
-      linkedin: "",
-      github: "",
-      subscores: {
-        technical: apiCandidate.velricScore ? Math.round(apiCandidate.velricScore * 0.4) : 0,
-        collaboration: apiCandidate.velricScore ? Math.round(apiCandidate.velricScore * 0.3) : 0,
-        reliability: apiCandidate.velricScore ? Math.round(apiCandidate.velricScore * 0.3) : 0,
-      },
-      missions: [],
-      strengths: apiCandidate.strength_areas || [],
-      weaknesses: [],
+      linkedin: undefined,
+      github: undefined,
     };
   };
 
-  const filteredCandidates = useMemo(() => {
-    // API already handles filtering, but we can do additional client-side filtering if needed
+  const filteredCandidates = useMemo<DisplayCandidate[]>(() => {
     return candidates.map(convertToDisplayCandidate);
   }, [candidates]);
 
@@ -298,7 +298,7 @@ function CandidatesPageContent() {
 
   const resetFilters = () => {
     setDomainFilter("All");
-    setScoreRange([70, 100]);
+    setScoreRange([0, 10]);
     setClusterFilters([]);
     setSearchQuery("");
   };
@@ -311,7 +311,7 @@ function CandidatesPageContent() {
 
   const activeFiltersCount = 
     (domainFilter !== "All" ? 1 : 0) +
-    (scoreRange[0] !== 70 || scoreRange[1] !== 100 ? 1 : 0) +
+    (scoreRange[0] !== 0 || scoreRange[1] !== 10 ? 1 : 0) +
     clusterFilters.length;
 
   return (
@@ -437,7 +437,7 @@ function CandidatesPageContent() {
                   {/* Velric Score Range */}
                   <div>
                     <label className="text-xs text-white/60 mb-3 block font-medium">
-                      Velric Score Range: {scoreRange[0]} - {scoreRange[1]}
+                      Velric Score Range: {scoreRange[0].toFixed(1)} - {scoreRange[1].toFixed(1)}
                     </label>
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
@@ -445,43 +445,51 @@ function CandidatesPageContent() {
                           type="number"
                           min={0}
                           max={scoreRange[1]}
+                          step={0.1}
                           value={scoreRange[0]}
-                          onChange={(e) =>
-                            setScoreRange([Number(e.target.value), scoreRange[1]])
-                          }
-                          className="w-20 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                          onChange={(e) => {
+                            const value = Math.max(0, Math.min(parseFloat(e.target.value) || 0, scoreRange[1]));
+                            setScoreRange([parseFloat(value.toFixed(1)), scoreRange[1]]);
+                          }}
+                          className="w-24 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
                         />
                         <span className="text-white/40">to</span>
                         <input
                           type="number"
                           min={scoreRange[0]}
-                          max={100}
+                          max={10}
+                          step={0.1}
                           value={scoreRange[1]}
-                          onChange={(e) =>
-                            setScoreRange([scoreRange[0], Number(e.target.value)])
-                          }
-                          className="w-20 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                          onChange={(e) => {
+                            const value = Math.min(10, Math.max(parseFloat(e.target.value) || 0, scoreRange[0]));
+                            setScoreRange([scoreRange[0], parseFloat(value.toFixed(1))]);
+                          }}
+                          className="w-24 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
                         />
                       </div>
                       <div className="flex items-center gap-4">
                         <input
                           type="range"
                           min={0}
-                          max={100}
+                          max={10}
+                          step={0.1}
                           value={scoreRange[0]}
-                          onChange={(e) =>
-                            setScoreRange([Number(e.target.value), scoreRange[1]])
-                          }
+                          onChange={(e) => {
+                            const value = Math.min(parseFloat(e.target.value), scoreRange[1]);
+                            setScoreRange([parseFloat(value.toFixed(1)), scoreRange[1]]);
+                          }}
                           className="flex-1 accent-cyan-400"
                         />
                         <input
                           type="range"
                           min={0}
-                          max={100}
+                          max={10}
+                          step={0.1}
                           value={scoreRange[1]}
-                          onChange={(e) =>
-                            setScoreRange([scoreRange[0], Number(e.target.value)])
-                          }
+                          onChange={(e) => {
+                            const value = Math.max(parseFloat(e.target.value), scoreRange[0]);
+                            setScoreRange([scoreRange[0], parseFloat(value.toFixed(1))]);
+                          }}
                           className="flex-1 accent-cyan-400"
                         />
                       </div>
@@ -585,18 +593,9 @@ function CandidatesPageContent() {
                       <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-xs text-white/60 mb-1">Velric Score</p>
-                            <p className="text-3xl font-bold text-cyan-300">
-                              {candidate.velricScore}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-white/60">Subscores</p>
-                            <p className="text-sm text-white/80">
-                              Tech: {candidate.subscores.technical}%
-                            </p>
-                            <p className="text-sm text-white/80">
-                              Collab: {candidate.subscores.collaboration}%
+                            <p className="text-xs text-white/60 mb-1">Velric Score (Avg mission score)</p>
+                            <p className="text-3xl font-bold text-cyan-300 flex items-baseline gap-1">
+                              {candidate.velricScore.toFixed(1)}
                             </p>
                           </div>
                         </div>

@@ -62,7 +62,7 @@ export default async function handler(
           email: "john@example.com",
           onboarded: true,
           profile_complete: true,
-          velricScore: 85,
+          velricScore: 8.5,
           domain: "Frontend Development",
           industry: "Technology",
           mission_focus: ["Frontend Development"],
@@ -79,7 +79,7 @@ export default async function handler(
           email: "jane@example.com",
           onboarded: true,
           profile_complete: true,
-          velricScore: 92,
+          velricScore: 9.2,
           domain: "Full Stack Development",
           industry: "Technology",
           mission_focus: ["Full Stack Development"],
@@ -113,12 +113,12 @@ export default async function handler(
 
       // Apply score filter
       if (minScore) {
-        const min = parseInt(minScore as string, 10);
+        const min = parseFloat(minScore as string);
         filtered = filtered.filter((c) => (c.velricScore || 0) >= min);
       }
       if (maxScore) {
-        const max = parseInt(maxScore as string, 10);
-        filtered = filtered.filter((c) => (c.velricScore || 100) <= max);
+        const max = parseFloat(maxScore as string);
+        filtered = filtered.filter((c) => (c.velricScore || 10) <= max);
       }
 
       return res.status(200).json({
@@ -175,29 +175,47 @@ export default async function handler(
       // Continue without survey data rather than failing
     }
 
-    // Create a map of user_id to survey data
-    const surveyMap = new Map(
-      (surveyData || []).map((s) => [s.user_id, s])
-    );
+    const { data: missionScores, error: missionError } = await supabase
+      .from("user_mission")
+      .select("user_id, velric_score")
+      .in("user_id", userIds)
+      .not("velric_score", "is", null);
 
-    // Step 3: Combine user and survey data
+    if (missionError) {
+      console.error("Error fetching mission grades:", missionError);
+    }
+
+    const surveyMap = new Map((surveyData || []).map((s) => [s.user_id, s]));
+
+    const missionScoreMap = new Map<
+      string,
+      { total: number; count: number }
+    >();
+
+    (missionScores || []).forEach((mission) => {
+      if (mission.velric_score === null || mission.velric_score === undefined) return;
+      const numericGrade =
+        typeof mission.velric_score === "number"
+          ? mission.velric_score
+          : parseFloat(mission.velric_score);
+      if (isNaN(numericGrade)) return;
+      const existing = missionScoreMap.get(mission.user_id) || { total: 0, count: 0 };
+      missionScoreMap.set(mission.user_id, {
+        total: existing.total + numericGrade,
+        count: existing.count + 1,
+      });
+    });
+
     let candidates: Candidate[] = users.map((user) => {
       const survey = surveyMap.get(user.id);
+      const missionScore = missionScoreMap.get(user.id);
+      const averageVelric =
+        missionScore && missionScore.count > 0
+          ? missionScore.total / missionScore.count
+          : null;
+      const velricScore =
+        averageVelric !== null ? parseFloat(averageVelric.toFixed(1)) : 0;
 
-      // Calculate Velric Score (simplified - you can enhance this)
-      let velricScore = 0;
-      if (survey) {
-        // Base score from profile completeness
-        if (user.profile_complete) velricScore += 20;
-        if (survey.industry) velricScore += 10;
-        if (survey.mission_focus && Array.isArray(survey.mission_focus) && survey.mission_focus.length > 0) velricScore += 20;
-        if (survey.strength_areas && Array.isArray(survey.strength_areas) && survey.strength_areas.length > 0) velricScore += 20;
-        if (survey.experience_summary) velricScore += 15;
-        if (survey.education_level) velricScore += 10;
-        if (survey.learning_preference) velricScore += 5;
-      }
-
-      // Get domain from mission_focus (first item)
       const domain =
         survey?.mission_focus && Array.isArray(survey.mission_focus) && survey.mission_focus.length > 0
           ? survey.mission_focus[0]
@@ -209,7 +227,7 @@ export default async function handler(
         email: user.email || "",
         onboarded: user.onboarded || false,
         profile_complete: user.profile_complete || false,
-        velricScore: Math.min(velricScore, 100),
+        velricScore,
         domain,
         industry: survey?.industry || undefined,
         mission_focus: survey?.mission_focus || undefined,
@@ -230,12 +248,12 @@ export default async function handler(
 
     // Score filter
     if (minScore) {
-      const min = parseInt(minScore as string, 10);
-      candidates = candidates.filter((c) => (c.velricScore || 0) >= min);
+      const min = parseFloat(minScore as string);
+      candidates = candidates.filter((c) => (c.velricScore ?? 0) >= min);
     }
     if (maxScore) {
-      const max = parseInt(maxScore as string, 10);
-      candidates = candidates.filter((c) => (c.velricScore || 100) <= max);
+      const max = parseFloat(maxScore as string);
+      candidates = candidates.filter((c) => (c.velricScore ?? 0) <= max);
     }
 
     // Industry filter

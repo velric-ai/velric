@@ -174,28 +174,6 @@ function RecruiterDashboardContent() {
                 </p>
               </motion.div>
 
-              {/* Job Posts Card */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
-                className="p-8 rounded-2xl cursor-pointer"
-                style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  backdropFilter: "blur(15px)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
-                }}
-                onClick={() => router.push("/recruiter/jobs")}
-              >
-                <Briefcase className="w-8 h-8 text-pink-400 mb-4" />
-                <h2 className="text-2xl font-bold mb-2">Manage Job Posts</h2>
-                <p className="text-white/70">
-                  Create, edit, and track the performance of your job
-                  listings.
-                </p>
-              </motion.div>
-
               {/* Schedule Interview Card */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
