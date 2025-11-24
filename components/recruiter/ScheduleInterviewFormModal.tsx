@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, Clock, MessageSquare, FileText, Send } from "lucide-react";
+import { X, Calendar, Send } from "lucide-react";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 
 interface ScheduleInterviewFormModalProps {
@@ -51,6 +51,22 @@ export default function ScheduleInterviewFormModal({
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [recruiterId, setRecruiterId] = useState<string | null>(null);
+
+  // Get recruiter ID from localStorage
+  useEffect(() => {
+    const userData = localStorage.getItem("velric_user");
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        if (parsedUser.id) {
+          setRecruiterId(parsedUser.id);
+        }
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+    }
+  }, []);
 
   // Fetch candidate availability when modal opens
   useEffect(() => {
@@ -63,17 +79,21 @@ export default function ScheduleInterviewFormModal({
     setIsLoadingSlots(true);
     try {
       const response = await fetch(`/api/recruiter/candidate-availability?userId=${candidateId}`);
-      const result = await response.json();
 
-      if (result.success && result.timeSlots) {
+      if (!response.ok) {
+        setSuggestedTimeSlots(generateDefaultTimeSlots());
+        return;
+      }
+
+      const result = await response.json().catch(() => ({ success: false }));
+
+      if (result.success && Array.isArray(result.timeSlots)) {
         setSuggestedTimeSlots(result.timeSlots);
       } else {
-        // Generate default time slots if no availability data
         setSuggestedTimeSlots(generateDefaultTimeSlots());
       }
-    } catch (error) {
-      console.error("Error fetching availability:", error);
-      // Generate default time slots on error
+    } catch (err) {
+      console.error("Error fetching availability:", err);
       setSuggestedTimeSlots(generateDefaultTimeSlots());
     } finally {
       setIsLoadingSlots(false);
@@ -173,6 +193,12 @@ export default function ScheduleInterviewFormModal({
       return;
     }
 
+    // Check if recruiter ID is available
+    if (!recruiterId) {
+      showSnackbar("Recruiter authentication required. Please log in again.", "error");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -185,6 +211,7 @@ export default function ScheduleInterviewFormModal({
           candidateId,
           candidateName,
           candidateEmail,
+          recruiterId,
           interviewType: formData.interviewType,
           context: formData.context,
           duration: formData.duration,
@@ -194,17 +221,29 @@ export default function ScheduleInterviewFormModal({
         }),
       });
 
-      const result = await response.json();
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Failed to schedule interview" }));
+        showSnackbar(errorData.error || "Failed to schedule interview", "error");
+        setIsLoading(false);
+        return;
+      }
+
+      const result = await response.json().catch(() => ({ success: false, error: "Invalid response from server" }));
 
       if (!result.success) {
-        throw new Error(result.error || "Failed to schedule interview");
+        showSnackbar(result.error || "Failed to schedule interview", "error");
+        setIsLoading(false);
+        return;
       }
 
       showSnackbar(`Interview request sent to ${candidateName}`, "success");
       handleClose();
     } catch (err: any) {
       console.error("Error scheduling interview:", err);
-      showSnackbar(err.message || "Failed to schedule interview. Please try again.", "error");
+      const errorMessage = err instanceof TypeError && err.message.includes("fetch")
+        ? "Network error. Please check your connection and try again."
+        : err.message || "Failed to schedule interview. Please try again.";
+      showSnackbar(errorMessage, "error");
     } finally {
       setIsLoading(false);
     }

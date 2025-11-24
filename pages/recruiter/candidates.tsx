@@ -6,7 +6,6 @@ import ScheduleInterviewFormModal from "@/components/recruiter/ScheduleInterview
 import { ProtectedDashboardRoute } from "@/components/auth/ProtectedRoute";
 import { useRouter } from "next/router";
 import RecruiterNavbar from "@/components/recruiter/RecruiterNavbar";
-import { getClusterById } from "@/lib/skillClusters";
 import { getIndustryOptions } from "@/utils/surveyValidation";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -30,13 +29,24 @@ const allIndustries = [
 const domainFilters = ["All", ...allIndustries];
 
 // Map candidate domain to survey industry for filtering
-const candidateDomainToIndustry: Record<string, string> = {
-  "Frontend": "Technology & Software",
-  "Backend": "Technology & Software",
-  "Data": "Data Science & Analytics",
-  "Marketing": "Marketing & Advertising",
-  "Finance": "Finance & Banking",
-  "General": "Other",
+const candidateDomainAliases: Record<string, string> = {
+  "frontend": "Technology & Software",
+  "frontend development": "Technology & Software",
+  "backend": "Technology & Software",
+  "backend development": "Technology & Software",
+  "full stack": "Technology & Software",
+  "data": "Data Science & Analytics",
+ "data analytics": "Data Science & Analytics",
+  "data science": "Data Science & Analytics",
+  "marketing": "Marketing & Advertising",
+  "growth marketing": "Marketing & Advertising",
+  "finance": "Finance & Banking",
+  "product management": "Product Management",
+  "healthcare": "Healthcare & Medical",
+  "education": "Education & Learning",
+  "design": "Design & Creative",
+  "e-commerce": "E-commerce & Retail",
+  "startup": "Startup Founder",
 };
 
 interface CandidateClustersDisplay {
@@ -50,6 +60,7 @@ interface DisplayCandidate {
   name: string;
   email?: string;
   domain: string;
+  industry?: string;
   velricScore: number;
   location?: string;
   skills: string[];
@@ -62,69 +73,42 @@ interface DisplayCandidate {
 // Check if a candidate matches an industry option
 function candidateMatchesIndustryOption(candidate: DisplayCandidate, industryOption: string): boolean {
   const optionLower = industryOption.toLowerCase();
-  
-  // Check if candidate's skills match
-  const skillsMatch = (candidate.skills || []).some(skill => {
-    const skillLower = skill.toLowerCase();
-    return optionLower.includes(skillLower) || skillLower.includes(optionLower);
-  });
-  
-  // Check if candidate's clusters match
-  const clustersMatch = (candidate.clusters?.core_stack || []).some(clusterId => {
-    const cluster = getClusterById(clusterId);
-    if (!cluster) return false;
-    const clusterNameLower = cluster.name.toLowerCase();
-    // Check if cluster name appears in option or vice versa
-    if (optionLower.includes(clusterNameLower) || clusterNameLower.includes(optionLower)) {
-      return true;
-    }
-    // Check if any cluster keyword matches
-    return cluster.keywords.some(keyword => 
-      optionLower.includes(keyword.toLowerCase()) || 
-      keyword.toLowerCase().includes(optionLower)
-    );
-  });
-  
-  // Check domain tags and strength tags
-  const tagsMatch = [
+
+  const skillsMatch = (candidate.skills || []).some((skill) =>
+    skill.toLowerCase().includes(optionLower)
+  );
+
+  const specializationSources = [
+    ...(candidate.clusters?.core_stack || []),
     ...(candidate.clusters?.domain_tags || []),
-    ...(candidate.clusters?.strength_tags || [])
-  ].some(tagId => {
-    const cluster = getClusterById(tagId);
-    if (!cluster) return false;
-    const clusterNameLower = cluster.name.toLowerCase();
-    return optionLower.includes(clusterNameLower) || clusterNameLower.includes(optionLower);
-  });
-  
-  // Direct keyword matching for specific options
+    ...(candidate.clusters?.strength_tags || []),
+    candidate.domain,
+    candidate.industry,
+  ].filter(Boolean) as string[];
+
+  const specializationMatch = specializationSources.some((spec) =>
+    spec.toLowerCase().includes(optionLower) || optionLower.includes(spec.toLowerCase())
+  );
+
   const keywordMatches = [
-    // Technology options
-    (optionLower.includes('frontend') || optionLower.includes('react') || optionLower.includes('vue') || optionLower.includes('angular')) && 
-      (candidate.domain === 'Frontend' || candidate.skills.some(s => ['react', 'vue', 'angular', 'typescript', 'javascript'].some(tech => s.toLowerCase().includes(tech)))),
-    (optionLower.includes('backend') || optionLower.includes('node') || optionLower.includes('python') || optionLower.includes('java')) && 
-      (candidate.domain === 'Backend' || candidate.skills.some(s => ['node', 'python', 'java', 'postgresql', 'api'].some(tech => s.toLowerCase().includes(tech)))),
-    optionLower.includes('full stack') && (candidate.skills.length > 5 || (candidate.domain === 'Frontend' || candidate.domain === 'Backend')),
-    (optionLower.includes('ai') || optionLower.includes('machine learning')) && 
-      candidate.skills.some(s => ['ai', 'ml', 'tensorflow', 'pytorch', 'neural', 'deep learning'].some(tech => s.toLowerCase().includes(tech))),
-    optionLower.includes('devops') && candidate.skills.some(s => ['docker', 'kubernetes', 'aws', 'ci/cd', 'terraform'].some(tech => s.toLowerCase().includes(tech))),
-    optionLower.includes('mobile') && candidate.skills.some(s => ['react native', 'swift', 'kotlin', 'flutter', 'ios', 'android'].some(tech => s.toLowerCase().includes(tech))),
-    // Data options
-    optionLower.includes('data engineering') && (candidate.domain === 'Data' || candidate.skills.some(s => ['airflow', 'dbt', 'etl', 'pipeline'].some(tech => s.toLowerCase().includes(tech)))),
-    (optionLower.includes('data analytics') || optionLower.includes('business analytics')) && 
-      (candidate.domain === 'Data' || candidate.skills.some(s => ['sql', 'tableau', 'analytics', 'pandas'].some(tech => s.toLowerCase().includes(tech)))),
-    // Finance options
-    optionLower.includes('investment banking') && (candidate.domain === 'Finance' || candidate.skills.some(s => ['investment', 'banking', 'm&a', 'capital'].some(tech => s.toLowerCase().includes(tech)))),
-    optionLower.includes('quantitative') && (candidate.domain === 'Finance' || candidate.skills.some(s => ['quant', 'quantitative', 'trading', 'risk'].some(tech => s.toLowerCase().includes(tech)))),
-    // Marketing options
-    (optionLower.includes('growth marketing') || optionLower.includes('growth')) && 
-      (candidate.domain === 'Marketing' || candidate.skills.some(s => ['growth', 'marketing', 'acquisition'].some(tech => s.toLowerCase().includes(tech)))),
-    (optionLower.includes('content marketing') || optionLower.includes('content strategy')) && 
-      (candidate.domain === 'Marketing' || candidate.skills.some(s => ['content', 'strategy', 'marketing'].some(tech => s.toLowerCase().includes(tech)))),
-    optionLower.includes('social media') && 
-      (candidate.domain === 'Marketing' || candidate.skills.some(s => ['social', 'media', 'ugc'].some(tech => s.toLowerCase().includes(tech)))),
+    (optionLower.includes("frontend") || optionLower.includes("react")) &&
+      (candidate.domain.toLowerCase().includes("frontend") ||
+        candidate.skills.some((s) => ["react", "typescript", "javascript"].some((tech) => s.toLowerCase().includes(tech)))),
+    (optionLower.includes("backend") || optionLower.includes("node")) &&
+      (candidate.domain.toLowerCase().includes("backend") ||
+        candidate.skills.some((s) => ["node", "python", "java", "api"].some((tech) => s.toLowerCase().includes(tech)))),
+    optionLower.includes("full stack") && candidate.skills.length > 5,
+    optionLower.includes("ai") &&
+      candidate.skills.some((s) => ["ai", "ml", "tensorflow", "pytorch"].some((tech) => s.toLowerCase().includes(tech))),
+    optionLower.includes("data") &&
+      (candidate.domain.toLowerCase().includes("data") ||
+        candidate.skills.some((s) => ["sql", "tableau", "pandas"].some((tech) => s.toLowerCase().includes(tech)))),
+    optionLower.includes("marketing") &&
+      (candidate.domain.toLowerCase().includes("marketing") ||
+        candidate.skills.some((s) => ["marketing", "growth", "content"].some((tech) => s.toLowerCase().includes(tech)))),
   ].some(Boolean);
-  
-  return skillsMatch || clustersMatch || tagsMatch || keywordMatches;
+
+  return skillsMatch || specializationMatch || keywordMatches;
 }
 
 interface ApiCandidate {
@@ -182,10 +166,7 @@ function CandidatesPageContent() {
         params.append("minScore", debouncedScoreRange[0].toString());
         params.append("maxScore", debouncedScoreRange[1].toString());
         if (debouncedClusterFilters.length > 0) {
-          params.append("clusters", debouncedClusterFilters.join(","));
-        }
-        if (debouncedClusterFilters.length > 0) {
-          params.append("industry", debouncedClusterFilters.join(","));
+          params.append("specializations", debouncedClusterFilters.join(","));
         }
 
         const response = await fetch(`/api/recruiter/candidates?${params.toString()}`);
@@ -227,41 +208,26 @@ function CandidatesPageContent() {
   const convertToDisplayCandidate = (apiCandidate: ApiCandidate): DisplayCandidate => {
     // Generate mock clusters structure
     const generateMockClusters = () => {
-      const coreStack: string[] = [];
-      const domainTags: string[] = [];
-      const strengthTags: string[] = [];
-      
-      // Map mission_focus to core_stack
-      if (apiCandidate.mission_focus && Array.isArray(apiCandidate.mission_focus)) {
-        apiCandidate.mission_focus.forEach((mf, idx) => {
-          coreStack.push(`cluster_${idx}_${mf.replace(/\s+/g, '_')}`);
-        });
-      }
-      
-      // Map industry to domain_tags
-      if (apiCandidate.industry) {
-        domainTags.push(`tag_${apiCandidate.industry.replace(/\s+/g, '_')}`);
-      }
-      
-      // Map strength_areas to strength_tags
-      if (apiCandidate.strength_areas && Array.isArray(apiCandidate.strength_areas)) {
-        apiCandidate.strength_areas.forEach((sa, idx) => {
-          strengthTags.push(`strength_${idx}_${sa.replace(/\s+/g, '_')}`);
-        });
-      }
-      
       return {
-        core_stack: coreStack.length > 0 ? coreStack : [],
-        domain_tags: domainTags,
-        strength_tags: strengthTags,
+        core_stack: apiCandidate.mission_focus || [],
+        domain_tags: apiCandidate.industry ? [apiCandidate.industry] : [],
+        strength_tags: apiCandidate.strength_areas || [],
       };
     };
+
+    const displayDomain =
+      apiCandidate.domain ||
+      (apiCandidate.mission_focus && apiCandidate.mission_focus.length > 0
+        ? apiCandidate.mission_focus[0]
+        : apiCandidate.industry) ||
+      "General";
 
     return {
       id: apiCandidate.id,
       name: apiCandidate.name,
       email: apiCandidate.email,
-      domain: apiCandidate.domain || "General",
+      domain: displayDomain,
+      industry: apiCandidate.industry,
       velricScore: typeof apiCandidate.velricScore === "number" ? Number(apiCandidate.velricScore.toFixed(1)) : 0,
       location: apiCandidate.location || undefined,
       skills: apiCandidate.skills || [],
@@ -343,8 +309,8 @@ function CandidatesPageContent() {
             <p className="text-sm text-white/60 mb-2">Recruiter • Talent Search</p>
             <h1 className="text-3xl font-bold mb-6">Search Candidates</h1>
             
-            {/* Search and Filter Bar */}
-            <div className="flex items-center gap-3">
+            {/* Search and Filtier Bar */}
+            <div className="flex tems-center gap-3">
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
                 <input
@@ -622,29 +588,25 @@ function CandidatesPageContent() {
                       {/* Core Clusters */}
                       <div className="mb-4">
                         <p className="text-xs text-white/60 mb-2">Core Expertise</p>
-                        <div className="flex flex-wrap gap-2">
-                          {candidate.clusters.core_stack.slice(0, 4).map((clusterId) => {
-                            const cluster = getClusterById(clusterId);
-                            if (!cluster) return null;
-                            return (
+                        {candidate.clusters.core_stack.length === 0 ? (
+                          <p className="text-xs text-white/50">No specializations listed</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {candidate.clusters.core_stack.slice(0, 4).map((label, idx) => (
                               <span
-                                key={clusterId}
-                                className="px-2 py-1 rounded-lg text-xs border"
-                                style={{
-                                  background: `${cluster.color}20`,
-                                  borderColor: `${cluster.color}60`,
-                                }}
+                                key={`${candidate.id}-core-${idx}`}
+                                className="px-2 py-1 rounded-lg text-xs border border-white/15 bg-white/5 text-white/80"
                               >
-                                {cluster.name}
+                                {label}
                               </span>
-                            );
-                          })}
-                          {candidate.clusters.core_stack.length > 4 && (
-                            <span className="px-2 py-1 rounded-lg text-xs text-white/60 border border-white/10">
-                              +{candidate.clusters.core_stack.length - 4}
-                            </span>
-                          )}
-                        </div>
+                            ))}
+                            {candidate.clusters.core_stack.length > 4 && (
+                              <span className="px-2 py-1 rounded-lg text-xs text-white/60 border border-white/10">
+                                +{candidate.clusters.core_stack.length - 4}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* About Preview */}

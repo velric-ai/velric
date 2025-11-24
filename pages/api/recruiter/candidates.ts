@@ -46,9 +46,7 @@ export default async function handler(
       domain,
       minScore,
       maxScore,
-      industry,
-      skills,
-      clusters,
+      specializations,
       limit = "50",
       offset = "0",
     } = req.query;
@@ -221,6 +219,11 @@ export default async function handler(
           ? survey.mission_focus[0]
           : undefined;
 
+      const clusters = new Set<string>();
+      if (survey?.industry) clusters.add(survey.industry);
+      (survey?.mission_focus || []).forEach((item: string) => clusters.add(item));
+      (survey?.strength_areas || []).forEach((item: string) => clusters.add(item));
+
       return {
         id: user.id,
         name: user.name || "Unknown",
@@ -236,14 +239,24 @@ export default async function handler(
         education_level: survey?.education_level || undefined,
         learning_preference: survey?.learning_preference || undefined,
         skills: extractSkillsFromExperience(survey?.experience_summary),
-        clusters: survey?.industry ? [survey.industry] : undefined,
+        clusters: clusters.size ? Array.from(clusters) : undefined,
       };
     });
 
     // Step 4: Apply filters
-    // Domain filter
+    // Domain filter (industry-based)
     if (domain && typeof domain === "string" && domain !== "All") {
-      candidates = candidates.filter((c) => c.domain === domain);
+      const domainLower = domain.toLowerCase();
+      candidates = candidates.filter((c) => {
+        const candidateIndustry = c.industry?.toLowerCase();
+        if (candidateIndustry && candidateIndustry === domainLower) return true;
+        const alias =
+          c.domain && typeof c.domain === "string"
+            ? candidateDomainAlias(c.domain)
+            : undefined;
+        if (alias && alias.toLowerCase() === domainLower) return true;
+        return false;
+      });
     }
 
     // Score filter
@@ -256,35 +269,18 @@ export default async function handler(
       candidates = candidates.filter((c) => (c.velricScore ?? 0) <= max);
     }
 
-    // Industry filter
-    if (industry && typeof industry === "string") {
-      const industries = Array.isArray(industry) ? industry : [industry];
-      candidates = candidates.filter((c) =>
-        industries.some((ind) => c.industry?.toLowerCase().includes(ind.toLowerCase()))
-      );
+    // Specialization filter (mission_focus) - already filtered at DB level, but double-check
+    if (specializations && typeof specializations === "string") {
+      const specializationList = specializations.split(",").map((s) => s.trim().toLowerCase());
+      candidates = candidates.filter((c) => {
+        if (!c.mission_focus || !Array.isArray(c.mission_focus)) return false;
+        return specializationList.some((spec) =>
+          c.mission_focus!.some((mf) => mf.toLowerCase().includes(spec))
+        );
+      });
     }
 
-    // Skills filter
-    if (skills && typeof skills === "string") {
-      const skillList = skills.split(",").map((s) => s.trim().toLowerCase());
-      candidates = candidates.filter((c) =>
-        c.skills?.some((skill) =>
-          skillList.some((s) => skill.toLowerCase().includes(s))
-        )
-      );
-    }
-
-    // Clusters filter (industry-based)
-    if (clusters && typeof clusters === "string") {
-      const clusterList = clusters.split(",").map((c) => c.trim().toLowerCase());
-      candidates = candidates.filter((c) =>
-        c.clusters?.some((cluster) =>
-          clusterList.some((cl) => cluster.toLowerCase().includes(cl))
-        )
-      );
-    }
-
-    // Additional search on combined data
+    // Search filter
     if (search && typeof search === "string" && search.trim()) {
       const searchLower = search.trim().toLowerCase();
       candidates = candidates.filter(
@@ -360,5 +356,32 @@ function extractSkillsFromExperience(experience?: string): string[] {
   );
 
   return foundSkills;
+}
+
+function candidateDomainAlias(domain?: string): string | undefined {
+  if (!domain) return undefined;
+  const key = domain.toLowerCase();
+  const map: Record<string, string> = {
+    frontend: "Technology & Software",
+    "frontend development": "Technology & Software",
+    "full stack": "Technology & Software",
+    backend: "Technology & Software",
+    "backend development": "Technology & Software",
+    "data science": "Data Science & Analytics",
+    "data analytics": "Data Science & Analytics",
+    "data engineering": "Data Science & Analytics",
+    marketing: "Marketing & Advertising",
+    "growth marketing": "Marketing & Advertising",
+    "product management": "Product Management",
+    finance: "Finance & Banking",
+    "investment banking": "Finance & Banking",
+    healthcare: "Healthcare & Medical",
+    education: "Education & Learning",
+    design: "Design & Creative",
+    ecommerce: "E-commerce & Retail",
+    "e-commerce": "E-commerce & Retail",
+    startup: "Startup Founder",
+  };
+  return map[key];
 }
 
