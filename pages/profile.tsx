@@ -5,6 +5,8 @@ import DashboardNavigation from "@/components/dashboard/DashboardNavigation";
 import ProfileCard from "@/components/ProfileCard";
 import SurveyData from "@/components/SurveyData";
 import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
+import { Upload, X } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
 function ProfileContent() {
   const [userData, setUserData] = useState<any>(null);
@@ -62,7 +64,7 @@ function ProfileContent() {
         setUserData({
           name: result.user.name || 'User',
           email: result.user.email,
-          avatar: "/assets/default-avatar.png",
+          avatar: result.user.profile_image || "/assets/default-avatar.png",
           status: result.user.onboarded ? "Active" : "Pending Onboarding",
           statusDescription: result.user.onboarded 
             ? "Your profile is complete" 
@@ -70,6 +72,11 @@ function ProfileContent() {
           onboarded: result.user.onboarded,
           profileComplete: result.user.profile_complete,
         });
+        
+        // Set preview if image exists
+        if (result.user.profile_image) {
+          setProfileImagePreview(result.user.profile_image);
+        }
       } catch (err: any) {
         console.error('Error fetching user data:', err);
         showUserDataError(err?.message);
@@ -95,7 +102,11 @@ function ProfileContent() {
   const [isLoadingSurvey, setIsLoadingSurvey] = useState(true);
   const [totalMissionsCompleted, setTotalMissionsCompleted] = useState<number>(0);
   const [averageVelricScore, setAverageVelricScore] = useState<number>(0);
+  const [profileViews, setProfileViews] = useState<number>(0);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Fetch survey data from API
   useEffect(() => {
@@ -159,7 +170,7 @@ function ProfileContent() {
     fetchSurveyData();
   }, []);
 
-  // Fetch mission statistics
+  // Fetch mission statistics and profile views
   useEffect(() => {
     const fetchMissionStats = async () => {
       try {
@@ -180,19 +191,24 @@ function ProfileContent() {
           return;
         }
 
-        // Fetch missions from analytics API
-        const response = await fetch(`/api/analytics?userId=${userId}`);
-        const result = await response.json();
+        // Fetch missions from analytics API and quick stats
+        const [analyticsResponse, quickStatsResponse] = await Promise.all([
+          fetch(`/api/analytics?userId=${userId}`),
+          fetch(`/api/user/quick-stats?userId=${userId}`),
+        ]);
 
-        if (result.success && result.missions) {
+        const analyticsResult = await analyticsResponse.json();
+        const quickStatsResult = await quickStatsResponse.json();
+
+        if (analyticsResult.success && analyticsResult.missions) {
           // Count completed missions (status is 'completed' or 'graded')
-          const completedMissions = result.missions.filter((mission: any) => 
+          const completedMissions = analyticsResult.missions.filter((mission: any) => 
             mission.status === 'completed' || mission.status === 'graded'
           );
           setTotalMissionsCompleted(completedMissions.length);
 
           // Calculate average velric score from all missions with scores
-          const missionsWithScores = result.missions.filter((mission: any) => 
+          const missionsWithScores = analyticsResult.missions.filter((mission: any) => 
             mission.velric_score !== null && 
             mission.velric_score !== undefined && 
             typeof mission.velric_score === 'number'
@@ -208,6 +224,11 @@ function ProfileContent() {
             setAverageVelricScore(0);
           }
         }
+
+        // Set profile views from quick stats
+        if (quickStatsResult.success && quickStatsResult.stats?.profileViews) {
+          setProfileViews(quickStatsResult.stats.profileViews.count || 0);
+        }
       } catch (err: any) {
         console.error('Error fetching mission stats:', err);
       } finally {
@@ -217,6 +238,101 @@ function ProfileContent() {
 
     fetchMissionStats();
   }, []);
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setSnackbarMessage('Please select a valid image file');
+      setIsSnackbarVisible(true);
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setSnackbarMessage('Image size must be less than 5MB');
+      setIsSnackbarVisible(true);
+      return;
+    }
+
+    setProfileImage(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfileImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setProfileImage(null);
+    // Reset preview to current user avatar or null
+    const currentAvatar = userData?.avatar && userData.avatar !== "/assets/default-avatar.png" 
+      ? userData.avatar 
+      : null;
+    setProfileImagePreview(currentAvatar);
+  };
+
+  const handleImageUpload = async () => {
+    if (!profileImage) return;
+
+    try {
+      setIsUploadingImage(true);
+      const fileName = `profile_${Date.now()}_${profileImage.name}`;
+      
+      const { data, error } = await supabase.storage
+        .from("portfolio_uploads")
+        .upload(fileName, profileImage, {
+          upsert: false,
+          contentType: profileImage.type,
+        });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from("portfolio_uploads")
+        .getPublicUrl(fileName);
+
+      // Update user profile image
+      const userDataStr = localStorage.getItem('velric_user');
+      if (!userDataStr) {
+        throw new Error('User not authenticated');
+      }
+
+      const localUser = JSON.parse(userDataStr);
+      const userId = localUser.id;
+
+      const response = await fetch('/api/user/upload-avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          imageUrl: urlData.publicUrl,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update profile image');
+      }
+
+      // Update local state
+      setUserData(prev => prev ? { ...prev, avatar: urlData.publicUrl } : prev);
+      setProfileImage(null);
+      setSnackbarMessage('Profile image updated successfully');
+      setIsSnackbarVisible(true);
+    } catch (error: any) {
+      console.error('Error uploading profile image:', error);
+      setSnackbarMessage(error.message || 'Failed to upload image. Please try again.');
+      setIsSnackbarVisible(true);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   return (
     <>
@@ -302,7 +418,7 @@ function ProfileContent() {
             {/* Profile Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
               {/* Left Column - Profile Card */}
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-1 space-y-4">
                 {isLoading ? (
                   <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 rounded-xl p-8 text-center">
                     <div className="animate-pulse">
@@ -316,7 +432,59 @@ function ProfileContent() {
                     <p className="text-red-400">{error}</p>
                   </div>
                 ) : (
-                  <ProfileCard user={userData} />
+                  <>
+                    <ProfileCard 
+                      user={userData} 
+                      onImageClick={() => {
+                        const input = document.getElementById('profileImageUpload') as HTMLInputElement;
+                        input?.click();
+                      }}
+                    />
+                    {/* Hidden file input */}
+                    <input
+                      type="file"
+                      id="profileImageUpload"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                    {/* Image upload modal/preview */}
+                    {profileImage && (
+                      <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 rounded-xl p-6">
+                        <h3 className="text-lg font-semibold text-white mb-4">Update Profile Picture</h3>
+                        <div className="flex items-center space-x-4 mb-4">
+                          <div className="relative w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                            {profileImagePreview && (
+                              <img
+                                src={profileImagePreview}
+                                alt="Profile preview"
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm text-white/80 mb-2">{profileImage.name}</p>
+                            <p className="text-xs text-white/60">Max 5MB, JPG/PNG</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={handleImageUpload}
+                            disabled={isUploadingImage}
+                            className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isUploadingImage ? "Uploading..." : "Save Image"}
+                          </button>
+                          <button
+                            onClick={removeImage}
+                            className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg hover:bg-white/10 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -354,7 +522,11 @@ function ProfileContent() {
                     <h3 className="text-lg font-semibold text-white mb-2">
                       Profile Views
                     </h3>
-                    <div className="text-3xl font-bold text-orange-400 mb-1">0</div>
+                    {isLoadingStats ? (
+                      <div className="text-3xl font-bold text-orange-400 mb-1">-</div>
+                    ) : (
+                      <div className="text-3xl font-bold text-orange-400 mb-1">{profileViews}</div>
+                    )}
                     <p className="text-white/60 text-sm">This month</p>
                   </div>
                 </div>

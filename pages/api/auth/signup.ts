@@ -50,7 +50,7 @@ export default async function handler(
 
   try {
     const body = req.body || {};
-    const { name, email, password, isRecruiter } = body;
+    const { name, email, password, isRecruiter, profileImage } = body;
     const recruiterFlag = Boolean(isRecruiter);
 
     // Validation
@@ -176,6 +176,7 @@ export default async function handler(
       created_at: new Date().toISOString(),
       survey_completed_at: null,
       profile_complete: false,
+      profile_image: profileImage || null,
     };
 
     const { data: userData, error: dbError } = await supabase

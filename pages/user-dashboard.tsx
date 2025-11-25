@@ -42,6 +42,31 @@ function UserDashboardContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [averageVelricScore, setAverageVelricScore] = useState<number>(0);
+  const [scoreGrowthData, setScoreGrowthData] = useState<{
+    currentAverage: number;
+    previousAverage: number;
+    growthPercentage: number;
+    hasBaseline: boolean;
+  } | null>(null);
+  const [isScoreGrowthLoading, setIsScoreGrowthLoading] = useState(false);
+  const [quickStatsData, setQuickStatsData] = useState<{
+    scoreGrowth: {
+      currentAverage: number;
+      previousAverage: number;
+      growthPercentage: number;
+      hasBaseline: boolean;
+    };
+    profileCompleteness: {
+      percentage: number;
+      completedSteps: number;
+      totalSteps: number;
+      pendingSteps: string[];
+    };
+    profileViews: {
+      count: number;
+    };
+  } | null>(null);
+  const [isQuickStatsLoading, setIsQuickStatsLoading] = useState(false);
 
   // Check authentication and load user data
   useEffect(() => {
@@ -91,6 +116,95 @@ function UserDashboardContent() {
     fetchRecentActivity();
   }, [user?.id]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+
+    let isMounted = true;
+
+    const fetchScoreGrowth = async () => {
+      setIsScoreGrowthLoading(true);
+      try {
+        const response = await fetch(`/api/user/score-growth?userId=${user.id}`);
+        const data = await response.json().catch(() => ({
+          success: false,
+          error: "Invalid response",
+        }));
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Failed to calculate score growth");
+        }
+
+        if (isMounted) {
+          setScoreGrowthData({
+            currentAverage: data.currentAverage ?? 0,
+            previousAverage: data.previousAverage ?? 0,
+            growthPercentage: data.growthPercentage ?? 0,
+            hasBaseline: Boolean(data.hasBaseline),
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching score growth:", error);
+        if (isMounted) {
+          setScoreGrowthData(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsScoreGrowthLoading(false);
+        }
+      }
+    };
+
+    fetchScoreGrowth();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
+
+  // Fetch quick stats
+  useEffect(() => {
+    if (!user?.id) return;
+
+    let isMounted = true;
+
+    const fetchQuickStats = async () => {
+      setIsQuickStatsLoading(true);
+      try {
+        const response = await fetch(`/api/user/quick-stats?userId=${user.id}`);
+        const data = await response.json().catch(() => ({
+          success: false,
+          error: "Invalid response",
+        }));
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Failed to fetch quick stats");
+        }
+
+        if (isMounted && data.stats) {
+          setQuickStatsData({
+            scoreGrowth: data.stats.scoreGrowth,
+            profileCompleteness: data.stats.profileCompleteness,
+            profileViews: data.stats.profileViews,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching quick stats:", error);
+        if (isMounted) {
+          setQuickStatsData(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsQuickStatsLoading(false);
+        }
+      }
+    };
+
+    fetchQuickStats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   // Mock data matching the reference images
   const dashboardData = {
@@ -171,8 +285,57 @@ function UserDashboardContent() {
     ]
   };
 
+  const scoreGrowthDisplay = isQuickStatsLoading
+    ? "..."
+    : quickStatsData
+    ? `${quickStatsData.scoreGrowth.growthPercentage > 0 ? "+" : ""}${quickStatsData.scoreGrowth.growthPercentage.toFixed(1)}%`
+    : "0%";
+
+  const scoreGrowthSubtext = isQuickStatsLoading
+    ? "Calculating recent performance..."
+    : quickStatsData
+    ? quickStatsData.scoreGrowth.hasBaseline
+      ? `Avg ${quickStatsData.scoreGrowth.currentAverage.toFixed(1)} vs ${quickStatsData.scoreGrowth.previousAverage.toFixed(1)}`
+      : "Need more activity to compare"
+    : "No recent missions";
+
+  const profileCompletenessDisplay = isQuickStatsLoading
+    ? "..."
+    : quickStatsData
+    ? `${quickStatsData.profileCompleteness.percentage}%`
+    : "0%";
+
+  const profileCompletenessSubtext = isQuickStatsLoading
+    ? "Loading..."
+    : quickStatsData && quickStatsData.profileCompleteness.pendingSteps.length > 0
+    ? `Add ${quickStatsData.profileCompleteness.totalSteps - quickStatsData.profileCompleteness.completedSteps} more details`
+    : "Profile complete";
+
+  const profileViewsDisplay = isQuickStatsLoading
+    ? "..."
+    : quickStatsData
+    ? quickStatsData.profileViews.count.toString()
+    : "0";
+
+  const quickStats = [
+    {
+      ...dashboardData.quickStats[0],
+      title: scoreGrowthDisplay,
+      subtext: scoreGrowthSubtext,
+    },
+    {
+      ...dashboardData.quickStats[1],
+      title: profileCompletenessDisplay,
+      subtext: profileCompletenessSubtext,
+    },
+    {
+      ...dashboardData.quickStats[2],
+      title: profileViewsDisplay,
+    },
+  ];
+
   const lastUpdatedDisplay =
-    formatDateTime(user?.updated_at || user?.updatedAt) ||
+    formatDateTime(user?.updated_at || user?.updatedAt || user?.lastUpdated) ||
     formatDateTime(dashboardData.lastUpdated);
 
   if (isLoading) {
@@ -433,12 +596,12 @@ function UserDashboardContent() {
                     <h3 className="text-2xl font-semibold text-white">Quick Stats</h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {dashboardData.quickStats.map((stat, index) => {
+                      {quickStats.map((stat, index) => {
                         const Icon = stat.icon;
 
                         return (
                           <motion.div
-                            key={stat.title}
+                            key={index}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.4 + index * 0.1, duration: 0.5 }}

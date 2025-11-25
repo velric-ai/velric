@@ -3,10 +3,11 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, User, Briefcase, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, User, Briefcase, Mail, Lock, Upload, X } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { SignupData, ValidationError } from '@/types/auth';
 import { validateName, validateEmail, validatePassword } from '@/services/authService';
+import { supabase } from '@/lib/supabaseClient';
 
 type SignupFormState = Omit<SignupData, "isRecruiter"> & { isRecruiter: boolean | null };
 
@@ -26,6 +27,9 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const roleOptions: Array<{ key: "professional" | "recruiter"; isRecruiter: boolean; title: string; description: string }> = [
     {
       key: "professional",
@@ -145,6 +149,67 @@ export default function Signup() {
     setTouched(prev => ({ ...prev, [field]: true }));
   };
 
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setErrors({ general: 'Please select a valid image file' });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors({ general: 'Image size must be less than 5MB' });
+      return;
+    }
+
+    setProfileImage(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfileImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setProfileImage(null);
+    setProfileImagePreview(null);
+  };
+
+  const uploadProfileImage = async (): Promise<string | null> => {
+    if (!profileImage) return null;
+
+    try {
+      setIsUploadingImage(true);
+      const fileName = `profile_${Date.now()}_${profileImage.name}`;
+      
+      const { data, error } = await supabase.storage
+        .from("portfolio_uploads") // Reuse existing bucket
+        .upload(fileName, profileImage, {
+          upsert: false,
+          contentType: profileImage.type,
+        });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from("portfolio_uploads")
+        .getPublicUrl(fileName);
+
+      return urlData.publicUrl;
+    } catch (error: any) {
+      console.error("Error uploading profile image:", error);
+      setErrors({ general: "Failed to upload image. Please try again." });
+      return null;
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
@@ -180,6 +245,17 @@ export default function Signup() {
     setIsLoading(true);
 
     try {
+      // Upload profile image if provided
+      let imageUrl: string | null = null;
+      if (profileImage) {
+        imageUrl = await uploadProfileImage();
+        if (!imageUrl && profileImage) {
+          // If upload failed but image was selected, show error
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const isRecruiter = formData.isRecruiter === true;
       const payload: SignupData = {
         name: formData.name,
@@ -189,7 +265,21 @@ export default function Signup() {
         isRecruiter,
       };
 
+      // If we have an image URL, we need to update the user after signup
+      // For now, we'll pass it in a custom way or update after signup
       const response = await signup(payload);
+      
+      // Update profile image if we have one
+      if (imageUrl && response?.user?.id) {
+        await fetch('/api/user/upload-avatar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: response.user.id,
+            imageUrl,
+          }),
+        });
+      }
       console.log('✅ Signup successful - storing user data...');
       
       // Use is_recruiter from backend API response (mapped from is_recruiter to isRecruiter in AuthContext)
@@ -285,6 +375,52 @@ export default function Signup() {
                   {errors.general}
                 </div>
               )}
+
+              {/* Profile Image Upload */}
+              <div>
+                <label htmlFor="profileImage" className="block text-sm font-medium text-gray-300 mb-2">
+                  Profile Picture (Optional)
+                </label>
+                <div className="flex items-center space-x-4">
+                  <div className="relative w-20 h-20 rounded-full bg-[#2A2A2E] border border-purple-500/20 flex items-center justify-center overflow-hidden">
+                    {profileImagePreview ? (
+                      <>
+                        <img
+                          src={profileImagePreview}
+                          alt="Profile preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          className="absolute top-0 right-0 p-1 bg-red-500 rounded-full text-white hover:bg-red-600 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </>
+                    ) : (
+                      <User className="w-8 h-8 text-gray-400" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <label
+                      htmlFor="profileImage"
+                      className="flex items-center justify-center px-4 py-2 bg-[#2A2A2E] border border-purple-500/20 rounded-xl text-white cursor-pointer hover:border-purple-500/40 transition-colors"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      <span className="text-sm">Choose Image</span>
+                    </label>
+                    <input
+                      type="file"
+                      id="profileImage"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">Max 5MB, JPG/PNG</p>
+                  </div>
+                </div>
+              </div>
 
               {/* Name Field */}
               <div>
@@ -434,10 +570,10 @@ export default function Signup() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || isUploadingImage}
                 className="w-full bg-gradient-to-r from-[#9333EA] to-[#06B6D4] text-white py-3 rounded-xl font-semibold hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                {isLoading ? "Creating Account..." : "Create Account"}
+                {isLoading || isUploadingImage ? (isUploadingImage ? "Uploading Image..." : "Creating Account...") : "Create Account"}
               </button>
             </form>
 

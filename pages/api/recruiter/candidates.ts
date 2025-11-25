@@ -18,6 +18,7 @@ interface Candidate {
   learning_preference?: string;
   skills?: string[];
   clusters?: string[];
+  profile_image?: string | null;
 }
 
 type CandidatesResponse =
@@ -129,7 +130,7 @@ export default async function handler(
     // Step 1: Fetch all non-recruiter users
     let usersQuery = supabase
       .from("users")
-      .select("id, name, email, onboarded, profile_complete")
+      .select("id, name, email, onboarded, profile_complete, profile_image")
       .eq("is_recruiter", false)
 
     // Apply search filter on users
@@ -240,6 +241,7 @@ export default async function handler(
         learning_preference: survey?.learning_preference || undefined,
         skills: extractSkillsFromExperience(survey?.experience_summary),
         clusters: clusters.size ? Array.from(clusters) : undefined,
+        profile_image: user.profile_image || null,
       };
     });
 

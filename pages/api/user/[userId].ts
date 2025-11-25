@@ -12,6 +12,7 @@ type GetUserResponse =
         created_at: string;
         survey_completed_at: string | null;
         profile_complete: boolean;
+        profile_image: string | null;
       };
     }
   | { success: false; error: string };
@@ -49,6 +50,7 @@ export default async function handler(
         created_at: new Date().toISOString(),
         survey_completed_at: null,
         profile_complete: false,
+        profile_image: null,
       };
 
       return res.status(200).json({
@@ -99,6 +101,7 @@ export default async function handler(
         created_at: userData.created_at,
         survey_completed_at: userData.survey_completed_at || null,
         profile_complete: userData.profile_complete || false,
+        profile_image: userData.profile_image || null,
       },
     });
   } catch (err: any) {
