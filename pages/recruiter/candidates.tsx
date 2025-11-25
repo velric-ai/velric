@@ -1,8 +1,9 @@
 import Head from "next/head";
 import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Filter, Search, Bookmark, BookmarkCheck, MapPin, Mail, Linkedin, Github, X, SlidersHorizontal, Calendar, Loader2 } from "lucide-react";
+import { Filter, Search, Bookmark, BookmarkCheck, MapPin, Mail, Linkedin, Github, X, SlidersHorizontal, Calendar, Loader2, User } from "lucide-react";
 import ScheduleInterviewFormModal from "@/components/recruiter/ScheduleInterviewFormModal";
+import CandidateProfileModal from "@/components/recruiter/CandidateProfileModal";
 import { ProtectedDashboardRoute } from "@/components/auth/ProtectedRoute";
 import { useRouter } from "next/router";
 import RecruiterNavbar from "@/components/recruiter/RecruiterNavbar";
@@ -68,6 +69,7 @@ interface DisplayCandidate {
   about?: string;
   linkedin?: string;
   github?: string;
+  profile_image?: string | null;
 }
 
 // Check if a candidate matches an industry option
@@ -128,6 +130,7 @@ interface ApiCandidate {
   learning_preference?: string;
   skills?: string[];
   clusters?: string[];
+  profile_image?: string | null;
 }
 
 function CandidatesPageContent() {
@@ -145,6 +148,13 @@ function CandidatesPageContent() {
     email?: string;
   } | null>(null);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedProfileCandidate, setSelectedProfileCandidate] = useState<{
+    id: string;
+    name: string;
+    email?: string;
+    velricScore?: number;
+  } | null>(null);
   const [candidates, setCandidates] = useState<ApiCandidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalCandidates, setTotalCandidates] = useState(0);
@@ -235,6 +245,7 @@ function CandidatesPageContent() {
       about: apiCandidate.experience_summary || "",
       linkedin: undefined,
       github: undefined,
+      profile_image: apiCandidate.profile_image || null,
     };
   };
 
@@ -521,26 +532,52 @@ function CandidatesPageContent() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ delay: index * 0.05 }}
-                      className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-xl hover:border-cyan-400/30 transition-all hover:scale-[1.02]"
+                      className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-xl hover:border-cyan-400/30 transition-all hover:scale-[1.02] cursor-pointer"
+                      onClick={() => {
+                        setSelectedProfileCandidate({
+                          id: candidate.id,
+                          name: candidate.name,
+                          email: candidate.email,
+                          velricScore: candidate.velricScore,
+                        });
+                        setIsProfileModalOpen(true);
+                      }}
                     >
                       {/* Header */}
                       <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h3 className="text-xl font-bold text-white mb-1">
-                            {candidate.name}
-                          </h3>
-                          <p className="text-sm text-white/60 mb-2">
-                            {candidate.domain}
-                          </p>
-                          {candidate.location && (
-                            <div className="flex items-center text-xs text-white/50">
-                              <MapPin className="w-3 h-3 mr-1" />
-                              {candidate.location}
-                            </div>
-                          )}
+                        <div className="flex items-start space-x-3 flex-1">
+                          {/* Profile Image */}
+                          <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center border border-cyan-500/30 overflow-hidden flex-shrink-0">
+                            {candidate.profile_image ? (
+                              <img
+                                src={candidate.profile_image}
+                                alt={candidate.name}
+                                className="w-full h-full rounded-full object-cover"
+                              />
+                            ) : (
+                              <User className="w-6 h-6 text-cyan-400" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-xl font-bold text-white mb-1">
+                              {candidate.name}
+                            </h3>
+                            <p className="text-sm text-white/60 mb-2">
+                              {candidate.domain}
+                            </p>
+                            {candidate.location && (
+                              <div className="flex items-center text-xs text-white/50">
+                                <MapPin className="w-3 h-3 mr-1" />
+                                {candidate.location}
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <button
-                          onClick={() => toggleSaveCandidate(candidate.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSaveCandidate(candidate.id);
+                          }}
                           className={`p-2 rounded-lg transition-colors ${
                             isSaved
                               ? "text-yellow-400 bg-yellow-400/10"
@@ -567,7 +604,8 @@ function CandidatesPageContent() {
                         </div>
                         {/* Schedule Interview Button */}
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedCandidate({
                               id: candidate.id,
                               name: candidate.name,
@@ -669,6 +707,21 @@ function CandidatesPageContent() {
             candidateId={selectedCandidate.id}
             candidateName={selectedCandidate.name}
             candidateEmail={selectedCandidate.email}
+          />
+        )}
+
+        {/* Candidate Profile Modal */}
+        {selectedProfileCandidate && (
+          <CandidateProfileModal
+            isOpen={isProfileModalOpen}
+            onClose={() => {
+              setIsProfileModalOpen(false);
+              setSelectedProfileCandidate(null);
+            }}
+            candidateId={selectedProfileCandidate.id}
+            candidateName={selectedProfileCandidate.name}
+            candidateEmail={selectedProfileCandidate.email}
+            candidateVelricScore={selectedProfileCandidate.velricScore}
           />
         )}
       </div>
