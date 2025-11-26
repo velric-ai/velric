@@ -139,9 +139,23 @@ const initialFormData: SurveyFormData = {
     touched: false,
   },
 
+  // Step 8: Logistics & Interview Preferences
+  logisticsPreferences: {
+    currentRegion: { value: "", error: null, touched: false },
+    legalWorkRegions: { value: [], error: null, touched: false },
+    sponsorshipConsideration: { value: "", error: null, touched: false },
+    sponsorshipRegions: { value: [], error: null, touched: false },
+    sponsorshipDependsText: { value: "", error: null, touched: false },
+    relocationOpenness: { value: "", error: null, touched: false },
+    relocationRegions: { value: "", error: null, touched: false },
+    remoteWorkInternational: { value: "", error: null, touched: false },
+    error: null,
+    touched: false,
+  },
+
   // Meta/Navigation
   currentStep: 1,
-  totalSteps: 8,
+  totalSteps: 9,
   isSubmitting: false,
   submitError: null,
   completedAt: null,
@@ -337,6 +351,19 @@ useEffect(() => {
           error: null,
           touched: false,
         },
+        // Step 8: Logistics Preferences
+        logisticsPreferences: {
+          currentRegion: { value: "", error: null, touched: false },
+          legalWorkRegions: { value: [], error: null, touched: false },
+          sponsorshipConsideration: { value: "", error: null, touched: false },
+          sponsorshipRegions: { value: [], error: null, touched: false },
+          sponsorshipDependsText: { value: "", error: null, touched: false },
+          relocationOpenness: { value: "", error: null, touched: false },
+          relocationRegions: { value: "", error: null, touched: false },
+          remoteWorkInternational: { value: "", error: null, touched: false },
+          error: null,
+          touched: false,
+        },
         updatedAt: Date.now(),
       };
 
@@ -509,7 +536,7 @@ useEffect(() => {
     }));
 
     try {
-      for (let step = 1; step <= 7; step++) {
+      for (let step = 1; step <= 8; step++) {
         const validation = validateStep(step, formData);
         if (!validation.isValid && (step <= 4 || step === 7)) {
           throw new ValidationError(
@@ -559,9 +586,9 @@ useEffect(() => {
       const surveyState = surveyStateStr ? JSON.parse(surveyStateStr) : {};
       const finalSurveyState = {
         ...surveyState,
-        currentStep: 8,
-        currentStepIndex: 7,
-        completedSteps: [1, 2, 3, 4, 5, 6, 7],
+        currentStep: 9,
+        currentStepIndex: 8,
+        completedSteps: [1, 2, 3, 4, 5, 6, 7, 8],
         completedAt: new Date().toISOString(),
       };
       localStorage.setItem(
@@ -571,7 +598,7 @@ useEffect(() => {
 
       setFormData((prev) => ({
         ...prev,
-        currentStep: 8,
+        currentStep: 9,
         completedAt: result.completedAt,
         isSubmitting: false,
         isDraft: false,

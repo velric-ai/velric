@@ -10,8 +10,9 @@ import { StepStrengthAreas } from "../../components/survey/StepStrengthAreas";
 import { StepLearningPreference } from "../../components/survey/StepLearningPreference";
 import { StepPortfolioUpload } from "../../components/survey/StepPortfolioUpload";
 import { StepPlatformConnections } from "../../components/survey/StepPlatformConnections";
-import { StepCompletion } from "../../components/survey/StepCompletion";
 import { StepExperience } from "../../components/survey/StepExperience";
+import { StepLogisticsPreferences } from "../../components/survey/StepLogisticsPreferences";
+import { StepCompletion } from "../../components/survey/StepCompletion";
 import { useSurveyForm } from "../../hooks/useSurveyForm";
 import { AppError, AuthError } from "../../utils/surveyValidation";
 import { ProtectedSurveyRoute } from "../../components/auth/ProtectedRoute";
@@ -47,7 +48,7 @@ function SurveyPageContent() {
           const newState = {
             currentStep: 1,
             currentStepIndex: 0,
-            totalSteps: 8,
+            totalSteps: 9,
             completedSteps: [],
             surveyData: {},
             startedAt: new Date().toISOString()
@@ -172,6 +173,8 @@ function SurveyPageContent() {
       case 7:
         return <StepExperience {...baseStepProps} canProceed={canProceed} />;
       case 8:
+        return <StepLogisticsPreferences {...baseStepProps} canProceed={canProceed()} />;
+      case 9:
         return <StepCompletion {...baseStepProps} canProceed={canProceed()} />;
       default:
         return <StepBasicInfo {...baseStepProps} canProceed={canProceed()} />;

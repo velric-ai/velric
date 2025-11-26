@@ -60,6 +60,18 @@ export interface SurveyFormData {
     hackerrank: PlatformConnection;
   };
   experienceSummary: { value: string; error: string | null; touched: boolean };
+  logisticsPreferences: {
+    currentRegion: { value: string; error: string | null; touched: boolean };
+    legalWorkRegions: { value: string[]; error: string | null; touched: boolean };
+    sponsorshipConsideration: { value: string; error: string | null; touched: boolean };
+    sponsorshipRegions: { value: string[]; error: string | null; touched: boolean };
+    sponsorshipDependsText: { value: string; error: string | null; touched: boolean };
+    relocationOpenness: { value: string; error: string | null; touched: boolean };
+    relocationRegions: { value: string; error: string | null; touched: boolean };
+    remoteWorkInternational: { value: string; error: string | null; touched: boolean };
+    error: string | null;
+    touched: boolean;
+  };
   currentStep: number;
   totalSteps: number;
   isSubmitting: boolean;
@@ -128,6 +140,16 @@ export async function submitSurveyData(
         timezone: formData.interviewAvailability.timezone,
       } : null,
       platform_connections: formData.platformConnections,
+      logistics_preferences: formData.logisticsPreferences ? {
+        current_region: formData.logisticsPreferences.currentRegion?.value || null,
+        legal_work_regions: formData.logisticsPreferences.legalWorkRegions?.value || [],
+        sponsorship_consideration: formData.logisticsPreferences.sponsorshipConsideration?.value || null,
+        sponsorship_regions: formData.logisticsPreferences.sponsorshipRegions?.value || [],
+        sponsorship_depends_text: formData.logisticsPreferences.sponsorshipDependsText?.value || null,
+        relocation_openness: formData.logisticsPreferences.relocationOpenness?.value || null,
+        relocation_regions: formData.logisticsPreferences.relocationRegions?.value || null,
+        remote_work_international: formData.logisticsPreferences.remoteWorkInternational?.value || null,
+      } : null,
       metadata: {
         total_time_spent: Object.values(formData.timeSpentPerStep).reduce(
           (a, b) => a + b,

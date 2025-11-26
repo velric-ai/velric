@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Mail, MapPin, GraduationCap, Briefcase, Code, Trophy, Linkedin, Github, Calendar, User } from "lucide-react";
+import { X, Mail, MapPin, GraduationCap, Briefcase, Code, Trophy, Linkedin, Github, Calendar, User, Globe } from "lucide-react";
 import ScheduleInterviewFormModal from "./ScheduleInterviewFormModal";
 
 interface CandidateProfileModalProps {
@@ -27,6 +27,16 @@ interface CandidateProfile {
   learning_preference?: string;
   skills?: string[];
   profile_image?: string | null;
+  logistics_preferences?: {
+    current_region?: string;
+    legal_work_regions?: string[];
+    sponsorship_consideration?: string;
+    sponsorship_regions?: string[];
+    sponsorship_depends_text?: string;
+    relocation_openness?: string;
+    relocation_regions?: string;
+    remote_work_international?: string;
+  };
 }
 
 export default function CandidateProfileModal({
@@ -101,6 +111,7 @@ export default function CandidateProfileModal({
             learning_preference: surveyData.surveyData?.learning_preference,
             skills: [],
             profile_image: userData.user.profile_image || null,
+            logistics_preferences: surveyData.surveyData?.logistics_preferences || null,
           });
         }
       } catch (error) {
@@ -220,6 +231,69 @@ export default function CandidateProfileModal({
                           <Trophy className="w-12 h-12 text-yellow-400" />
                         </div>
                       </div>
+
+                      {/* Logistics & Interview Preferences */}
+                      {profile.logistics_preferences && (
+                        <div className="p-6 rounded-xl bg-white/5 border border-white/10">
+                          <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                            <Globe className="w-5 h-5 mr-2 text-cyan-400" />
+                            Logistics & Availability
+                          </h3>
+                          <div className="space-y-2 text-sm">
+                            {/* Format: 🌍 South Asia   🛂 No sponsorship (South Asia/EU Remote) */}
+                            <div className="flex flex-wrap items-center gap-3">
+                              {/* Current Region */}
+                              {profile.logistics_preferences.current_region && (
+                                <span className="text-white">
+                                  🌍 {profile.logistics_preferences.current_region}
+                                </span>
+                              )}
+                              
+                              {/* Legal Work Regions */}
+                              {profile.logistics_preferences.legal_work_regions && 
+                               profile.logistics_preferences.legal_work_regions.length > 0 && (
+                                <span className="text-white">
+                                  🛂 No sponsorship ({profile.logistics_preferences.legal_work_regions.join("/")})
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Format: 🚚 Relocate to NA/EU   💻Remote OK */}
+                            <div className="flex flex-wrap items-center gap-3">
+                              {/* Relocation */}
+                              {profile.logistics_preferences.relocation_openness && (
+                                <>
+                                  {profile.logistics_preferences.relocation_openness === "anywhere" && (
+                                    <span className="text-white">🚚 Relocate: Anywhere</span>
+                                  )}
+                                  {profile.logistics_preferences.relocation_openness === "only_some" && (
+                                    <span className="text-white">
+                                      🚚 Relocate to {profile.logistics_preferences.relocation_regions || "Specific regions"}
+                                    </span>
+                                  )}
+                                  {profile.logistics_preferences.relocation_openness === "no" && (
+                                    <span className="text-white">🚚 Not open to relocation</span>
+                                  )}
+                                  {profile.logistics_preferences.relocation_openness === "depends" && (
+                                    <span className="text-white">🚚 Relocation: Depends</span>
+                                  )}
+                                </>
+                              )}
+
+                              {/* Remote Work International */}
+                              {profile.logistics_preferences.remote_work_international && (
+                                <span className="text-white">
+                                  💻 Remote: {profile.logistics_preferences.remote_work_international === "yes" 
+                                    ? "OK" 
+                                    : profile.logistics_preferences.remote_work_international === "no"
+                                    ? "No"
+                                    : "Depends"}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Domain & Industry */}
                       {(profile.domain || profile.industry) && (
