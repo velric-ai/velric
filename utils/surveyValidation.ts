@@ -278,8 +278,18 @@ export const validateStep = (step: number, formData: any): ValidationResult => {
       
     case 7: // Experience Summary
       if (!formData.experienceSummary?.value?.trim()) {
-        errors.experienceSummary = 'Please share your experience and accomplishments';
+        errors.experienceSummary = 'Experience summary is required';
       }
+      break;
+      
+    case 8: // Logistics & Interview Preferences
+      // Current region is required
+      if (!formData.logisticsPreferences?.currentRegion?.value) {
+        errors.logisticsPreferences = 'Please select your current region';
+      }
+      // Note: Other fields are optional, but we validate structure
+      break;
+        errors.experienceSummary = 'Please share your experience and accomplishments';
       break;
       
     default:

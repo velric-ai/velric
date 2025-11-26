@@ -244,6 +244,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       portfolioFile,
       portfolioUrl,
       platformConnections,
+      logisticsPreferences,
       metadata
     } = req.body;
 
@@ -300,6 +301,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       portfolioFile,
       portfolioUrl: portfolioUrl ? sanitizeInput(portfolioUrl) : null,
       platformConnections: platformConnections || {},
+      logisticsPreferences: logisticsPreferences || null,
       metadata: metadata || {}
     };
 
@@ -356,6 +358,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       experience_summary: sanitizedData.metadata?.experienceSummary || null,
       platform_connections: sanitizedData.platformConnections,
+      logistics_preferences: sanitizedData.logisticsPreferences ? {
+        current_region: sanitizedData.logisticsPreferences.currentRegion?.value || null,
+        legal_work_regions: sanitizedData.logisticsPreferences.legalWorkRegions?.value || [],
+        sponsorship_consideration: sanitizedData.logisticsPreferences.sponsorshipConsideration?.value || null,
+        sponsorship_regions: sanitizedData.logisticsPreferences.sponsorshipRegions?.value || [],
+        sponsorship_depends_text: sanitizedData.logisticsPreferences.sponsorshipDependsText?.value || null,
+        relocation_openness: sanitizedData.logisticsPreferences.relocationOpenness?.value || null,
+        relocation_regions: sanitizedData.logisticsPreferences.relocationRegions?.value || null,
+        remote_work_international: sanitizedData.logisticsPreferences.remoteWorkInternational?.value || null,
+      } : null,
       metadata: sanitizedData.metadata,
       created_at: new Date().toISOString(),
     };

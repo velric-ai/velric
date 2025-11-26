@@ -7,7 +7,7 @@ import DashboardNavigation from "@/components/dashboard/DashboardNavigation";
 import Footer from "@/components/Footer";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { StaticMission } from "@/data/staticMissions";
-import { AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft, X } from "lucide-react";
 import SubmissionForm from "@/components/SubmissionForm";
 
 export default function MissionDetailPage() {
@@ -22,6 +22,9 @@ export default function MissionDetailPage() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const submissionSectionRef = useRef<HTMLDivElement | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [showTabSwitchWarning, setShowTabSwitchWarning] = useState(false);
+  const wasVisibleRef = useRef(true);
 
   // Get logged-in user ID from localStorage
   useEffect(() => {
@@ -34,6 +37,33 @@ export default function MissionDetailPage() {
         console.error('Error parsing user data:', error);
       }
     }
+  }, []);
+
+  // Track tab switches using Page Visibility API
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // User switched away from the tab
+        wasVisibleRef.current = false;
+      } else {
+        // User came back to the tab
+        if (!wasVisibleRef.current) {
+          // Only increment if they actually left and came back
+          setTabSwitchCount(prev => {
+            const newCount = prev + 1;
+            setShowTabSwitchWarning(true);
+            return newCount;
+          });
+          wasVisibleRef.current = true;
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -278,7 +308,32 @@ export default function MissionDetailPage() {
         {/* Mission Content */}
         <section className="px-4 md:px-8 lg:px-16 pb-20 relative z-10">
           <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Mission Header with Tab Switch Indicator */}
+            <div className="mb-8">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <h1 className="text-3xl md:text-4xl font-bold text-[#F5F5F5] font-['Space_Grotesk'] mb-2">
+                    {mission.title}
+                  </h1>
+                </div>
+                {/* Tab Switch Indicator */}
+                {tabSwitchCount > 0 && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    onClick={() => setShowTabSwitchWarning(!showTabSwitchWarning)}
+                    className="flex items-center space-x-2 px-4 py-2 bg-yellow-500/20 border border-yellow-500/50 rounded-lg hover:bg-yellow-500/30 transition-all duration-200"
+                  >
+                    <AlertCircle className="w-5 h-5 text-yellow-400" />
+                    <span className="text-yellow-300 font-semibold text-sm">
+                      {tabSwitchCount} Tab Switch{tabSwitchCount !== 1 ? 'es' : ''}
+                    </span>
+                  </motion.button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
               {/* Main Content - spans 2 columns */}
               <div className="lg:col-span-2">
                 {/* Mission Details Card */}
@@ -467,7 +522,7 @@ export default function MissionDetailPage() {
               </div>
 
               {/* Sidebar */}
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-2">
                 <div className="bg-[#1C1C1E]/90 backdrop-blur-xl rounded-2xl p-6 sticky top-32 hover:shadow-2xl hover:shadow-[#6A0DAD]/20 transition-all duration-500 border border-[#6A0DAD]/20 hover:border-[#6A0DAD]/40 group overflow-hidden">
                   {/* Card Background Pattern */}
                   <div className="absolute inset-0 opacity-5">
@@ -516,16 +571,15 @@ export default function MissionDetailPage() {
                                 mission.difficulty === "Beginner"
                                   ? 1
                                   : mission.difficulty === "Intermediate"
-                                  ? 2
-                                  : 3;
+                                    ? 2
+                                    : 3;
                               return (
                                 <div
                                   key={i}
-                                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                                    i < level
+                                  className={`w-3 h-3 rounded-full transition-all duration-300 ${i < level
                                       ? "bg-gradient-to-r from-[#00D9FF] to-[#6A0DAD] animate-pulse"
                                       : "bg-gray-600"
-                                  }`}
+                                    }`}
                                 />
                               );
                             })}
@@ -577,57 +631,54 @@ export default function MissionDetailPage() {
                     <div className="mt-10">
                       <h3 className="text-xl font-semibold text-[#F5F5F5] mb-4 font-['Space_Grotesk'] flex items-center">
                         <div
-                          className={`w-2 h-2 rounded-full mr-2 ${
-                            missionStatus === "completed"
+                          className={`w-2 h-2 rounded-full mr-2 ${missionStatus === "completed"
                               ? "bg-green-400"
                               : missionStatus === "in_progress"
-                              ? "bg-blue-400 animate-pulse"
-                              : missionStatus === "submitted"
-                              ? "bg-yellow-400"
-                              : "bg-gray-400"
-                          }`}
+                                ? "bg-blue-400 animate-pulse"
+                                : missionStatus === "submitted"
+                                  ? "bg-yellow-400"
+                                  : "bg-gray-400"
+                            }`}
                         ></div>
                         Your Progress
                       </h3>
                       <div className="bg-[#0D0D0D]/70 rounded-full h-4 mb-3 overflow-hidden border border-gray-700/50 relative">
                         <div className="absolute inset-0 bg-gradient-to-r from-[#6A0DAD]/20 to-[#00D9FF]/20 animate-pulse"></div>
                         <div
-                          className={`bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] h-4 rounded-full transition-all duration-1000 relative z-10 ${
-                            missionStatus === "completed"
+                          className={`bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] h-4 rounded-full transition-all duration-1000 relative z-10 ${missionStatus === "completed"
                               ? "w-full"
                               : missionStatus === "submitted"
-                              ? "w-4/5"
-                              : missionStatus === "in_progress"
-                              ? "w-1/4"
-                              : "w-0"
-                          }`}
+                                ? "w-4/5"
+                                : missionStatus === "in_progress"
+                                  ? "w-1/4"
+                                  : "w-0"
+                            }`}
                         ></div>
                       </div>
                       <p className="text-gray-400 text-sm font-['Inter'] flex items-center">
                         <span
-                          className={`w-2 h-2 rounded-full mr-2 ${
-                            missionStatus === "completed"
+                          className={`w-2 h-2 rounded-full mr-2 ${missionStatus === "completed"
                               ? "bg-green-400"
                               : missionStatus === "in_progress"
-                              ? "bg-blue-400"
-                              : missionStatus === "submitted"
-                              ? "bg-yellow-400"
-                              : "bg-gray-500"
-                          }`}
+                                ? "bg-blue-400"
+                                : missionStatus === "submitted"
+                                  ? "bg-yellow-400"
+                                  : "bg-gray-500"
+                            }`}
                         ></span>
                         {missionStatus === "completed"
                           ? "100% Complete"
                           : missionStatus === "submitted"
-                          ? "80% Complete - Under Review"
-                          : missionStatus === "in_progress"
-                          ? "25% Complete - In Progress"
-                          : "0% Complete - Not Started"}
+                            ? "80% Complete - Under Review"
+                            : missionStatus === "in_progress"
+                              ? "25% Complete - In Progress"
+                              : "0% Complete - Not Started"}
                       </p>
                     </div>
 
-                            
-                            {/* Enhanced Action Buttons */}
-                   {/*
+
+                    {/* Enhanced Action Buttons */}
+                    {/*
                     <div className="space-y-4 mt-8">
                       {missionStatus === "suggested" && (
                         <button
@@ -748,32 +799,31 @@ export default function MissionDetailPage() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
 
-        {/* Submission Section */}
-        <section className="px-4 md:px-8 lg:px-16 pb-20 relative z-10">
-          <div
-            className="max-w-4xl mx-auto"
-            ref={submissionSectionRef}
-            id="submission-section"
-          >
-            <div className="bg-[#1C1C1E]/90 backdrop-blur-xl rounded-2xl p-8 border border-[#6A0DAD]/20">
-              <h2 className="text-2xl font-bold text-[#F5F5F5] mb-6">
-                Submit Your Response
-              </h2>
-              <SubmissionForm
-                onSubmit={handleSubmission}
-                isLoading={isSubmitting}
-              />
-              {submitSuccess && (
-                <div className="mt-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-center">
-                  <p className="text-green-400 font-semibold">
-                    Submitted! Redirecting to feedback...
-                  </p>
+              {/* Submission Section */}
+              <section className="lg:col-span-2">
+                <div
+                  ref={submissionSectionRef}
+                  id="submission-section"
+                >
+                  <div className="bg-[#1C1C1E]/90 backdrop-blur-xl rounded-2xl p-8 border border-[#6A0DAD]/20">
+                    <h2 className="text-2xl font-bold text-[#F5F5F5] mb-6">
+                      Submit Your Response
+                    </h2>
+                    <SubmissionForm
+                      onSubmit={handleSubmission}
+                      isLoading={isSubmitting}
+                    />
+                    {submitSuccess && (
+                      <div className="mt-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-center">
+                        <p className="text-green-400 font-semibold">
+                          Submitted! Redirecting to feedback...
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
+              </section>
             </div>
           </div>
         </section>
