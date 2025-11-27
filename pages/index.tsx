@@ -1252,6 +1252,22 @@ export default function Home() {
   </div>
 </section> 
         {/* Footer */}
+        {/* Auth buttons - Moved to bottom center */}
+<div className="w-full flex justify-center mt-3 gap-3">
+  <Link href="/login">
+    <button className="border border-purple-500/50 text-white px-4 py-2 text-sm sm:text-base rounded-full font-medium hover:bg-purple-500/10 hover:border-purple-400 transition-all duration-300 whitespace-nowrap">
+      Login
+    </button>
+  </Link>
+  <Link href="/signup">
+    <button className="bg-gradient-to-r from-[#9333EA] to-[#06B6D4] text-white px-4 py-2 text-sm sm:text-base rounded-full font-semibold hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 whitespace-nowrap">
+      Sign Up
+    </button>
+  </Link>
+</div>
+
+{/* Footer */}
+
 {/* Footer */}
 <Footer />
       </main>
