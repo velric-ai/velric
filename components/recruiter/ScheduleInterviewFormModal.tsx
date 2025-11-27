@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, Send } from "lucide-react";
+import { X, Calendar, Send, Briefcase } from "lucide-react";
 import { useSnackbar } from "@/contexts/SnackbarContext";
+import CustomSelect from "@/components/ui/CustomSelect";
+import WarningModal from "@/components/ui/WarningModal";
 
 interface ScheduleInterviewFormModalProps {
   isOpen: boolean;
@@ -52,6 +54,11 @@ export default function ScheduleInterviewFormModal({
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [recruiterId, setRecruiterId] = useState<string | null>(null);
+  const [selectedApplicationId, setSelectedApplicationId] = useState<string>("");
+  const [applications, setApplications] = useState<Array<{ id: string; job_title: string }>>([]);
+  const [isLoadingApplications, setIsLoadingApplications] = useState(false);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+  const [validationReasons, setValidationReasons] = useState<string[]>([]);
 
   // Get recruiter ID from localStorage
   useEffect(() => {
@@ -68,12 +75,15 @@ export default function ScheduleInterviewFormModal({
     }
   }, []);
 
-  // Fetch candidate availability when modal opens
+  // Fetch candidate availability and applications when modal opens
   useEffect(() => {
     if (isOpen && candidateId) {
       fetchCandidateAvailability();
+      if (recruiterId) {
+        fetchApplications();
+      }
     }
-  }, [isOpen, candidateId]);
+  }, [isOpen, candidateId, recruiterId]);
 
   const fetchCandidateAvailability = async () => {
     setIsLoadingSlots(true);
@@ -97,6 +107,39 @@ export default function ScheduleInterviewFormModal({
       setSuggestedTimeSlots(generateDefaultTimeSlots());
     } finally {
       setIsLoadingSlots(false);
+    }
+  };
+
+  const fetchApplications = async () => {
+    if (!recruiterId) return;
+    
+    setIsLoadingApplications(true);
+    try {
+      const response = await fetch(`/api/recruiter/applications?recruiterId=${encodeURIComponent(recruiterId)}`);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Failed to fetch applications" }));
+        console.error("Failed to fetch applications:", errorData.error);
+        return;
+      }
+
+      const result = await response.json().catch(() => ({ success: false }));
+      
+      if (result.success && Array.isArray(result.applications)) {
+        // Filter to only show active applications (optional - you can remove this filter if you want all)
+        const activeApplications = result.applications.filter(
+          (app: any) => app.status === "active" || app.status === "draft"
+        );
+        setApplications(activeApplications);
+        console.log("Fetched applications:", activeApplications.length);
+      } else {
+        console.error("Invalid response format:", result);
+        setApplications([]);
+      }
+    } catch (err) {
+      console.error("Error fetching applications:", err);
+    } finally {
+      setIsLoadingApplications(false);
     }
   };
 
@@ -185,6 +228,44 @@ export default function ScheduleInterviewFormModal({
     return Object.keys(newErrors).length === 0;
   };
 
+  const validateApplicationMatch = async (): Promise<{ isValid: boolean; reasons: string[] }> => {
+    // Only validate if an application is selected
+    if (!selectedApplicationId || selectedApplicationId.trim() === "") {
+      return { isValid: true, reasons: [] }; // No application selected, skip validation
+    }
+
+    try {
+      const response = await fetch(`/api/recruiter/validate-application-match`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          applicationId: selectedApplicationId,
+          candidateId,
+        }),
+      });
+
+      if (!response.ok) {
+        return { isValid: true, reasons: [] }; // If validation fails, allow submission
+      }
+
+      const result = await response.json().catch(() => ({ success: false }));
+      
+      if (result.success && result.isValid) {
+        return { isValid: true, reasons: [] };
+      }
+
+      return {
+        isValid: false,
+        reasons: result.reasons || ["Application requirements do not match candidate preferences"],
+      };
+    } catch (err) {
+      console.error("Error validating application match:", err);
+      return { isValid: true, reasons: [] }; // On error, allow submission
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -197,6 +278,16 @@ export default function ScheduleInterviewFormModal({
     if (!recruiterId) {
       showSnackbar("Recruiter authentication required. Please log in again.", "error");
       return;
+    }
+
+    // Validate application match if application is selected
+    if (selectedApplicationId) {
+      const validation = await validateApplicationMatch();
+      if (!validation.isValid) {
+        setValidationReasons(validation.reasons);
+        setShowWarningModal(true);
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -218,6 +309,7 @@ export default function ScheduleInterviewFormModal({
           preferredDate: formData.preferredDate,
           preferredTime: formData.preferredTime,
           message: formData.message,
+          applicationId: selectedApplicationId || undefined,
         }),
       });
 
@@ -258,8 +350,64 @@ export default function ScheduleInterviewFormModal({
       preferredTime: "",
       message: "",
     });
+    setSelectedApplicationId("");
     setErrors({});
+    setShowWarningModal(false);
+    setValidationReasons([]);
     onClose();
+  };
+
+  const handleForceSubmit = async () => {
+    setShowWarningModal(false);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/recruiter/schedule-interview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          candidateId,
+          candidateName,
+          candidateEmail,
+          recruiterId,
+          interviewType: formData.interviewType,
+          context: formData.context,
+          duration: formData.duration,
+          preferredDate: formData.preferredDate,
+          preferredTime: formData.preferredTime,
+          message: formData.message,
+          applicationId: selectedApplicationId || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Failed to schedule interview" }));
+        showSnackbar(errorData.error || "Failed to schedule interview", "error");
+        setIsLoading(false);
+        return;
+      }
+
+      const result = await response.json().catch(() => ({ success: false, error: "Invalid response from server" }));
+
+      if (!result.success) {
+        showSnackbar(result.error || "Failed to schedule interview", "error");
+        setIsLoading(false);
+        return;
+      }
+
+      showSnackbar(`Interview request sent to ${candidateName}`, "success");
+      handleClose();
+    } catch (err: any) {
+      console.error("Error scheduling interview:", err);
+      const errorMessage = err instanceof TypeError && err.message.includes("fetch")
+        ? "Network error. Please check your connection and try again."
+        : err.message || "Failed to schedule interview. Please try again.";
+      showSnackbar(errorMessage, "error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -312,6 +460,35 @@ export default function ScheduleInterviewFormModal({
           {/* Content */}
           <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)] custom-scroll">
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Application Selection */}
+              <div>
+                {isLoadingApplications ? (
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+                    <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                    <p className="text-sm text-white/60">Loading applications...</p>
+                  </div>
+                ) : applications.length > 0 ? (
+                  <CustomSelect
+                    value={selectedApplicationId}
+                    onChange={(value) => setSelectedApplicationId(value)}
+                    options={applications.map((app) => app.id)}
+                    placeholder="Select a job application (optional)"
+                    icon={<Briefcase className="w-4 h-4" />}
+                    label="Job Application (Optional)"
+                    getOptionLabel={(id) => applications.find((app) => app.id === id)?.job_title || id}
+                  />
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      Job Application (Optional)
+                    </label>
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
+                      <p className="text-sm text-white/60">No applications available. Create one in the Applications page.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Interview Type */}
               <div>
                 <label className="block text-sm font-medium text-white/80 mb-2">
@@ -478,6 +655,16 @@ export default function ScheduleInterviewFormModal({
           </div>
         </motion.div>
       </div>
+
+      {/* Warning Modal */}
+      <WarningModal
+        isOpen={showWarningModal}
+        onClose={() => setShowWarningModal(false)}
+        title="Application Requirements Mismatch"
+        reasons={validationReasons}
+        onConfirm={handleForceSubmit}
+        confirmText="Submit Anyway"
+      />
     </AnimatePresence>
   );
 }

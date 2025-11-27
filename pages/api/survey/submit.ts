@@ -1,5 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { supabase, USE_DUMMY } from '@/lib/supabaseClient';
+import {
+  EDUCATION_LEVELS,
+  INDUSTRIES,
+  VALID_STRENGTHS,
+  VALID_LEARNING_PREFERENCES,
+} from '@/data/surveyConstants';
 
 // Rate limiting store (in production, use Redis or database)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -22,62 +28,10 @@ function checkRateLimit(identifier: string, maxRequests: number = 10, windowMs: 
   return true;
 }
 
-// Validation schemas
-const VALID_EDUCATION_LEVELS = [
-  'High School',
-  'Some College',
-  'Bachelors Degree',
-  'Masters Degree',
-  'PhD',
-  'Self-Taught',
-  'Other'
-];
-
-const VALID_INDUSTRIES = [
-  'Technology & Software',
-  'Artificial Intelligence & ML',
-  'Finance & Banking',
-  'Healthcare & Medical',
-  'E-commerce & Retail',
-  'Education & Learning',
-  'Product Management',
-  'Consulting & Services',
-  'Marketing & Advertising',
-  'Operations & Supply Chain',
-  'Data Science & Analytics',
-  'Design & Creative',
-  'Startup Founder',
-  'Government & Public Sector',
-  'Non-profit',
-  'Transportation & Logistics',
-  'Real Estate & Property',
-  'Manufacturing',
-  'Agriculture & Food',
-  'Media & Entertainment',
-  'Legal Services',
-  'Hospitality & Tourism',
-  'Human Resources',
-  'Sales & Business Development',
-  'Research & Development',
-  'Quality Assurance',
-  'Customer Support',
-  'IT Infrastructure',
-  'Other'
-];
-
-const VALID_STRENGTHS = [
-  'Leadership & Management',
-  'Problem Solving',
-  'Coding & Development',
-  'Design Thinking',
-  'Storytelling & Communication',
-  'Data Analysis',
-  'Marketing Strategy',
-  'Technical Communication',
-  'Teamwork & Collaboration'
-];
-
-const VALID_LEARNING_PREFERENCES = ['trial-error', 'reading', 'both'];
+// Use constants from centralized file
+const VALID_EDUCATION_LEVELS = EDUCATION_LEVELS;
+const VALID_INDUSTRIES = INDUSTRIES;
+const VALID_LEARNING_PREFERENCES = VALID_LEARNING_PREFERENCES;
 
 // Validation functions
 function validateFullName(name: string): string | null {
@@ -90,14 +44,14 @@ function validateFullName(name: string): string | null {
 }
 
 function validateEducationLevel(level: string): string | null {
-  if (!level || !VALID_EDUCATION_LEVELS.includes(level)) {
+  if (!level || !EDUCATION_LEVELS.includes(level)) {
     return 'Invalid education level';
   }
   return null;
 }
 
 function validateIndustry(industry: string): string | null {
-  if (!industry || !VALID_INDUSTRIES.includes(industry)) {
+  if (!industry || !INDUSTRIES.includes(industry)) {
     return 'Invalid industry';
   }
   return null;
