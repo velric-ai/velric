@@ -42,6 +42,8 @@ function UserDashboardContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [averageVelricScore, setAverageVelricScore] = useState<number>(0);
+  const [overallVelricScore, setOverallVelricScore] = useState<number | null>(null);
+  const [isVelricScoreLoading, setIsVelricScoreLoading] = useState(false);
   const [scoreGrowthData, setScoreGrowthData] = useState<{
     currentAverage: number;
     previousAverage: number;
@@ -114,6 +116,47 @@ function UserDashboardContent() {
     };
 
     fetchRecentActivity();
+  }, [user?.id]);
+
+  // Fetch overall Velric score from user_stats table
+  useEffect(() => {
+    if (!user?.id) return;
+
+    let isMounted = true;
+
+    const fetchOverallVelricScore = async () => {
+      setIsVelricScoreLoading(true);
+      try {
+        const response = await fetch(`/api/user/velric-score?userId=${user.id}`);
+        const data = await response.json().catch(() => ({
+          success: false,
+          error: "Invalid response",
+        }));
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Failed to fetch Velric score");
+        }
+
+        if (isMounted) {
+          setOverallVelricScore(data.overallVelricScore ?? 0);
+        }
+      } catch (error) {
+        console.error("Error fetching overall Velric score:", error);
+        if (isMounted) {
+          setOverallVelricScore(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsVelricScoreLoading(false);
+        }
+      }
+    };
+
+    fetchOverallVelricScore();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user?.id]);
 
   useEffect(() => {
@@ -208,7 +251,7 @@ function UserDashboardContent() {
 
   // Mock data matching the reference images
   const dashboardData = {
-    velricScore: averageVelricScore || 0,
+    velricScore: isVelricScoreLoading ? 0 : (overallVelricScore ?? averageVelricScore ?? 0),
     percentile: 95,
     lastUpdated: "2025-10-14",
     yearlyActivity: [

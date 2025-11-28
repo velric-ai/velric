@@ -38,10 +38,13 @@ export default async function handler(
   try {
     const supabaseClient = createServerSupabaseClient();
 
-    // Query all user_mission data for the user
+    // Query all user_mission data for the user with mission details
     const { data: userMissions, error } = await supabaseClient
       .from("user_mission")
-      .select("*")
+      .select(`
+        *,
+        missions(title)
+      `)
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
@@ -63,7 +66,7 @@ export default async function handler(
         id: mission.id,
         user_id: mission.user_id,
         mission_id: mission.mission_id,
-        mission_number: missionNumber,
+        title: mission.missions?.title || `Mission ${mission.mission_id}`,
         status: mission.status,
         submission_text: mission.submission_text || null,
         grade: mission.grade || null,

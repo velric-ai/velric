@@ -65,11 +65,20 @@ export default async function handler(
       return res.status(404).json({ success: false, error: "Not found" });
     }
 
-    // Generate mission number from mission_id if available
-    const missionNumber = submission.mission_id 
-      ? generateMissionNumber(submission.mission_id) 
-      : null;
+    // Fetch user's overall Velric score
+    let userVelricScore = null;
+    if (submission.user_id) {
+      const { data: userStats } = await supabaseClient
+        .from("user_stats")
+        .select("overall_velric_score")
+        .eq("user_id", submission.user_id)
+        .single();
+      
+      userVelricScore = userStats?.overall_velric_score || null;
+    }
 
+    const missionNumber = generateMissionNumber(submission.mission_id);
+    
     console.log(`[Feedback ${id}] Retrieved submission:`, {
       found: !!submission,
       id: submission.id,
@@ -80,6 +89,7 @@ export default async function handler(
       grade: submission.grade,
       feedback: submission.feedback,
       velric_score: submission.velric_score,
+      userVelricScore: userVelricScore,
       has_feedback_text: !!submission.feedback_text,
       has_grades: !!submission.grades,
       has_summary: !!submission.summary,
@@ -90,7 +100,7 @@ export default async function handler(
       success: true, 
       submission: {
         ...submission,
-        mission_number: missionNumber,
+        userVelricScore,
       }
     });
   } catch (err: any) {

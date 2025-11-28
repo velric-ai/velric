@@ -197,18 +197,24 @@ export const validateStep = (step: number, formData: any): ValidationResult => {
       );
       if (missionError) errors.missionFocus = missionError;
       break;
+
+    case 3: // Candidate Level
+      if (!formData.level?.value) {
+        errors.level = 'Please select your level';
+      }
+      break;
       
-    case 3: // Strength Areas
+    case 4: // Strength Areas
       const strengthError = validateStrengthAreas(formData.strengthAreas?.value || []);
       if (strengthError) errors.strengthAreas = strengthError;
       break;
       
-    case 4: // Learning Preference
+    case 5: // Learning Preference
       const learningError = validateLearningPreference(formData.learningPreference?.value || '');
       if (learningError) errors.learningPreference = learningError;
       break;
       
-    case 5: // Portfolio (Optional)
+    case 6: // Portfolio (Optional)
       if (formData.portfolio?.url) {
         const urlError = validatePortfolioUrl(formData.portfolio.url);
         if (urlError) errors.portfolioUrl = urlError;
@@ -220,11 +226,11 @@ export const validateStep = (step: number, formData: any): ValidationResult => {
       }
       break;
       
-    case 6: // Platform Connections (Optional)
+    case 7: // Platform Connections (Optional)
       // No validation required - all optional
       break;
       
-    case 7: // Experience Summary
+    case 8: // Experience Summary
       if (!formData.experienceSummary?.value?.trim()) {
         errors.experienceSummary = 'Experience summary is required';
       }

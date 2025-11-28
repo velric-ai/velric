@@ -72,21 +72,28 @@ const initialFormData: SurveyFormData = {
     options: [],
   },
 
-  // Step 3: Strength Areas
+  // Step 3: Candidate Level
+  level: {
+    value: "",
+    error: null,
+    touched: false,
+  },
+
+  // Step 4: Strength Areas
   strengthAreas: {
     value: [],
     error: null,
     touched: false,
   },
 
-  // Step 4: Learning Preference
+  // Step 5: Learning Preference
   learningPreference: {
     value: "",
     error: null,
     touched: false,
   },
 
-  // Step 5: Portfolio (Optional)
+  // Step 6: Portfolio (Optional)
   portfolio: {
     file: null,
     filePreview: null,
@@ -99,7 +106,7 @@ const initialFormData: SurveyFormData = {
     uploadedFilename: null,
   },
 
-  // Step 6: Platform Connections (Optional)
+  // Step 7: Platform Connections (Optional)
   platformConnections: {
     github: {
       connected: false,
@@ -132,7 +139,7 @@ const initialFormData: SurveyFormData = {
     },
   },
 
-  // Step 7: Experience Summary
+  // Step 8: Experience Summary
   experienceSummary: {
     value: "",
     error: null,

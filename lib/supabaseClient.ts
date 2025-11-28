@@ -1864,6 +1864,32 @@ export async function runMissionMigration(): Promise<{
   }
 }
 
+// Get user's overall Velric score
+export async function getUserVelricScore(userId: string): Promise<number | null> {
+  if (USE_DUMMY) {
+    // Return mock score in dummy mode
+    await new Promise((r) => setTimeout(r, 20));
+    return null;
+  }
+  try {
+    const { data, error } = await supabase
+      .from("user_stats")
+      .select("overall_velric_score")
+      .eq("user_id", userId)
+      .single();
+    
+    if (error && error.code !== "PGRST116") throw error; // PGRST116 is "not found"
+    return data?.overall_velric_score || null;
+  } catch (error: any) {
+    // Gracefully handle missing user_stats table
+    if (error?.code === "PGRST205" || error?.code === "42P01") {
+      console.warn("User stats table not found, returning null for Velric score");
+      return null;
+    }
+    throw error;
+  }
+}
+
 // Persist overall Velric score for a user
 export async function updateUserOverallVelricScore(
   userId: string,

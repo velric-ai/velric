@@ -162,6 +162,24 @@ const FeedbackPage: React.FC = () => {
                               />
                             </div>
                           </div>
+
+                          {/* Overall User Velric Score */}
+                          {submission?.userVelricScore !== undefined &&
+                            submission?.userVelricScore !== null && (
+                              <div className="mt-6 pt-6 border-t border-[#6A0DAD]/30">
+                                <p className="text-[14px] text-[#F5F5F5]/70 font-inter mb-3">
+                                  Your Overall Velric Score
+                                </p>
+                                <div className="inline-flex items-baseline gap-2">
+                                  <span className="text-[48px] font-bold font-sora bg-gradient-to-r from-[#00D9FF] to-[#6A0DAD] bg-clip-text text-transparent">
+                                    {submission.userVelricScore.toFixed(1)}
+                                  </span>
+                                  <span className="text-[24px] font-semibold text-[#F5F5F5]/60 font-sora">
+                                    / 10
+                                  </span>
+                                </div>
+                              </div>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -276,15 +294,7 @@ const FeedbackPage: React.FC = () => {
                           </div>
                         ))}
                         {/* Velric overall score out of 10 */}
-                        {typeof submission.velric_score === "number" && (
-                          <div className="bg-[#1C1C1E] border border-[#6A0DAD]/30 rounded-xl p-3 mt-2 text-center">
-                            <span className="text-[16px] font-bold text-[#00D9FF]">
-                              Velric Score:{" "}
-                              {Math.round(submission.velric_score / 10)}
-                              /10
-                            </span>
-                          </div>
-                        )}
+                        
                       </div>
                     )}
                   </div>
