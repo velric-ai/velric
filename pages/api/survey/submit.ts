@@ -31,7 +31,7 @@ function checkRateLimit(identifier: string, maxRequests: number = 10, windowMs: 
 // Use constants from centralized file
 const VALID_EDUCATION_LEVELS = EDUCATION_LEVELS;
 const VALID_INDUSTRIES = INDUSTRIES;
-const VALID_LEARNING_PREFERENCES = VALID_LEARNING_PREFERENCES;
+// VALID_LEARNING_PREFERENCES is already imported and can be used directly
 
 // Validation functions
 function validateFullName(name: string): string | null {
