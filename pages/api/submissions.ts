@@ -4,13 +4,15 @@ import {
   updateSubmission,
   getCompletedSubmissionsByUser,
   updateUserOverallVelricScore,
+  supabase,
+  USE_DUMMY,
 } from "@/lib/supabaseClient";
 
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
 type Data = { success: boolean; id?: string; error?: string };
 
-async function callOpenAIToGrade(text: string) {
+async function callOpenAIToGrade(text: string, isTechnical: boolean = true) {
   if (!OPENAI_KEY) {
     console.warn("[Grading] OpenAI API key not set, using mock grading");
     // Fallback: Generate realistic mock grading based on submission length and quality
@@ -22,27 +24,47 @@ async function callOpenAIToGrade(text: string) {
     let baseScore = 50;
     if (wordCount > 100) baseScore += 10;
     if (wordCount > 300) baseScore += 10;
-    if (hasCode) baseScore += 15;
+    if (hasCode && isTechnical) baseScore += 15;
     if (hasStructure) baseScore += 10;
     // Add some randomness (±5)
     baseScore += Math.floor(Math.random() * 11) - 5;
     baseScore = Math.min(95, Math.max(50, baseScore));
 
+    // Build grades object - exclude Code Quality for non-technical missions
+    const grades: Record<string, number> = {
+      "Technical Accuracy": Math.floor(baseScore / 10),
+      Clarity: Math.floor((baseScore + 5) / 10),
+      Creativity: Math.floor((baseScore - 5) / 10),
+      Relevance: Math.floor(baseScore / 10),
+    };
+
+    // Only include Code Quality for technical missions
+    if (isTechnical) {
+      grades["Code Quality"] = hasCode
+        ? Math.floor((baseScore + 10) / 10)
+        : Math.floor((baseScore - 10) / 10);
+    }
+
+    const rubric: Record<string, string> = {
+      "Technical Accuracy": "Demonstrates understanding of concepts",
+      Clarity: "Clear communication of ideas",
+      Creativity: "Original approach to problem-solving",
+      Relevance: "Addresses the mission requirements",
+    };
+
+    if (isTechnical) {
+      rubric["Code Quality"] = hasCode ? "Well-structured code" : "N/A";
+    }
+
     return {
-      grades: {
-        "Technical Accuracy": Math.floor(baseScore / 10),
-        Clarity: Math.floor((baseScore + 5) / 10),
-        Creativity: Math.floor((baseScore - 5) / 10),
-        Relevance: Math.floor(baseScore / 10),
-        "Code Quality": hasCode
-          ? Math.floor((baseScore + 10) / 10)
-          : Math.floor((baseScore - 10) / 10),
-      },
+      grades,
       feedback: `Your submission demonstrates ${
         baseScore >= 80 ? "excellent" : baseScore >= 70 ? "good" : "adequate"
       } understanding. ${
-        hasCode
+        isTechnical && hasCode
           ? "The code implementation shows promise."
+          : !isTechnical
+          ? "Your strategic approach and analysis are well-presented."
           : "Consider adding code examples to strengthen your submission."
       } ${
         wordCount > 200
@@ -63,27 +85,32 @@ async function callOpenAIToGrade(text: string) {
           : baseScore >= 60
           ? "C+"
           : "C",
-      rubric: {
-        "Technical Accuracy": "Demonstrates understanding of concepts",
-        Clarity: "Clear communication of ideas",
-        Creativity: "Original approach to problem-solving",
-        Relevance: "Addresses the mission requirements",
-        "Code Quality": hasCode ? "Well-structured code" : "N/A",
-      },
+      rubric,
       positiveTemplates: [
         "Great attention to detail",
         "Clear documentation",
         "Good problem-solving approach",
       ],
-      improvementTemplates: [
-        "Consider adding more examples",
-        "Expand on edge cases",
-        "Improve code comments",
-      ],
+      improvementTemplates: isTechnical
+        ? [
+            "Consider adding more examples",
+            "Expand on edge cases",
+            "Improve code comments",
+          ]
+        : [
+            "Consider adding more examples",
+            "Expand on analysis depth",
+            "Strengthen strategic recommendations",
+          ],
     };
   }
 
-  const system = `You are an expert grader. You will receive a submission text for an assignment or project. Your job is to infer the assignment/task from the submission itself and provide feedback, grades, rubric, and feedback templates accordingly. Return ONLY a single JSON object (no surrounding text) with the following keys:\n- grades: an object mapping exactly these five categories to integer scores 1-10 (Technical Accuracy, Clarity, Creativity, Relevance, Code Quality)\n- feedback: a detailed textual feedback string (2-6 short paragraphs)\n- summary: a 1-2 sentence overall summary\n- overall_score: integer 0-100 representing combined score\n- letter_grade: short letter grade string (e.g. A, A-, B+)\n- rubric: an object mapping each criterion to a short descriptor sentence\n- positiveTemplates: an array of 2-4 short positive feedback templates (strings)\n- improvementTemplates: an array of 2-4 short improvement suggestion templates (strings)\nInfer the assignment/task from the submission text and grade accordingly. Make sure the JSON is valid and contains all keys.`;
+  // Build grading categories based on mission type
+  const gradingCategories = isTechnical
+    ? "Technical Accuracy, Clarity, Creativity, Relevance, Code Quality"
+    : "Technical Accuracy, Clarity, Creativity, Relevance";
+
+  const system = `You are an expert grader. You will receive a submission text for an assignment or project. Your job is to infer the assignment/task from the submission itself and provide feedback, grades, rubric, and feedback templates accordingly. Return ONLY a single JSON object (no surrounding text) with the following keys:\n- grades: an object mapping exactly these ${isTechnical ? "five" : "four"} categories to integer scores 1-10 (${gradingCategories})\n- feedback: a detailed textual feedback string (2-6 short paragraphs)\n- summary: a 1-2 sentence overall summary\n- overall_score: integer 0-100 representing combined score\n- letter_grade: short letter grade string (e.g. A, A-, B+)\n- rubric: an object mapping each criterion to a short descriptor sentence\n- positiveTemplates: an array of 2-4 short positive feedback templates (strings)\n- improvementTemplates: an array of 2-4 short improvement suggestion templates (strings)\n${isTechnical ? "" : "IMPORTANT: This is a NON-TECHNICAL mission. Do NOT include 'Code Quality' in the grades. Focus on strategic thinking, analysis, and business impact instead."}\nInfer the assignment/task from the submission text and grade accordingly. Make sure the JSON is valid and contains all keys.`;
 
   const user = `Here is a submission text. Please infer the assignment/task and grade it as described above.\n\n${text}`;
 
@@ -147,6 +174,35 @@ export default async function handler(
       .json({ success: false, error: "Missing submissionText or userId" });
 
   try {
+    // 0) Determine if mission is technical or non-technical
+    let isTechnical = true; // Default to technical
+    if (missionId) {
+      try {
+        if (USE_DUMMY) {
+          // For dummy mode, check if field contains "Non-technical" or similar
+          isTechnical = true; // Default assumption for dummy mode
+        } else {
+          const { data: mission, error: missionError } = await supabase
+            .from("missions")
+            .select("field")
+            .eq("id", missionId)
+            .single();
+
+          if (!missionError && mission) {
+            const field = (mission.field || "").toLowerCase();
+            // Check if field explicitly indicates non-technical
+            // Based on the mission generation prompt, field can be "Technical" or "Non-technical"
+            isTechnical = !field.includes("non-technical") && 
+                         field !== "non-technical" &&
+                         !field.startsWith("non-technical");
+          }
+        }
+      } catch (err) {
+        console.warn("[Grading] Could not determine mission type, defaulting to technical:", err);
+        isTechnical = true;
+      }
+    }
+
     // 1) Save submission
     const { submission } = await createSubmission({
       userId: userId!,
@@ -155,8 +211,8 @@ export default async function handler(
     });
 
     // 2) Call OpenAI to grade (MVP requires API key)
-    console.log("[Grading] Starting AI grading for submission:", submission.id);
-    const grading = await callOpenAIToGrade(submissionText);
+    console.log("[Grading] Starting AI grading for submission:", submission.id, "isTechnical:", isTechnical);
+    const grading = await callOpenAIToGrade(submissionText, isTechnical);
     console.log("[Grading] AI returned:", {
       hasGrades: !!grading.grades,
       overall_score: grading.overall_score,

@@ -14,6 +14,7 @@ import {
   Inbox,
   FileText,
 } from "lucide-react";
+import RecruiterNotificationsDropdown from "./RecruiterNotificationsDropdown";
 
 interface RecruiterNavbarProps {
   activeTab?: string;
@@ -27,6 +28,8 @@ export default function RecruiterNavbar({
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+  const [interviewRequestCount, setInterviewRequestCount] = useState(0);
 
   // Auto-detect active tab from route if not provided
   const getActiveTab = () => {
@@ -54,22 +57,49 @@ export default function RecruiterNavbar({
     }
   }, []);
 
+  // Fetch interview request count
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchInterviewCount = async () => {
+      try {
+        const response = await fetch(`/api/recruiter/interview-requests?recruiterId=${user.id}`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            setInterviewRequestCount(result.count || 0);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching interview request count:", error);
+      }
+    };
+
+    fetchInterviewCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchInterviewCount, 30000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (showUserDropdown && !target.closest(".user-dropdown-container")) {
         setShowUserDropdown(false);
       }
+      if (showNotificationsDropdown && !target.closest(".notification-dropdown-container")) {
+        setShowNotificationsDropdown(false);
+      }
     };
 
-    if (showUserDropdown) {
+    if (showUserDropdown || showNotificationsDropdown) {
       document.addEventListener("click", handleClickOutside);
     }
 
     return () => {
       document.removeEventListener("click", handleClickOutside);
     };
-  }, [showUserDropdown]);
+  }, [showUserDropdown, showNotificationsDropdown]);
 
   const handleLogout = () => {
     localStorage.removeItem("velric_user");
@@ -147,16 +177,39 @@ export default function RecruiterNavbar({
         </div>
 
         <div className="flex items-center space-x-4">
-          <motion.button
-            className="relative p-2 rounded-lg hover:bg-white/5 transition-colors"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <Bell className="w-5 h-5 text-white/80" />
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-pink-500 to-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
-              5
-            </span>
-          </motion.button>
+          {/* Notification Bell */}
+          <div className="relative notification-dropdown-container">
+            <motion.button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowNotificationsDropdown(!showNotificationsDropdown);
+              }}
+              className="relative p-2 rounded-lg hover:bg-white/10 transition-colors"
+              title="Interview Requests"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <Bell className="w-5 h-5 text-white/70 hover:text-white" />
+              {interviewRequestCount > 0 && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center"
+                >
+                  <span className="text-xs font-bold text-white">
+                    {interviewRequestCount > 9 ? "9+" : interviewRequestCount}
+                  </span>
+                </motion.div>
+              )}
+            </motion.button>
+            {showNotificationsDropdown && user?.id && (
+              <RecruiterNotificationsDropdown
+                isOpen={showNotificationsDropdown}
+                onClose={() => setShowNotificationsDropdown(false)}
+                recruiterId={user.id}
+              />
+            )}
+          </div>
 
           <div className="relative user-dropdown-container">
             <motion.button

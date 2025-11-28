@@ -92,7 +92,8 @@ export function StepBasicInfo({
 
   const handleNameChange = (value: string) => {
     const sanitized = sanitizeName(value);
-    const error = formData.fullName.touched ? validateFullName(sanitized) : null;
+    // Don't validate during typing, only on blur
+    const error = formData.fullName.touched ? validateFullName(sanitized.trim()) : null;
     
     updateFormData({
       fullName: {
@@ -104,10 +105,12 @@ export function StepBasicInfo({
   };
 
   const handleNameBlur = () => {
-    const error = validateFullName(formData.fullName.value);
+    // Trim only on blur for validation
+    const trimmedValue = formData.fullName.value.trim();
+    const error = validateFullName(trimmedValue);
     updateFormData({
       fullName: {
-        ...formData.fullName,
+        value: trimmedValue,
         error,
         touched: true
       }

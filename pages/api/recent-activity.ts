@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { generateMissionNumber } from "@/utils/missionNumber";
 
 function createServerSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -78,7 +79,10 @@ export default async function handler(
 
     // Format activities to match dashboard structure
     const activities = (userMissions || []).map((mission: any) => {
-      const missionTitle = `Mission #${mission.mission_id}`;
+      // Generate unique mission number - handle null/undefined mission_id
+      const missionId = mission.mission_id ? String(mission.mission_id) : null;
+      const missionNumber = generateMissionNumber(missionId);
+      const missionTitle = missionNumber;
       const createdDate = new Date(mission.created_at);
       const now = new Date();
       const diffMs = now.getTime() - createdDate.getTime();
@@ -113,6 +117,7 @@ export default async function handler(
         timeAgo: timeAgo,
         status: mission.status,
         mission_id: mission.mission_id,
+        mission_number: missionNumber,
       };
     });
 

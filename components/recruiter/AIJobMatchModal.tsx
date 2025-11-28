@@ -1,27 +1,33 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, Search, TrendingUp, Calendar } from "lucide-react";
+import { useSnackbar } from "@/contexts/SnackbarContext";
 import ScheduleInterviewFormModal from "./ScheduleInterviewFormModal";
-import { Candidate, mockCandidates } from "@/lib/mockCandidates";
-import { getClusterById, mapSkillToClusters } from "@/lib/skillClusters";
 
 interface AIJobMatchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  candidates?: Candidate[]; // Optional, defaults to mockCandidates
 }
 
-interface MatchResult {
-  candidate: Candidate;
-  matchScore: number;
-  matchedClusters: string[];
-  overlapPercentage: number;
+interface SearchResult {
+  id: string;
+  name: string;
+  email: string;
+  velricScore?: number;
+  domain?: string;
+  location?: string;
+  matchReason?: string;
+  industry?: string;
+  mission_focus?: string[];
+  strength_areas?: string[];
+  experience_summary?: string;
 }
 
-export default function AIJobMatchModal({ isOpen, onClose, candidates = mockCandidates }: AIJobMatchModalProps) {
+export default function AIJobMatchModal({ isOpen, onClose }: AIJobMatchModalProps) {
+  const { showSnackbar } = useSnackbar();
   const [jobDescription, setJobDescription] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [matches, setMatches] = useState<MatchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<{
     id: string;
@@ -30,69 +36,82 @@ export default function AIJobMatchModal({ isOpen, onClose, candidates = mockCand
   } | null>(null);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
-  const generateMatches = () => {
-    if (!jobDescription.trim()) return;
+  const handleSearch = async () => {
+    if (!jobDescription.trim()) {
+      showSnackbar("Please enter a job description or search prompt", "error");
+      return;
+    }
 
     setIsProcessing(true);
     setHasSearched(true);
 
-    // Simulate processing delay
-    setTimeout(() => {
-      // Extract keywords from job description
-      const descriptionLower = jobDescription.toLowerCase();
-      const words = descriptionLower.split(/\s+/).filter(w => w.length > 3);
+    try {
+      console.log("Sending prompt to API:", jobDescription);
       
-      // Find clusters mentioned in job description
-      const mentionedClusters = new Set<string>();
-      for (const word of words) {
-        const clusters = mapSkillToClusters(word);
-        clusters.forEach(c => mentionedClusters.add(c));
+      const response = await fetch("/api/recruiter/search-candidates", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt: jobDescription }),
+      });
+
+      // Check if response is ok
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: `HTTP error! status: ${response.status}` };
+        }
+        const errorMessage = errorData.error || `Server error: ${response.status}`;
+        showSnackbar(errorMessage, "error");
+        setSearchResults([]);
+        return;
       }
 
-      // Calculate matches
-      const results: MatchResult[] = candidates.map(candidate => {
-        // Count cluster overlaps
-        const candidateClusters = new Set([
-          ...candidate.clusters.core_stack,
-          ...candidate.clusters.domain_tags,
-          ...candidate.clusters.strength_tags
-        ]);
+      const result = await response.json();
 
-        const matchedClusters = Array.from(mentionedClusters).filter(c => candidateClusters.has(c));
-        const overlapPercentage = mentionedClusters.size > 0 
-          ? (matchedClusters.length / mentionedClusters.size) * 100 
-          : 0;
+      if (!result.success) {
+        const errorMessage = result.error || "Failed to search candidates";
+        showSnackbar(errorMessage, "error");
+        setSearchResults([]);
+        return;
+      }
 
-        // Match score: 60% Velric Score + 40% cluster overlap
-        const matchScore = Math.round(
-          candidate.velricScore * 0.6 + 
-          Math.min(overlapPercentage, 100) * 0.4
-        );
+      const candidates = result.candidates || [];
+      setSearchResults(candidates);
 
-        return {
-          candidate,
-          matchScore,
-          matchedClusters,
-          overlapPercentage: Math.round(overlapPercentage)
-        };
-      });
-
-      // Sort by match score (descending), then by Velric Score
-      results.sort((a, b) => {
-        if (b.matchScore !== a.matchScore) {
-          return b.matchScore - a.matchScore;
-        }
-        return b.candidate.velricScore - a.candidate.velricScore;
-      });
-
-      setMatches(results);
+      // Show success message
+      if (candidates.length > 0) {
+        showSnackbar(`Found ${candidates.length} candidate${candidates.length !== 1 ? 's' : ''}`, "success");
+      } else {
+        showSnackbar("No candidates found. Try adjusting your job description.", "info");
+      }
+    } catch (err: any) {
+      console.error("Error searching candidates:", err);
+      
+      // Determine error message based on error type
+      let errorMessage = "Failed to search candidates. Please try again.";
+      
+      if (err instanceof TypeError && err.message.includes("fetch")) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      } else if (err instanceof SyntaxError) {
+        errorMessage = "Invalid response from server. Please try again.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      showSnackbar(errorMessage, "error");
+      setSearchResults([]);
+    } finally {
       setIsProcessing(false);
-    }, 1500);
+    }
   };
 
   const handleClose = () => {
     setJobDescription("");
-    setMatches([]);
+    setSearchResults([]);
     setHasSearched(false);
     onClose();
   };
@@ -149,16 +168,20 @@ export default function AIJobMatchModal({ isOpen, onClose, candidates = mockCand
             {/* Job Description Input */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-white/80 mb-2">
-                Paste Job Description
+                Enter Job Description or Search Prompt
               </label>
               <textarea
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
-                placeholder="Paste the job description here... For example: 'Looking for a Senior Frontend Developer with React, TypeScript experience. Must have experience with Next.js and modern UI/UX design.'"
+                placeholder="Enter job description or search prompt. Examples:
+- 'Looking for a Senior Frontend Developer with React, TypeScript experience'
+- 'Find candidates with Python and Machine Learning skills in Technology industry'
+- 'Search for developers with 5+ years experience in Backend Development'
+- 'Show all candidates with React and Next.js experience'"
                 className="w-full h-32 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400 resize-none"
               />
               <button
-                onClick={generateMatches}
+                onClick={handleSearch}
                 disabled={!jobDescription.trim() || isProcessing}
                 className="mt-4 w-full px-6 py-3 rounded-xl font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 style={{
@@ -168,7 +191,7 @@ export default function AIJobMatchModal({ isOpen, onClose, candidates = mockCand
                 {isProcessing ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Generating Matches...</span>
+                    <span>Searching Candidates...</span>
                   </>
                 ) : (
                   <>
@@ -184,24 +207,24 @@ export default function AIJobMatchModal({ isOpen, onClose, candidates = mockCand
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-white">
-                    {matches.length} Candidate{matches.length !== 1 ? 's' : ''} Found
+                    {searchResults.length} Candidate{searchResults.length !== 1 ? 's' : ''} Found
                   </h3>
-                  {matches.length > 0 && (
+                  {searchResults.length > 0 && (
                     <span className="text-sm text-white/60">
                       Sorted by match score
                     </span>
                   )}
                 </div>
 
-                {matches.length === 0 ? (
+                {searchResults.length === 0 ? (
                   <div className="p-8 text-center rounded-xl bg-white/5 border border-white/10">
                     <p className="text-white/60">No matches found. Try adjusting your job description.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {matches.map((match, index) => (
+                    {searchResults.map((candidate, index) => (
                       <motion.div
-                        key={match.candidate.id}
+                        key={candidate.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
@@ -211,41 +234,103 @@ export default function AIJobMatchModal({ isOpen, onClose, candidates = mockCand
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-2">
                               <h4 className="text-lg font-semibold text-white">
-                                {match.candidate.name}
+                                {candidate.name}
                               </h4>
                               <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
                                 #{index + 1}
                               </span>
                             </div>
-                            <p className="text-sm text-white/60 mb-2">
-                              {match.candidate.domain} • Velric Score: {match.candidate.velricScore}
+                            <p className="text-sm text-white/60 mb-1">
+                              {candidate.email}
                             </p>
-                            {match.candidate.location && (
-                              <p className="text-xs text-white/50">{match.candidate.location}</p>
+                            {candidate.industry && (
+                              <p className="text-sm text-white/60 mb-1">
+                                {candidate.industry}
+                              </p>
+                            )}
+                            {candidate.matchReason && (
+                              <p className="text-xs text-cyan-400 mt-2">
+                                {candidate.matchReason}
+                              </p>
                             )}
                           </div>
                           <div className="text-right">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <TrendingUp className="w-4 h-4 text-cyan-400" />
-                              <span className="text-2xl font-bold text-cyan-300">
-                                {match.matchScore}%
-                              </span>
-                            </div>
-                            <p className="text-xs text-white/60">Match Score</p>
-                            <p className="text-xs text-cyan-400 mt-1">
-                              {match.overlapPercentage}% overlap
-                            </p>
+                            {candidate.velricScore && (
+                              <>
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <TrendingUp className="w-4 h-4 text-cyan-400" />
+                                  <span className="text-2xl font-bold text-cyan-300">
+                                    {candidate.velricScore}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-white/60">Velric Score</p>
+                              </>
+                            )}
                           </div>
                         </div>
+
+                        {/* Mission Focus and Strength Areas */}
+                        {(candidate.mission_focus && candidate.mission_focus.length > 0) || 
+                         (candidate.strength_areas && candidate.strength_areas.length > 0) ? (
+                          <div className="mt-3 pt-3 border-t border-white/10">
+                            {candidate.mission_focus && candidate.mission_focus.length > 0 && (
+                              <div className="mb-2">
+                                <p className="text-xs text-white/60 mb-1">Mission Focus:</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {candidate.mission_focus.slice(0, 5).map((focus, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="px-2 py-1 rounded-full text-xs border border-cyan-500/30 bg-cyan-500/20 text-cyan-300"
+                                    >
+                                      {focus}
+                                    </span>
+                                  ))}
+                                  {candidate.mission_focus.length > 5 && (
+                                    <span className="px-2 py-1 rounded-full text-xs text-white/60">
+                                      +{candidate.mission_focus.length - 5} more
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            {candidate.strength_areas && candidate.strength_areas.length > 0 && (
+                              <div>
+                                <p className="text-xs text-white/60 mb-1">Strengths:</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {candidate.strength_areas.slice(0, 5).map((strength, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="px-2 py-1 rounded-full text-xs border border-purple-500/30 bg-purple-500/20 text-purple-300"
+                                    >
+                                      {strength}
+                                    </span>
+                                  ))}
+                                  {candidate.strength_areas.length > 5 && (
+                                    <span className="px-2 py-1 rounded-full text-xs text-white/60">
+                                      +{candidate.strength_areas.length - 5} more
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+
+                        {/* Experience Summary */}
+                        {candidate.experience_summary && (
+                          <p className="mt-3 text-sm text-white/70 line-clamp-2">
+                            {candidate.experience_summary}
+                          </p>
+                        )}
 
                         {/* Schedule Interview Button */}
                         <div className="mt-3 pt-3 border-t border-white/10">
                           <button
                             onClick={() => {
                               setSelectedCandidate({
-                                id: match.candidate.id,
-                                name: match.candidate.name,
-                                email: match.candidate.email,
+                                id: candidate.id,
+                                name: candidate.name,
+                                email: candidate.email,
                               });
                               setIsScheduleModalOpen(true);
                             }}
@@ -258,42 +343,6 @@ export default function AIJobMatchModal({ isOpen, onClose, candidates = mockCand
                             <span>Schedule Interview</span>
                           </button>
                         </div>
-
-                        {match.matchedClusters.length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-white/10">
-                            <p className="text-xs text-white/60 mb-2">Matched Clusters:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {match.matchedClusters.slice(0, 5).map((clusterId) => {
-                                const cluster = getClusterById(clusterId);
-                                if (!cluster) return null;
-                                return (
-                                  <span
-                                    key={clusterId}
-                                    className="px-2 py-1 rounded-full text-xs border"
-                                    style={{
-                                      background: `${cluster.color}20`,
-                                      borderColor: `${cluster.color}60`,
-                                      color: 'white'
-                                    }}
-                                  >
-                                    {cluster.name}
-                                  </span>
-                                );
-                              })}
-                              {match.matchedClusters.length > 5 && (
-                                <span className="px-2 py-1 rounded-full text-xs text-white/60">
-                                  +{match.matchedClusters.length - 5} more
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {match.candidate.about && (
-                          <p className="mt-3 text-sm text-white/70 line-clamp-2">
-                            {match.candidate.about}
-                          </p>
-                        )}
                       </motion.div>
                     ))}
                   </div>

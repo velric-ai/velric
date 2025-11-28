@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { generateMissionNumber } from "@/utils/missionNumber";
 
 function createServerSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -55,10 +56,14 @@ export default async function handler(
       const completedDate = mission.completed_at ? new Date(mission.completed_at) : null;
       const startedDate = mission.started_at ? new Date(mission.started_at) : null;
 
+      // Generate unique mission number from mission_id
+      const missionNumber = generateMissionNumber(mission.mission_id);
+
       return {
         id: mission.id,
         user_id: mission.user_id,
         mission_id: mission.mission_id,
+        mission_number: missionNumber,
         status: mission.status,
         submission_text: mission.submission_text || null,
         grade: mission.grade || null,

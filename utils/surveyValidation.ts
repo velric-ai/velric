@@ -165,7 +165,6 @@ export const sanitizeName = (value: string): string => {
   if (typeof value !== 'string') return '';
   
   return value
-    .trim()
     .slice(0, 50)
     .replace(/[^a-zA-Z\s'-]/g, '');
 };

@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { generateMissionNumber } from "@/utils/missionNumber";
 
 // Create server-side Supabase client with service role key (bypasses RLS)
 function createServerSupabaseClient() {
@@ -64,11 +65,17 @@ export default async function handler(
       return res.status(404).json({ success: false, error: "Not found" });
     }
 
+    // Generate mission number from mission_id if available
+    const missionNumber = submission.mission_id 
+      ? generateMissionNumber(submission.mission_id) 
+      : null;
+
     console.log(`[Feedback ${id}] Retrieved submission:`, {
       found: !!submission,
       id: submission.id,
       user_id: submission.user_id,
       mission_id: submission.mission_id,
+      mission_number: missionNumber,
       status: submission.status,
       grade: submission.grade,
       feedback: submission.feedback,
@@ -79,7 +86,13 @@ export default async function handler(
       letter_grade: submission.letter_grade,
     });
 
-    return res.status(200).json({ success: true, submission });
+    return res.status(200).json({ 
+      success: true, 
+      submission: {
+        ...submission,
+        mission_number: missionNumber,
+      }
+    });
   } catch (err: any) {
     console.error(`[Feedback API] Unexpected error:`, err);
     return res
