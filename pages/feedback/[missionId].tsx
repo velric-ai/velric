@@ -61,12 +61,14 @@ const FeedbackPage: React.FC = () => {
 
           <div className="text-center mb-16">
             {/* Mission Badge */}
-            <div className="inline-flex items-center px-6 py-3 bg-[#1C1C1E] border border-[#6A0DAD]/30 rounded-full mb-8 hover:scale-105 transition-all duration-300">
-              <div className="w-3 h-3 bg-[#00D9FF] rounded-full mr-3 animate-pulse"></div>
-              <span className="text-[#00D9FF] text-[14px] font-inter font-semibold uppercase tracking-wide">
-                Mission #{missionId}
-              </span>
-            </div>
+            {submission?.mission_number && (
+              <div className="inline-flex items-center px-6 py-3 bg-[#1C1C1E] border border-[#6A0DAD]/30 rounded-full mb-8 hover:scale-105 transition-all duration-300">
+                <div className="w-3 h-3 bg-[#00D9FF] rounded-full mr-3 animate-pulse"></div>
+                <span className="text-[#00D9FF] text-[14px] font-inter font-semibold uppercase tracking-wide">
+                  {submission.mission_number}
+                </span>
+              </div>
+            )}
 
             {/* Main Heading */}
             <h1

@@ -175,6 +175,25 @@ export function StepLearningPreference({
                   }}
                 />
                 
+                {/* Selection Indicator - Top Right */}
+                <div className="absolute top-4 right-4 z-20">
+                  <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                    isSelected
+                      ? 'border-green-400 bg-green-500'
+                      : 'border-white/30 group-hover:border-white/50'
+                  }`}>
+                    {isSelected && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.3, type: "spring" }}
+                      >
+                        <Check className="w-5 h-5 text-white" />
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+                
                 {/* Content */}
                 <div className="relative z-10">
                   {/* Icon */}
@@ -198,25 +217,6 @@ export function StepLearningPreference({
                           color: isSelected ? 'white' : preference.color 
                         }} 
                       />
-                    </div>
-                  </div>
-                  
-                  {/* Selection Indicator */}
-                  <div className="absolute top-6 right-6">
-                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
-                      isSelected
-                        ? 'border-green-400 bg-green-500'
-                        : 'border-white/30 group-hover:border-white/50'
-                    }`}>
-                      {isSelected && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ duration: 0.3, type: "spring" }}
-                        >
-                          <Check className="w-5 h-5 text-white" />
-                        </motion.div>
-                      )}
                     </div>
                   </div>
                   

@@ -203,7 +203,7 @@ function AnalyticsContent() {
                                   )}
                                 </div>
                                 <h3 className="text-lg font-semibold text-white">
-                                  Mission #{mission.mission_id}
+                                  {mission.mission_number || `Mission #${mission.mission_id?.substring(0, 8)}`}
                                 </h3>
                                 <p className="text-sm text-white/60 mt-1">
                                   Created: {mission.created_date} at {mission.created_time}
