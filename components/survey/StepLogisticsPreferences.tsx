@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, Globe, MapPin, Plane, Monitor, Check, AlertCircle } from "lucide-react";
+import {
+  REGIONS,
+  SPONSORSHIP_OPTIONS,
+  RELOCATION_OPTIONS,
+  REMOTE_WORK_OPTIONS,
+} from "@/data/surveyConstants";
 
 interface StepLogisticsPreferencesProps {
   formData: any;
@@ -10,39 +16,6 @@ interface StepLogisticsPreferencesProps {
   canProceed: boolean;
   isSubmitting: boolean;
 }
-
-const REGIONS = [
-  "North America",
-  "Latin America",
-  "Europe",
-  "Middle East",
-  "Africa",
-  "South Asia",
-  "East Asia",
-  "Southeast Asia",
-  "Oceania",
-  "Remote only",
-];
-
-const SPONSORSHIP_OPTIONS = [
-  { value: "yes", label: "Yes – specify regions" },
-  { value: "no", label: "No" },
-  { value: "only_remote", label: "Only remote" },
-  { value: "depends", label: "Depends" },
-];
-
-const RELOCATION_OPTIONS = [
-  { value: "anywhere", label: "Anywhere" },
-  { value: "only_some", label: "Only some regions" },
-  { value: "no", label: "No" },
-  { value: "depends", label: "Depends" },
-];
-
-const REMOTE_WORK_OPTIONS = [
-  { value: "yes", label: "Yes" },
-  { value: "no", label: "No" },
-  { value: "depends", label: "Depends" },
-];
 
 export function StepLogisticsPreferences({
   formData,

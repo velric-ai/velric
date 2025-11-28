@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ChevronDown, Check, AlertCircle, Calendar, Clock, Plus, X, Globe } from "lucide-react";
 import { FormInput } from "./FormInput";
 import { validateFullName, validateEducationLevel, validateIndustry, sanitizeName } from "../../utils/surveyValidation";
+import { EDUCATION_LEVELS, INDUSTRIES, DAYS_OF_WEEK, TIME_SLOTS } from "@/data/surveyConstants";
 
 interface StepBasicInfoProps {
   formData: any;
@@ -13,63 +14,6 @@ interface StepBasicInfoProps {
   isSubmitting: boolean;
   resetSubsequentSteps?: () => void;
 }
-
-const EDUCATION_LEVELS = [
-  'High School',
-  'Some College',
-  'Bachelors Degree',
-  'Masters Degree',
-  'PhD',
-  'Self-Taught',
-  'Other'
-];
-
-const INDUSTRIES = [
-  'Technology & Software',
-  'Artificial Intelligence & ML',
-  'Finance & Banking',
-  'Healthcare & Medical',
-  'E-commerce & Retail',
-  'Education & Learning',
-  'Product Management',
-  'Consulting & Services',
-  'Marketing & Advertising',
-  'Operations & Supply Chain',
-  'Data Science & Analytics',
-  'Design & Creative',
-  'Startup Founder',
-  'Government & Public Sector',
-  'Non-profit',
-  'Transportation & Logistics',
-  'Real Estate & Property',
-  'Manufacturing',
-  'Agriculture & Food',
-  'Media & Entertainment',
-  'Legal Services',
-  'Hospitality & Tourism',
-  'Human Resources',
-  'Sales & Business Development',
-  'Research & Development',
-  'Quality Assurance',
-  'Customer Support',
-  'IT Infrastructure',
-  'Other'
-];
-
-const DAYS_OF_WEEK = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
-
-const TIME_SLOTS = Array.from({ length: 24 }, (_, i) => {
-  const hour = i.toString().padStart(2, "0");
-  return `${hour}:00`;
-});
 
 export function StepBasicInfo({ 
   formData, 
