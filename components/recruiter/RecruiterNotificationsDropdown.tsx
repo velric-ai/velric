@@ -9,9 +9,11 @@ interface InterviewRequest {
   candidate_email?: string | null;
   interview_type: string;
   context: string;
-  duration: number;
+  duration?: number; // Optional for backward compatibility
   preferred_date: string;
   preferred_time: string;
+  start_time?: string | null;
+  end_time?: string | null;
   message: string | null;
   status: string;
   created_at: string;

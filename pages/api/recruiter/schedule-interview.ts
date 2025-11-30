@@ -10,9 +10,10 @@ type ScheduleInterviewResponse =
         recruiter_id: string;
         interview_type: string;
         context: string;
-        duration: number;
         preferred_date: string;
         preferred_time: string;
+        start_time?: string;
+        end_time?: string;
         message: string | null;
         status: string;
         created_at: string;
@@ -42,9 +43,10 @@ export default async function handler(
       candidateEmail,
       interviewType,
       context,
-      duration,
       preferredDate,
       preferredTime,
+      startTime,
+      endTime,
       message,
       applicationId,
     } = req.body;
@@ -57,11 +59,37 @@ export default async function handler(
       });
     }
 
-    if (!interviewType || !context || !duration || !preferredDate || !preferredTime) {
+    if (!interviewType || !context || !preferredDate || (!preferredTime && !startTime)) {
       return res.status(400).json({
         success: false,
         error: "All required fields must be provided",
       });
+    }
+
+    // Validate that both startTime and endTime are provided together
+    if (startTime && !endTime) {
+      return res.status(400).json({
+        success: false,
+        error: "End time is required when start time is provided",
+      });
+    }
+
+    if (endTime && !startTime) {
+      return res.status(400).json({
+        success: false,
+        error: "Start time is required when end time is provided",
+      });
+    }
+
+    // Validate time range if provided
+    if (startTime && endTime) {
+      const timeRegex = /^\d{2}:\d{2}$/;
+      if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid time format. Use HH:MM",
+        });
+      }
     }
 
     // Get recruiter ID from request headers or body
@@ -80,18 +108,19 @@ export default async function handler(
     if (USE_DUMMY) {
       const mockInterviewRequest = {
         id: `interview_${Date.now()}`,
-        candidate_id: candidateId,
-        recruiter_id: recruiterId || "recruiter_1",
-        interview_type: interviewType,
-        context: context,
-        duration: duration,
-        preferred_date: preferredDate,
-        preferred_time: preferredTime,
-        message: message || null,
-        status: "pending",
-        application_ids: applicationId ? [applicationId] : [],
-        created_at: new Date().toISOString(),
-      };
+      candidate_id: candidateId,
+      recruiter_id: recruiterId || "recruiter_1",
+      interview_type: interviewType,
+      context: context,
+      preferred_date: preferredDate,
+      preferred_time: preferredTime || startTime,
+      start_time: startTime || preferredTime,
+      end_time: endTime || null,
+      message: message || null,
+      status: "pending",
+      application_ids: applicationId ? [applicationId] : [],
+      created_at: new Date().toISOString(),
+    };
 
       return res.status(201).json({
         success: true,
@@ -100,7 +129,7 @@ export default async function handler(
       });
     }
 
-    // Validate date and time format
+    // Validate date format
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     const timeRegex = /^\d{2}:\d{2}$/;
 
@@ -111,7 +140,8 @@ export default async function handler(
       });
     }
 
-    if (!timeRegex.test(preferredTime)) {
+    // Validate preferredTime if provided (for backward compatibility)
+    if (preferredTime && !timeRegex.test(preferredTime)) {
       return res.status(400).json({
         success: false,
         error: "Invalid time format. Use HH:MM",
@@ -125,9 +155,10 @@ export default async function handler(
       recruiter_id: recruiterId,
       interview_type: interviewType,
       context: context.trim(),
-      duration: parseInt(duration, 10),
       preferred_date: preferredDate,
-      preferred_time: preferredTime,
+      preferred_time: preferredTime || startTime, // Use startTime if preferredTime not provided
+      start_time: startTime || preferredTime, // Use preferredTime if startTime not provided (backward compatibility)
+      end_time: endTime || null,
       message: message?.trim() || null,
       status: "pending",
     };
@@ -159,9 +190,10 @@ export default async function handler(
         recruiter_id: interviewRequest.recruiter_id,
         interview_type: interviewRequest.interview_type,
         context: interviewRequest.context,
-        duration: interviewRequest.duration,
         preferred_date: interviewRequest.preferred_date,
         preferred_time: interviewRequest.preferred_time,
+        start_time: interviewRequest.start_time || null,
+        end_time: interviewRequest.end_time || null,
         message: interviewRequest.message,
         status: interviewRequest.status,
         created_at: interviewRequest.created_at,

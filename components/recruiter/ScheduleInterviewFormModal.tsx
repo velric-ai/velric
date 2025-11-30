@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Calendar, Send, Briefcase } from "lucide-react";
-import { useSnackbar } from "@/contexts/SnackbarContext";
+import { useSnackbar } from "@/hooks/useSnackbar";
 import CustomSelect from "@/components/ui/CustomSelect";
 import WarningModal from "@/components/ui/WarningModal";
 
@@ -24,13 +24,6 @@ const INTERVIEW_TYPES = [
   "Other",
 ];
 
-const DURATION_OPTIONS = [
-  { value: 30, label: "30 minutes" },
-  { value: 45, label: "45 minutes" },
-  { value: 60, label: "60 minutes" },
-  { value: 90, label: "90 minutes" },
-  { value: 120, label: "2 hours" },
-];
 
 export default function ScheduleInterviewFormModal({
   isOpen,
@@ -44,14 +37,11 @@ export default function ScheduleInterviewFormModal({
   const [formData, setFormData] = useState({
     interviewType: "Screening",
     context: missionTitle || "",
-    duration: 60,
     preferredDate: "",
     preferredTime: "",
     message: "",
   });
-  const [suggestedTimeSlots, setSuggestedTimeSlots] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [recruiterId, setRecruiterId] = useState<string | null>(null);
   const [selectedApplicationId, setSelectedApplicationId] = useState<string>("");
@@ -59,6 +49,12 @@ export default function ScheduleInterviewFormModal({
   const [isLoadingApplications, setIsLoadingApplications] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [validationReasons, setValidationReasons] = useState<string[]>([]);
+  const [startHour, setStartHour] = useState<string>("9");
+  const [startMinute, setStartMinute] = useState<string>("00");
+  const [startAmPm, setStartAmPm] = useState<"AM" | "PM">("AM");
+  const [endHour, setEndHour] = useState<string>("10");
+  const [endMinute, setEndMinute] = useState<string>("00");
+  const [endAmPm, setEndAmPm] = useState<"AM" | "PM">("AM");
 
   // Get recruiter ID from localStorage
   useEffect(() => {
@@ -75,40 +71,12 @@ export default function ScheduleInterviewFormModal({
     }
   }, []);
 
-  // Fetch candidate availability and applications when modal opens
+  // Fetch applications when modal opens
   useEffect(() => {
-    if (isOpen && candidateId) {
-      fetchCandidateAvailability();
-      if (recruiterId) {
-        fetchApplications();
-      }
+    if (isOpen && recruiterId) {
+      fetchApplications();
     }
-  }, [isOpen, candidateId, recruiterId]);
-
-  const fetchCandidateAvailability = async () => {
-    setIsLoadingSlots(true);
-    try {
-      const response = await fetch(`/api/recruiter/candidate-availability?userId=${candidateId}`);
-
-      if (!response.ok) {
-        setSuggestedTimeSlots(generateDefaultTimeSlots());
-        return;
-      }
-
-      const result = await response.json().catch(() => ({ success: false }));
-
-      if (result.success && Array.isArray(result.timeSlots)) {
-        setSuggestedTimeSlots(result.timeSlots);
-      } else {
-        setSuggestedTimeSlots(generateDefaultTimeSlots());
-      }
-    } catch (err) {
-      console.error("Error fetching availability:", err);
-      setSuggestedTimeSlots(generateDefaultTimeSlots());
-    } finally {
-      setIsLoadingSlots(false);
-    }
-  };
+  }, [isOpen, recruiterId]);
 
   const fetchApplications = async () => {
     if (!recruiterId) return;
@@ -143,28 +111,6 @@ export default function ScheduleInterviewFormModal({
     }
   };
 
-  const generateDefaultTimeSlots = (): string[] => {
-    const slots: string[] = [];
-    const today = new Date();
-    
-    // Generate slots for next 7 days
-    for (let day = 1; day <= 7; day++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + day);
-      
-      // Skip weekends
-      if (date.getDay() === 0 || date.getDay() === 6) continue;
-      
-      // Generate time slots: 9 AM, 11 AM, 2 PM, 4 PM
-      const times = ["09:00", "11:00", "14:00", "16:00"];
-      times.forEach((time) => {
-        const dateStr = date.toISOString().split("T")[0];
-        slots.push(`${dateStr} ${time}`);
-      });
-    }
-    
-    return slots.slice(0, 10); // Return top 10 slots
-  };
 
   const handleInputChange = (field: string) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -182,24 +128,57 @@ export default function ScheduleInterviewFormModal({
     }
   };
 
-  const handleTimeSlotSelect = (slot: string) => {
-    const [date, time] = slot.split(" ");
+  const convertTo24Hour = (hour: string, minute: string, ampm: "AM" | "PM"): string => {
+    let hour24 = parseInt(hour, 10);
+    if (ampm === "PM" && hour24 !== 12) {
+      hour24 += 12;
+    } else if (ampm === "AM" && hour24 === 12) {
+      hour24 = 0;
+    }
+    return `${hour24.toString().padStart(2, "0")}:${minute}`;
+  };
+
+  const handleTimeRangeChange = () => {
+    const startTime24 = convertTo24Hour(startHour, startMinute, startAmPm);
+    
+    // Use start time as preferred time
     setFormData((prev) => ({
       ...prev,
-      preferredDate: date,
-      preferredTime: time,
+      preferredTime: startTime24,
     }));
     
     // Clear errors
-    if (errors.preferredDate || errors.preferredTime) {
+    if (errors.preferredTime) {
       setErrors((prev) => {
         const newErrors = { ...prev };
-        delete newErrors.preferredDate;
         delete newErrors.preferredTime;
         return newErrors;
       });
     }
   };
+
+  // Update preferredTime when time range changes (for backward compatibility)
+  useEffect(() => {
+    if (startHour && startMinute && startAmPm) {
+      const startTime24 = convertTo24Hour(startHour, startMinute, startAmPm);
+      setFormData((prev) => ({
+        ...prev,
+        preferredTime: startTime24,
+      }));
+      
+      // Clear errors
+      if (errors.preferredTime) {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.preferredTime;
+          return newErrors;
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startHour, startMinute, startAmPm]);
+
+
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
@@ -210,10 +189,6 @@ export default function ScheduleInterviewFormModal({
 
     if (!formData.context.trim()) {
       newErrors.context = "Context/Message is required";
-    }
-
-    if (!formData.duration || formData.duration <= 0) {
-      newErrors.duration = "Duration is required";
     }
 
     if (!formData.preferredDate) {
@@ -293,6 +268,9 @@ export default function ScheduleInterviewFormModal({
     setIsLoading(true);
 
     try {
+      const startTime24 = convertTo24Hour(startHour, startMinute, startAmPm);
+      const endTime24 = convertTo24Hour(endHour, endMinute, endAmPm);
+      
       const response = await fetch("/api/recruiter/schedule-interview", {
         method: "POST",
         headers: {
@@ -305,9 +283,10 @@ export default function ScheduleInterviewFormModal({
           recruiterId,
           interviewType: formData.interviewType,
           context: formData.context,
-          duration: formData.duration,
           preferredDate: formData.preferredDate,
-          preferredTime: formData.preferredTime,
+          preferredTime: formData.preferredTime, // Keep for backward compatibility
+          startTime: startTime24,
+          endTime: endTime24,
           message: formData.message,
           applicationId: selectedApplicationId || undefined,
         }),
@@ -345,7 +324,6 @@ export default function ScheduleInterviewFormModal({
     setFormData({
       interviewType: "Screening",
       context: missionTitle || "",
-      duration: 60,
       preferredDate: "",
       preferredTime: "",
       message: "",
@@ -362,6 +340,9 @@ export default function ScheduleInterviewFormModal({
     setIsLoading(true);
 
     try {
+      const startTime24 = convertTo24Hour(startHour, startMinute, startAmPm);
+      const endTime24 = convertTo24Hour(endHour, endMinute, endAmPm);
+      
       const response = await fetch("/api/recruiter/schedule-interview", {
         method: "POST",
         headers: {
@@ -374,9 +355,10 @@ export default function ScheduleInterviewFormModal({
           recruiterId,
           interviewType: formData.interviewType,
           context: formData.context,
-          duration: formData.duration,
           preferredDate: formData.preferredDate,
-          preferredTime: formData.preferredTime,
+          preferredTime: formData.preferredTime, // Keep for backward compatibility
+          startTime: startTime24,
+          endTime: endTime24,
           message: formData.message,
           applicationId: selectedApplicationId || undefined,
         }),
@@ -531,80 +513,126 @@ export default function ScheduleInterviewFormModal({
                 )}
               </div>
 
-              {/* Duration */}
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">
-                  Duration <span className="text-red-400">*</span>
-                </label>
-                <select
-                  value={formData.duration}
-                  onChange={handleInputChange("duration")}
-                  className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${
-                    errors.duration ? "border-red-500" : "border-white/10"
-                  } text-white focus:outline-none focus:ring-2 focus:ring-cyan-400`}
-                >
-                  {DURATION_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value} className="bg-[#1a0b2e]">
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.duration && (
-                  <p className="mt-1 text-sm text-red-400">{errors.duration}</p>
-                )}
-              </div>
+              {/* Date and Time Range Selection */}
+              <div className="space-y-4">
+                {/* Date Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">
+                    Interview Date <span className="text-red-400">*</span>
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40 pointer-events-none" />
+                    <input
+                      type="date"
+                      value={formData.preferredDate}
+                      onChange={handleInputChange("preferredDate")}
+                      min={new Date().toISOString().split("T")[0]}
+                      className={`w-full pl-12 pr-4 py-3 rounded-xl bg-white/5 border ${
+                        errors.preferredDate ? "border-red-500" : "border-white/10"
+                      } text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all`}
+                    />
+                  </div>
+                  {errors.preferredDate && (
+                    <p className="mt-1 text-sm text-red-400">{errors.preferredDate}</p>
+                  )}
+                </div>
 
-              {/* Suggested Time Slots */}
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">
-                  Suggested Time Slots <span className="text-red-400">*</span>
-                </label>
-                {isLoadingSlots ? (
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
-                    <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                    <p className="text-sm text-white/60">Loading availability...</p>
-                  </div>
-                ) : suggestedTimeSlots.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {suggestedTimeSlots.map((slot) => {
-                      const [date, time] = slot.split(" ");
-                      const dateObj = new Date(date);
-                      const isSelected =
-                        formData.preferredDate === date && formData.preferredTime === time;
-                      
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() => handleTimeSlotSelect(slot)}
-                          className={`p-3 rounded-xl border transition-all text-left ${
-                            isSelected
-                              ? "border-cyan-400 bg-cyan-500/20 text-cyan-300"
-                              : "border-white/10 bg-white/5 text-white/80 hover:border-cyan-400/50 hover:bg-white/10"
-                          }`}
+                {/* Time Range Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-2">
+                    Time Range <span className="text-red-400">*</span>
+                  </label>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-4">
+                    {/* Start Time */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-16">
+                        <span className="text-xs text-white/60 font-medium">From</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-1">
+                        <select
+                          value={startHour}
+                          onChange={(e) => setStartHour(e.target.value)}
+                          className="flex-1 px-3 py-2.5 rounded-lg bg-[#0D0D0D] border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all"
                         >
-                          <div className="text-xs text-white/60 mb-1">
-                            {dateObj.toLocaleDateString("en-US", {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </div>
-                          <div className="font-semibold">{time}</div>
-                        </button>
-                      );
-                    })}
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                            <option key={h} value={h} className="bg-[#1a0b2e]">
+                              {h}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="text-white/60 font-semibold">:</span>
+                        <select
+                          value={startMinute}
+                          onChange={(e) => setStartMinute(e.target.value)}
+                          className="flex-1 px-3 py-2.5 rounded-lg bg-[#0D0D0D] border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all"
+                        >
+                          {["00", "15", "30", "45"].map((m) => (
+                            <option key={m} value={m} className="bg-[#1a0b2e]">
+                              {m}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={startAmPm}
+                          onChange={(e) => setStartAmPm(e.target.value as "AM" | "PM")}
+                          className="flex-1 px-3 py-2.5 rounded-lg bg-[#0D0D0D] border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all"
+                        >
+                          <option value="AM" className="bg-[#1a0b2e]">AM</option>
+                          <option value="PM" className="bg-[#1a0b2e]">PM</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-16"></div>
+                      <div className="flex-1 h-px bg-white/10"></div>
+                    </div>
+
+                    {/* End Time */}
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 w-16">
+                        <span className="text-xs text-white/60 font-medium">To</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-1">
+                        <select
+                          value={endHour}
+                          onChange={(e) => setEndHour(e.target.value)}
+                          className="flex-1 px-3 py-2.5 rounded-lg bg-[#0D0D0D] border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all"
+                        >
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                            <option key={h} value={h} className="bg-[#1a0b2e]">
+                              {h}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="text-white/60 font-semibold">:</span>
+                        <select
+                          value={endMinute}
+                          onChange={(e) => setEndMinute(e.target.value)}
+                          className="flex-1 px-3 py-2.5 rounded-lg bg-[#0D0D0D] border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all"
+                        >
+                          {["00", "15", "30", "45"].map((m) => (
+                            <option key={m} value={m} className="bg-[#1a0b2e]">
+                              {m}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={endAmPm}
+                          onChange={(e) => setEndAmPm(e.target.value as "AM" | "PM")}
+                          className="flex-1 px-3 py-2.5 rounded-lg bg-[#0D0D0D] border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-all"
+                        >
+                          <option value="AM" className="bg-[#1a0b2e]">AM</option>
+                          <option value="PM" className="bg-[#1a0b2e]">PM</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-center">
-                    <p className="text-sm text-white/60">No availability data found</p>
-                  </div>
-                )}
-                {(errors.preferredDate || errors.preferredTime) && (
-                  <p className="mt-1 text-sm text-red-400">
-                    Please select a time slot
-                  </p>
-                )}
+                  {errors.preferredTime && (
+                    <p className="mt-1 text-sm text-red-400">{errors.preferredTime}</p>
+                  )}
+                </div>
               </div>
 
               {/* Additional Message */}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Clock, User, CheckCircle, XCircle, Loader2 } from "lucide-react";
-import { useSnackbar } from "@/contexts/SnackbarContext";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 interface InterviewRequest {
   id: string;
@@ -10,13 +10,28 @@ interface InterviewRequest {
   recruiter_email?: string | null;
   interview_type: string;
   context: string;
-  duration: number;
+  duration?: number; // Optional for backward compatibility
   preferred_date: string;
   preferred_time: string;
+  start_time?: string | null;
+  end_time?: string | null;
   message: string | null;
   status: string;
   created_at: string;
 }
+
+// Helper function to format time range
+const formatTimeRange = (startTime?: string | null, endTime?: string | null): string => {
+  if (!startTime || !endTime) return "";
+  const formatTime12 = (time24: string): string => {
+    const [hours, minutes] = time24.split(":");
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
+  return `${formatTime12(startTime)} - ${formatTime12(endTime)}`;
+};
 
 interface InterviewRequestsDropdownProps {
   isOpen: boolean;

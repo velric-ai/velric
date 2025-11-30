@@ -16,7 +16,7 @@ import {
 import { ProtectedDashboardRoute } from "../../components/auth/ProtectedRoute";
 import { WelcomeMessage } from "../../components/dashboard/WelcomeMessage";
 import RecruiterNavbar from "../../components/recruiter/RecruiterNavbar";
-import { useSnackbar } from "@/contexts/SnackbarContext";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 interface InterviewRequest {
   id: string;
@@ -25,14 +25,29 @@ interface InterviewRequest {
   candidate_email?: string | null;
   interview_type: string;
   context: string;
-  duration: number;
+  duration?: number; // Optional for backward compatibility
   preferred_date: string;
   preferred_time: string;
+  start_time?: string | null;
+  end_time?: string | null;
   message: string | null;
   status: string;
   created_at: string;
   updated_at: string;
 }
+
+// Helper function to format time range
+const formatTimeRange = (startTime?: string | null, endTime?: string | null): string => {
+  if (!startTime || !endTime) return "";
+  const formatTime12 = (time24: string): string => {
+    const [hours, minutes] = time24.split(":");
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+  };
+  return `${formatTime12(startTime)} - ${formatTime12(endTime)}`;
+};
 
 const STATUS_COLORS = {
   pending: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
@@ -275,12 +290,21 @@ function InboxContent() {
                             </div>
                             <div className="flex items-center space-x-2 text-white/60">
                               <Clock className="w-4 h-4" />
-                              <span className="text-sm">{request.duration} minutes</span>
+                              <span className="text-sm">
+                                {request.start_time && request.end_time
+                                  ? formatTimeRange(request.start_time, request.end_time)
+                                  : request.duration
+                                    ? `${request.duration} minutes`
+                                    : formatTime(request.preferred_time)}
+                              </span>
                             </div>
                             <div className="flex items-center space-x-2 text-white/60">
                               <Calendar className="w-4 h-4" />
                               <span className="text-sm">
-                                {formatDate(request.preferred_date)} at {formatTime(request.preferred_time)}
+                                {formatDate(request.preferred_date)}
+                                {request.start_time && request.end_time
+                                  ? ` (${formatTimeRange(request.start_time, request.end_time)})`
+                                  : ` at ${formatTime(request.preferred_time)}`}
                               </span>
                             </div>
                             <div className="flex items-center space-x-2 text-white/60">

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, User, Briefcase, Mail, Lock, Upload, X } from "lucide-react";
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { SignupData, ValidationError } from '@/types/auth';
 import { validateName, validateEmail, validatePassword } from '@/services/authService';
 import { supabase } from '@/lib/supabaseClient';
