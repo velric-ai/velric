@@ -144,7 +144,7 @@ export default function MissionsPage() {
 
       // Generate missions with user data using existing generate API
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second client timeout
+      const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second client timeout
 
       console.log(`[Missions] Generating new missions for user ${userId}`);
       const generateResponse = await fetch('/api/missions/generate', {

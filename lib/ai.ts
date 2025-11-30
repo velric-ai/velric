@@ -32,6 +32,7 @@ CONTEXT:
 - Interests: {interests}
 - Industry Focus: {industry}
 - Difficulty Level: {difficulty}
+- Level: {level}
 - Time Estimate: less than 2 hours
 - Resume Data: {resume_json}
 
@@ -118,6 +119,7 @@ CONTEXT:
 - Industry Focus: {industry}
 - Difficulty Level: {difficulty}
 - Time Estimate: {timeEstimate}
+- Level: {level}
 
 REQUIREMENTS:
 1. Generate 3-5 unique, practical coding missions
@@ -159,6 +161,7 @@ export async function generateComprehensiveMission(
   industry: string,
   difficulty: "Beginner" | "Intermediate" | "Advanced",
   timeEstimate: string,
+  level: string,
   resumeData?: any
 ): Promise<StaticMission> {
   if (!openai) {
@@ -217,10 +220,11 @@ export async function generateComprehensiveMission(
       .replace("{industry}", industry)
       .replace("{difficulty}", difficulty)
       .replace("{timeEstimate}", timeEstimate)
+      .replace("{level}", level)
       .replace("{resumeData}", resumeDataStr || "No resume data provided");
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4",
       messages: [
         {
           role: "system",
@@ -319,6 +323,7 @@ export async function generateAndStoreMissions(
   interests: string[],
   industry: string,
   difficulty: "Beginner" | "Intermediate" | "Advanced",
+  level: string,
   count: number = 3
 ): Promise<string[]> {
   const generatedMissionIds: string[] = [];
@@ -332,7 +337,8 @@ export async function generateAndStoreMissions(
         industry,
         difficulty,
         `${Math.floor(Math.random() * 8) + 2}-${Math.floor(Math.random() * 8) + 6
-        } hours`
+        } hours`,
+        level
       );
 
       // Store in Supabase

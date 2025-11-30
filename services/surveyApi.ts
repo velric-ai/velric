@@ -44,6 +44,7 @@ export interface SurveyFormData {
     options: string[];
   };
   strengthAreas: { value: string[]; error: string | null; touched: boolean };
+  level: { value: string; error: string | null; touched: boolean };
   learningPreference: { value: string; error: string | null; touched: boolean };
   portfolio: {
     file: File | null;
@@ -53,6 +54,8 @@ export interface SurveyFormData {
     url: string;
     urlError: string | null;
     uploadStatus: "uploading" | "success" | "error" | null;
+    uploadedUrl: string | null;
+    uploadedFilename: string | null;
   };
   platformConnections: {
     github: PlatformConnection;
@@ -127,6 +130,7 @@ export async function submitSurveyData(
       full_name: formData.fullName.value,
       education_level: formData.educationLevel.value,
       industry: formData.industry.value,
+      level: formData.level?.value || null,
       mission_focus: formData.missionFocus.value,
       strength_areas: formData.strengthAreas.value,
       learning_preference: formData.learningPreference.value,

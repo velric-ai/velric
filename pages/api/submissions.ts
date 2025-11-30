@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import {
   createSubmission,
   updateSubmission,
-  getCompletedSubmissionsByUser,
+  getUserVelricScore,
   updateUserOverallVelricScore,
   supabase,
   USE_DUMMY,
@@ -12,107 +12,15 @@ const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
 type Data = { success: boolean; id?: string; error?: string };
 
-async function callOpenAIToGrade(text: string, isTechnical: boolean = true) {
+// First API call: Analyze the submission text and extract key information
+async function analyzeSubmissionText(text: string): Promise<string> {
   if (!OPENAI_KEY) {
-    console.warn("[Grading] OpenAI API key not set, using mock grading");
-    // Fallback: Generate realistic mock grading based on submission length and quality
-    const wordCount = text.split(/\s+/).length;
-    const hasCode = /```|function|const|let|var|class|import/.test(text);
-    const hasStructure = text.length > 100;
-
-    // Calculate base score (50-90) based on submission quality indicators
-    let baseScore = 50;
-    if (wordCount > 100) baseScore += 10;
-    if (wordCount > 300) baseScore += 10;
-    if (hasCode && isTechnical) baseScore += 15;
-    if (hasStructure) baseScore += 10;
-    // Add some randomness (±5)
-    baseScore += Math.floor(Math.random() * 11) - 5;
-    baseScore = Math.min(95, Math.max(50, baseScore));
-
-    // Build grades object - exclude Code Quality for non-technical missions
-    const grades: Record<string, number> = {
-      "Technical Accuracy": Math.floor(baseScore / 10),
-      Clarity: Math.floor((baseScore + 5) / 10),
-      Creativity: Math.floor((baseScore - 5) / 10),
-      Relevance: Math.floor(baseScore / 10),
-    };
-
-    // Only include Code Quality for technical missions
-    if (isTechnical) {
-      grades["Code Quality"] = hasCode
-        ? Math.floor((baseScore + 10) / 10)
-        : Math.floor((baseScore - 10) / 10);
-    }
-
-    const rubric: Record<string, string> = {
-      "Technical Accuracy": "Demonstrates understanding of concepts",
-      Clarity: "Clear communication of ideas",
-      Creativity: "Original approach to problem-solving",
-      Relevance: "Addresses the mission requirements",
-    };
-
-    if (isTechnical) {
-      rubric["Code Quality"] = hasCode ? "Well-structured code" : "N/A";
-    }
-
-    return {
-      grades,
-      feedback: `Your submission demonstrates ${
-        baseScore >= 80 ? "excellent" : baseScore >= 70 ? "good" : "adequate"
-      } understanding. ${
-        isTechnical && hasCode
-          ? "The code implementation shows promise."
-          : !isTechnical
-          ? "Your strategic approach and analysis are well-presented."
-          : "Consider adding code examples to strengthen your submission."
-      } ${
-        wordCount > 200
-          ? "Your detailed explanation is appreciated."
-          : "Try to provide more comprehensive explanations."
-      }`,
-      summary: `${
-        baseScore >= 80 ? "Strong" : baseScore >= 70 ? "Good" : "Satisfactory"
-      } submission with room for improvement.`,
-      overall_score: baseScore,
-      letter_grade:
-        baseScore >= 90
-          ? "A"
-          : baseScore >= 80
-          ? "B+"
-          : baseScore >= 70
-          ? "B"
-          : baseScore >= 60
-          ? "C+"
-          : "C",
-      rubric,
-      positiveTemplates: [
-        "Great attention to detail",
-        "Clear documentation",
-        "Good problem-solving approach",
-      ],
-      improvementTemplates: isTechnical
-        ? [
-            "Consider adding more examples",
-            "Expand on edge cases",
-            "Improve code comments",
-          ]
-        : [
-            "Consider adding more examples",
-            "Expand on analysis depth",
-            "Strengthen strategic recommendations",
-          ],
-    };
+    throw new Error("OpenAI API key not set");
   }
 
-  // Build grading categories based on mission type
-  const gradingCategories = isTechnical
-    ? "Technical Accuracy, Clarity, Creativity, Relevance, Code Quality"
-    : "Technical Accuracy, Clarity, Creativity, Relevance";
+  const system = `You are a submission analyzer. Analyze the provided submission text and extract key information about what the user is trying to accomplish. Return ONLY a brief analysis (2-3 sentences) that identifies the core task, approach, and any notable strengths or weaknesses visible in the submission.`;
 
-  const system = `You are an expert grader. You will receive a submission text for an assignment or project. Your job is to infer the assignment/task from the submission itself and provide feedback, grades, rubric, and feedback templates accordingly. Return ONLY a single JSON object (no surrounding text) with the following keys:\n- grades: an object mapping exactly these ${isTechnical ? "five" : "four"} categories to integer scores 1-10 (${gradingCategories})\n- feedback: a detailed textual feedback string (2-6 short paragraphs)\n- summary: a 1-2 sentence overall summary\n- overall_score: integer 0-100 representing combined score\n- letter_grade: short letter grade string (e.g. A, A-, B+)\n- rubric: an object mapping each criterion to a short descriptor sentence\n- positiveTemplates: an array of 2-4 short positive feedback templates (strings)\n- improvementTemplates: an array of 2-4 short improvement suggestion templates (strings)\n${isTechnical ? "" : "IMPORTANT: This is a NON-TECHNICAL mission. Do NOT include 'Code Quality' in the grades. Focus on strategic thinking, analysis, and business impact instead."}\nInfer the assignment/task from the submission text and grade accordingly. Make sure the JSON is valid and contains all keys.`;
-
-  const user = `Here is a submission text. Please infer the assignment/task and grade it as described above.\n\n${text}`;
+  const user = `Analyze this submission text:\n\n${text}`;
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -127,7 +35,60 @@ async function callOpenAIToGrade(text: string, isTechnical: boolean = true) {
         { role: "user", content: user },
       ],
       temperature: 0.15,
-      max_tokens: 700,
+      max_tokens: 300,
+    }),
+  });
+
+  if (!res.ok) {
+    const textErr = await res.text();
+    throw new Error(`OpenAI error: ${res.status} ${textErr}`);
+  }
+
+  const data = await res.json();
+  const analysis = data?.choices?.[0]?.message?.content || "";
+
+  console.log("[Submission Analysis]:", analysis);
+
+  return analysis;
+}
+
+// Second API call: Generate comprehensive grading based on analysis
+async function generateGradingResponse(
+  text: string,
+  analysis: string
+): Promise<any> {
+  if (!OPENAI_KEY) {
+    throw new Error("OpenAI API key not set");
+  }
+
+  const system = `You are a HR panelist and expert evaluator. You will grade a submission based on the provided analysis and submission text. Return ONLY a single JSON object (no surrounding text) with the following keys:
+- grade: a decimal value from 0-10 (to 1 decimal place) representing the overall mission score.you can give the user 0 also if the user has not done anything in that category
+- grades: an object mapping exactly these five categories to integer scores 0-10 (Technical Accuracy, Clarity, Creativity, Relevance, Code Quality).You're free to analyze,if the user has excelled or failed in any category. you can give the user 0 also if the user has not done anything in that category.
+- feedback: a detailed textual feedback string (2-6 short paragraphs)
+- summary: a 1-2 sentence overall summary
+- letter_grade: short letter grade string (MUST be one of: A, A+, B, B+, C, C+, D, F)
+- rubric: an object mapping each criterion to a short descriptor sentence
+- positiveTemplates: an array of 2-4 short positive feedback templates (strings)
+- improvementTemplates: an array of 2-4 short improvement suggestion templates (strings)
+
+The grade (0-10) should directly reflect the quality of work.This grade can be 0 also if something irrelevant or unusual is provided. Letter grades must be ONLY from the allowed list (A, A+, B, B+, C, C+, D, F). Make sure the JSON is valid and contains all keys.`;
+
+  const user = `Submission analysis:\n${analysis}\n\nSubmission text:\n${text}`;
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${OPENAI_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      temperature: 0.15,
+      max_tokens: 800,
     }),
   });
 
@@ -145,14 +106,15 @@ async function callOpenAIToGrade(text: string, isTechnical: boolean = true) {
   const parsed = JSON.parse(jsonText);
 
   console.log("[OpenAI Grading Response]:", {
-    hasGrades: !!parsed.grades,
+    grade: parsed.grade,
     grades: parsed.grades,
-    overall_score: parsed.overall_score,
     letter_grade: parsed.letter_grade,
+    hasFeedback: !!parsed.feedback,
   });
 
   return parsed;
 }
+
 
 export default async function handler(
   req: NextApiRequest,
@@ -210,94 +172,60 @@ export default async function handler(
       submissionText: submissionText!,
     });
 
-    // 2) Call OpenAI to grade (MVP requires API key)
-    console.log("[Grading] Starting AI grading for submission:", submission.id, "isTechnical:", isTechnical);
-    const grading = await callOpenAIToGrade(submissionText, isTechnical);
-    console.log("[Grading] AI returned:", {
-      hasGrades: !!grading.grades,
-      overall_score: grading.overall_score,
+    // 2) First API call: Analyze the submission text
+    console.log("[Grading] Starting AI analysis for submission:", submission.id);
+    const analysis = await analyzeSubmissionText(submissionText);
+
+    // 3) Second API call: Generate comprehensive grading based on analysis
+    console.log("[Grading] Generating grading response based on analysis");
+    const grading = await generateGradingResponse(submissionText, analysis);
+
+    // 4) Use the grade (0-10) directly as the velric mission score
+    const velricMissionScore = grading.grade;
+
+    console.log("[Velric Mission Score]:", {
+      missionScore: velricMissionScore,
+      grade: grading.grade,
       letter_grade: grading.letter_grade,
-      hasFeedback: !!grading.feedback,
     });
 
-    // 3) Calculate Velric score for user (0-10 scale, harder to get 10/10)
+    // 5) Get current user velric score and update with new mission score
     try {
-      // Get all completed/graded submissions for user
-      const completedSubs = await getCompletedSubmissionsByUser(userId);
-
-      // Collect all scores including current one
-      const allScores = [
-        ...completedSubs.map((sub: any) =>
-          typeof sub.overall_score === "number" ? sub.overall_score : 0
-        ),
-        typeof grading.overall_score === "number" ? grading.overall_score : 0,
-      ];
-
-      // Calculate weighted average (recent submissions have slightly more weight)
-      let weightedSum = 0;
-      let weightSum = 0;
-      allScores.forEach((score, index) => {
-        const weight = 1 + (index / allScores.length) * 0.5; // Recent ones get up to 1.5x weight
-        weightedSum += score * weight;
-        weightSum += weight;
-      });
-      const averageScore = weightSum > 0 ? weightedSum / weightSum : 0;
-
-      console.log("[Velric Score Calculation]:", {
-        allScoresCount: allScores.length,
-        allScoresValues: allScores,
-        averageScore: averageScore,
-        weightedSum,
-        weightSum,
-      });
-
-      // Convert 0-100 scale to 0-10 with harsh curve
-      // Perfect 10 requires 95+ average, 9+ requires 85+, 8+ requires 75+
-      let velricScore = 0;
-      if (averageScore >= 95) velricScore = 10;
-      else if (averageScore >= 90) velricScore = 9.5;
-      else if (averageScore >= 85) velricScore = 9;
-      else if (averageScore >= 80) velricScore = 8.5;
-      else if (averageScore >= 75) velricScore = 8;
-      else if (averageScore >= 70) velricScore = 7.5;
-      else if (averageScore >= 65) velricScore = 7;
-      else if (averageScore >= 60) velricScore = 6.5;
-      else if (averageScore >= 55) velricScore = 6;
-      else velricScore = Math.max(1, averageScore / 10); // Minimum 1.0
-
-      console.log("[Velric Score Calculation Detail]:", {
-        averageScore,
-        beforeCurve: velricScore,
-        curveApplied: averageScore >= 55 ? "tiered" : "linear",
-      });
-
-      // Small bonus for consistency (completing multiple missions)
-      const consistencyBonus = Math.min(0.5, allScores.length * 0.05);
-      velricScore = Math.min(10, velricScore + consistencyBonus);
+      const currentVelricScore = await getUserVelricScore(userId);
+      
+      // Calculate updated velric score (average of current score and new mission score)
+      const updatedVelricScore =
+        currentVelricScore && currentVelricScore > 0
+          ? (currentVelricScore + velricMissionScore) / 2
+          : velricMissionScore;
 
       // Round to 1 decimal place
-      velricScore = Math.round(velricScore * 10) / 10;
+      const finalVelricScore = Math.round(updatedVelricScore * 10) / 10;
 
-      console.log("[Velric Score Final]:", {
-        calculatedScore: velricScore,
-        consistencyBonus,
-        finalScore: velricScore,
+      console.log("[Velric Score Update]:", {
+        previousScore: currentVelricScore,
+        missionScore: velricMissionScore,
+        updatedScore: finalVelricScore,
       });
+
+      // 6) Update submission with grading details (use analysis as the main feedback)
       await updateSubmission(submission.id, {
-        feedback: grading.feedback || grading.summary || null,
+        feedback: analysis || null,
         grades: grading.grades || null,
         summary: grading.summary || null,
-        overall_score: grading.overall_score ?? null,
         letter_grade: grading.letter_grade ?? null,
         rubric: grading.rubric ?? null,
         positiveTemplates: grading.positiveTemplates ?? null,
         improvementTemplates: grading.improvementTemplates ?? null,
-        velricScore,
+        velricScore: velricMissionScore,
         status: "graded",
       });
-      await updateUserOverallVelricScore(userId, velricScore);
+
+      // 7) Update user's overall velric score
+      await updateUserOverallVelricScore(userId, finalVelricScore);
     } catch (e) {
       console.error("Failed to update submission with grading:", e);
+      throw e;
     }
 
     return res.status(200).json({ success: true, id: submission.id });

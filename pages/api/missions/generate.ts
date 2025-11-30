@@ -12,6 +12,7 @@ interface GenerateBody {
   interests?: string[];
   industry?: string;
   difficulty?: "Beginner" | "Intermediate" | "Advanced";
+
   count?: number;
 }
 
@@ -45,7 +46,8 @@ export default async function handler(
       difficulty = "Intermediate",
       count = 3,
       userId,
-    } = (req.body || {}) as GenerateBody & { userId?: string };
+      level = "Intermediate",
+    } = (req.body || {}) as GenerateBody & { userId?: string; level?: string };
 
     const safeCount = Math.min(Math.max(count, 1), 5);
 
@@ -64,7 +66,8 @@ export default async function handler(
             interests,
             industry,
             difficulty,
-            `${2 + i}-${6 + i} hours`
+            `${2 + i}-${6 + i} hours`,
+            level
           );
           return mission;
         } catch (error) {

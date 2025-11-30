@@ -192,6 +192,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fullName,
       educationLevel,
       industry,
+      level,
       missionFocus,
       strengthAreas,
       learningPreference,
@@ -204,6 +205,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('[Survey Submit] Full request body portfolioFile:', JSON.stringify(portfolioFile, null, 2));
     console.log('[Survey Submit] Full request body portfolioUrl:', portfolioUrl);
+
+      // Debug: Log level value from request
+      console.log('[Survey Submit] Incoming level value:', req.body.level);
 
     // Validation errors collection
     const errors: { [key: string]: string } = {};
@@ -249,6 +253,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fullName: sanitizeInput(fullName),
       educationLevel: sanitizeInput(educationLevel),
       industry: sanitizeInput(industry),
+      level: sanitizeInput(level),
       missionFocus: Array.isArray(missionFocus) ? missionFocus.map(sanitizeInput) : [],
       strengthAreas: Array.isArray(strengthAreas) ? strengthAreas.map(sanitizeInput) : [],
       learningPreference: sanitizeInput(learningPreference),
@@ -303,6 +308,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       full_name: sanitizedData.fullName,
       education_level: sanitizedData.educationLevel,
       industry: sanitizedData.industry,
+      level: sanitizedData.level,
       mission_focus: sanitizedData.missionFocus,
       strength_areas: sanitizedData.strengthAreas,
       learning_preference: sanitizedData.learningPreference,
@@ -325,6 +331,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       metadata: sanitizedData.metadata,
       created_at: new Date().toISOString(),
     };
+      console.log('[Survey Submit] Final payload:', JSON.stringify(payload, null, 2));
 
     console.log('[Survey Submit] Storing portfolio data:', {
       portfolioFilename: portfolioFilename,
