@@ -8,7 +8,7 @@ import { ProtectedDashboardRoute } from "@/components/auth/ProtectedRoute";
 import { useRouter } from "next/router";
 import RecruiterNavbar from "@/components/recruiter/RecruiterNavbar";
 import { getIndustryOptions } from "@/utils/surveyValidation";
-import { useSnackbar } from "@/contexts/SnackbarContext";
+import { useSnackbar } from "@/hooks/useSnackbar";
 import { useDebounce } from "@/hooks/useDebounce";
 
 // All industries from survey form (Step 1)

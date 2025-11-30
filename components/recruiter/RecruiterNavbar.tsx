@@ -15,6 +15,7 @@ import {
   FileText,
 } from "lucide-react";
 import RecruiterNotificationsDropdown from "./RecruiterNotificationsDropdown";
+import { useAuth } from "@/hooks/useAuth";
 
 interface RecruiterNavbarProps {
   activeTab?: string;
@@ -26,7 +27,7 @@ export default function RecruiterNavbar({
   onTabChange,
 }: RecruiterNavbarProps) {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const { user } = useAuth();
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   const [interviewRequestCount, setInterviewRequestCount] = useState(0);
@@ -44,18 +45,6 @@ export default function RecruiterNavbar({
   };
 
   const currentActiveTab = getActiveTab();
-
-  useEffect(() => {
-    const userDataString = localStorage.getItem("velric_user");
-    if (userDataString) {
-      try {
-        const parsedUser = JSON.parse(userDataString);
-        setUser(parsedUser);
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-      }
-    }
-  }, []);
 
   // Fetch interview request count
   useEffect(() => {
@@ -101,8 +90,10 @@ export default function RecruiterNavbar({
     };
   }, [showUserDropdown, showNotificationsDropdown]);
 
+  const { logout } = useAuth();
+  
   const handleLogout = () => {
-    localStorage.removeItem("velric_user");
+    logout();
     router.push("/");
   };
 

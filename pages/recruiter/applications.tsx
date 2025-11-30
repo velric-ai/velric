@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { ProtectedDashboardRoute } from "@/components/auth/ProtectedRoute";
 import RecruiterNavbar from "@/components/recruiter/RecruiterNavbar";
-import { useSnackbar } from "@/contexts/SnackbarContext";
+import { useSnackbar } from "@/hooks/useSnackbar";
 import { getIndustryOptions } from "@/utils/surveyValidation";
 import {
   REGIONS,

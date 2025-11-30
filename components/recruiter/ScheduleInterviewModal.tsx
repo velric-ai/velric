@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Calendar, Search, Sparkles, User } from "lucide-react";
-import { useSnackbar } from "@/contexts/SnackbarContext";
+import { useSnackbar } from "@/hooks/useSnackbar";
 import ScheduleInterviewFormModal from "./ScheduleInterviewFormModal";
 
 interface ScheduleInterviewModalProps {

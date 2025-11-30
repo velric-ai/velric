@@ -11,9 +11,11 @@ type InterviewRequestsResponse =
         recruiter_email?: string;
         interview_type: string;
         context: string;
-        duration: number;
+        duration?: number; // Optional for backward compatibility
         preferred_date: string;
         preferred_time: string;
+        start_time?: string | null;
+        end_time?: string | null;
         message: string | null;
         status: string;
         created_at: string;
@@ -53,9 +55,10 @@ export default async function handler(
           recruiter_email: "john@example.com",
           interview_type: "Technical",
           context: "Senior Frontend Developer position",
-          duration: 60,
           preferred_date: "2025-01-20",
           preferred_time: "14:00",
+          start_time: "14:00",
+          end_time: "15:00",
           message: "Looking forward to discussing your experience",
           status: "pending",
           created_at: new Date().toISOString(),
@@ -100,9 +103,11 @@ export default async function handler(
           recruiter_email: recruiterData?.email || null,
           interview_type: request.interview_type,
           context: request.context,
-          duration: request.duration,
+          duration: request.duration || undefined,
           preferred_date: request.preferred_date,
           preferred_time: request.preferred_time,
+          start_time: request.start_time || null,
+          end_time: request.end_time || null,
           message: request.message,
           status: request.status,
           created_at: request.created_at,
