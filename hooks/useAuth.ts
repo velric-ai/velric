@@ -29,13 +29,15 @@ export const useAuth = () => {
     }
   };
 
-  const signup = async (data: SignupData): Promise<SignupResponse> => {
+  const signup = async (data: SignupData): Promise<SignupResponse | null> => {
     const result = await dispatch(signupUser(data));
     if (signupUser.fulfilled.match(result)) {
       return result.payload;
     } else {
-      const errorMessage = result.payload as string;
-      throw new Error(errorMessage);
+      // Show error snackbar instead of throwing
+      const errorMessage = result.payload as string || 'Signup failed. Please try again.';
+      dispatch(showSnackbar({ message: errorMessage, type: 'error' }));
+      return null;
     }
   };
 

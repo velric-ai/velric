@@ -7,9 +7,11 @@ import { useRouter } from "next/router";
 import { StaticMission } from "@/data/staticMissions";
 import { ArrowLeft, Clock, TrendingUp, Users, Star } from "lucide-react";
 import SubmissionForm from "@/components/SubmissionForm";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 export default function MissionsPage() {
   const router = useRouter();
+  const { showSnackbar } = useSnackbar();
   const [missions, setMissions] = useState<StaticMission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -25,7 +27,8 @@ export default function MissionsPage() {
 
   const buildPayload = (count: number) => {
     if (!userSurveyData) {
-      throw new Error('Survey data not loaded');
+      showSnackbar('Survey data not loaded. Please complete your survey first.', 'error');
+      return null;
     }
     const missionFocus = Array.isArray(userSurveyData.mission_focus) ? userSurveyData.mission_focus : [];
     const strengthAreas = Array.isArray(userSurveyData.strength_areas) ? userSurveyData.strength_areas : [];
@@ -211,6 +214,10 @@ export default function MissionsPage() {
       
       // Use logged-in user's survey data for mission generation
       const payload = buildPayload(3);
+      if (!payload) {
+        setGenerating(false);
+        return;
+      }
 
       const resp = await fetch('/api/admin/generate-missions', {
         method: 'POST',
@@ -223,7 +230,9 @@ export default function MissionsPage() {
       }
       await fetchMissions(true);
     } catch (e: any) {
-      setError(e.message || 'Failed to generate missions');
+      const errorMessage = e.message || 'Failed to generate missions';
+      showSnackbar(errorMessage, 'error');
+      setError(errorMessage);
     } finally {
       setGenerating(false);
     }
@@ -237,6 +246,10 @@ export default function MissionsPage() {
       
       // Use logged-in user's survey data for mission generation
       const payload = buildPayload(3);
+      if (!payload) {
+        setPreviewGenerating(false);
+        return;
+      }
 
       const resp = await fetch('/api/missions/generate', {
         method: 'POST',
@@ -245,7 +258,10 @@ export default function MissionsPage() {
       });
       const data = await resp.json();
       if (!resp.ok || !data.success) {
-        throw new Error(data.error || 'Failed to generate missions');
+        const errorMessage = data.error || 'Failed to generate missions';
+        showSnackbar(errorMessage, 'error');
+        setError(errorMessage);
+        return;
       }
       // Prepend generated missions to the list for immediate UX
       setMissions((prev: StaticMission[]) => [...data.missions, ...prev]);
@@ -254,7 +270,9 @@ export default function MissionsPage() {
         await fetchMissions(true);
       }
     } catch (e: any) {
-      setError(e.message || 'Failed to generate missions');
+      const errorMessage = e.message || 'Failed to generate missions';
+      showSnackbar(errorMessage, 'error');
+      setError(errorMessage);
     } finally {
       setPreviewGenerating(false);
     }
@@ -267,11 +285,16 @@ export default function MissionsPage() {
       const resp = await fetch('/api/admin/seed-static-missions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ limit: 5 }) });
       const data = await resp.json();
       if (!resp.ok || !data.success) {
-        throw new Error(data.error || 'Failed to seed missions');
+        const errorMessage = data.error || 'Failed to seed missions';
+        showSnackbar(errorMessage, 'error');
+        setError(errorMessage);
+        return;
       }
       await fetchMissions(true);
     } catch (e: any) {
-      setError(e.message || 'Failed to seed missions');
+      const errorMessage = e.message || 'Failed to seed missions';
+      showSnackbar(errorMessage, 'error');
+      setError(errorMessage);
     } finally {
       setSeeding(false);
     }

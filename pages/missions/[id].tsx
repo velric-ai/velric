@@ -9,9 +9,11 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { StaticMission } from "@/data/staticMissions";
 import { AlertCircle, ArrowLeft, X } from "lucide-react";
 import SubmissionForm from "@/components/SubmissionForm";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 export default function MissionDetailPage() {
   const router = useRouter();
+  const { showSnackbar } = useSnackbar();
   const { id } = router.query;
   const [mission, setMission] = useState<StaticMission | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,7 +81,11 @@ export default function MissionDetailPage() {
         const missionData = await missionResponse.json();
 
         if (!missionData.success) {
-          throw new Error(missionData.error || "Mission not found");
+          const errorMessage = missionData.error || "Mission not found";
+          showSnackbar(errorMessage, "error");
+          setError(errorMessage);
+          setIsLoading(false);
+          return;
         }
 
         setMission(missionData.mission);
@@ -185,8 +191,12 @@ export default function MissionDetailPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok || !data.success)
-        throw new Error(data.error || "Submission failed");
+      if (!res.ok || !data.success) {
+        const errorMessage = data.error || "Submission failed";
+        showSnackbar(errorMessage, "error");
+        setIsSubmitting(false);
+        return;
+      }
       setSubmitSuccess(true);
       setMissionStatus("submitted");
       router.push(`/feedback/${data.id}`);

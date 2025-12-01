@@ -7,19 +7,18 @@ import SurveyData from "@/components/SurveyData";
 import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
 import { Upload, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 function ProfileContent() {
+  const { showSnackbar } = useSnackbar();
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
-  const [isSnackbarVisible, setIsSnackbarVisible] = useState(false);
 
   const showUserDataError = (message?: string) => {
     const friendlyMessage = message || "Failed to load user data";
     setError(friendlyMessage);
-    setSnackbarMessage(friendlyMessage);
-    setIsSnackbarVisible(true);
+    showSnackbar(friendlyMessage, "error");
     setUserData({
       name: "User",
       email: "user@example.com",
@@ -87,16 +86,6 @@ function ProfileContent() {
 
     fetchUserData();
   }, []);
-
-  useEffect(() => {
-    if (!isSnackbarVisible) return;
-
-    const timer = setTimeout(() => {
-      setIsSnackbarVisible(false);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [isSnackbarVisible]);
 
   const [surveyData, setSurveyData] = useState<any>(null);
   const [isLoadingSurvey, setIsLoadingSurvey] = useState(true);
@@ -252,8 +241,7 @@ function ProfileContent() {
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setSnackbarMessage('Image size must be less than 5MB');
-      setIsSnackbarVisible(true);
+      showSnackbar('Image size must be less than 5MB', 'error');
       return;
     }
 
@@ -290,7 +278,10 @@ function ProfileContent() {
           contentType: profileImage.type,
         });
 
-      if (error) throw error;
+      if (error) {
+        showSnackbar("Failed to upload image. Please try again.", "error");
+        return null;
+      }
 
       const { data: urlData } = supabase.storage
         .from("portfolio_uploads")
@@ -299,7 +290,8 @@ function ProfileContent() {
       // Update user profile image
       const userDataStr = localStorage.getItem('velric_user');
       if (!userDataStr) {
-        throw new Error('User not authenticated');
+        showSnackbar('User not authenticated. Please log in again.', "error");
+        return null;
       }
 
       const localUser = JSON.parse(userDataStr);
@@ -317,7 +309,9 @@ function ProfileContent() {
       const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to update profile image');
+        const errorMessage = result.error || 'Failed to update profile image';
+        showSnackbar(errorMessage, "error");
+        return null;
       }
 
       // Update local state
@@ -327,8 +321,7 @@ function ProfileContent() {
       setIsSnackbarVisible(true);
     } catch (error: any) {
       console.error('Error uploading profile image:', error);
-      setSnackbarMessage(error.message || 'Failed to upload image. Please try again.');
-      setIsSnackbarVisible(true);
+      showSnackbar(error.message || 'Failed to upload image. Please try again.', 'error');
     } finally {
       setIsUploadingImage(false);
     }
@@ -366,39 +359,6 @@ function ProfileContent() {
 
         {/* Main Content */}
         <div className="relative z-10 pt-16">
-          <AnimatePresence>
-            {isSnackbarVisible && snackbarMessage && (
-              <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className="fixed top-24 right-6 z-[60] max-w-sm rounded-2xl border border-purple-500/30 bg-gradient-to-r from-[#1a0b2e]/95 via-[#16213e]/95 to-[#0f3460]/95 p-4 shadow-2xl shadow-purple-900/40"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/20 text-red-300">
-                    !
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-white">{snackbarMessage}</p>
-                  </div>
-                  <button
-                    onClick={() => setIsSnackbarVisible(false)}
-                    className="text-white/50 transition hover:text-white"
-                    aria-label="Dismiss error"
-                  >
-                    &times;
-                  </button>
-                </div>
-                <motion.div
-                  initial={{ width: "0%" }}
-                  animate={{ width: "100%" }}
-                  transition={{ duration: 4.5, ease: "linear" }}
-                  className="mt-3 h-1 rounded-full bg-gradient-to-r from-red-400 via-purple-400 to-cyan-400"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
