@@ -25,14 +25,13 @@ const snackbarSlice = createSlice({
     },
     hideSnackbar: (state) => {
       state.isVisible = false;
-      // Clear message after a short delay to allow animation
-      setTimeout(() => {
-        state.message = null;
-      }, 300);
+    },
+    clearSnackbar: (state) => {
+      state.message = null;
     },
   },
 });
 
-export const { showSnackbar, hideSnackbar } = snackbarSlice.actions;
+export const { showSnackbar, hideSnackbar, clearSnackbar } = snackbarSlice.actions;
 export default snackbarSlice.reducer;
 

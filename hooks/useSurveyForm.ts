@@ -12,6 +12,7 @@ import {
   AuthError,
   ValidationError,
 } from "../utils/surveyValidation";
+import { useSnackbar } from "./useSnackbar";
 
 // Added missing types
 interface PlatformConnection {
@@ -179,6 +180,7 @@ const initialFormData: SurveyFormData = {
 
 export function useSurveyForm() {
   const router = useRouter();
+  const { showSnackbar } = useSnackbar();
   const [formData, setFormData] = useState<SurveyFormData>(initialFormData);
   const [stepStartTime, setStepStartTime] = useState<number>(Date.now());
 
@@ -632,13 +634,18 @@ useEffect(() => {
 
       if (error instanceof AuthError) {
         errorMessage = "Session expired. Please sign in again.";
+        showSnackbar(errorMessage, "error");
         setTimeout(() => {
           router.push("/login?redirect=/onboard/survey");
         }, 2000);
       } else if (error instanceof ValidationError) {
         errorMessage = error.message;
+        showSnackbar(errorMessage, "error");
       } else if (error instanceof AppError) {
         errorMessage = error.message;
+        showSnackbar(errorMessage, "error");
+      } else {
+        showSnackbar(errorMessage, "error");
       }
 
       setFormData((prev) => ({

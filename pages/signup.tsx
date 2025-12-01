@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, User, Briefcase, Mail, Lock, Upload, X } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
+import { useSnackbar } from '@/hooks/useSnackbar';
 import { SignupData, ValidationError } from '@/types/auth';
 import { validateName, validateEmail, validatePassword } from '@/services/authService';
 import { supabase } from '@/lib/supabaseClient';
@@ -14,6 +15,7 @@ type SignupFormState = Omit<SignupData, "isRecruiter"> & { isRecruiter: boolean 
 export default function Signup() {
   const router = useRouter();
   const { signup, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { showSnackbar } = useSnackbar();
 
   const [formData, setFormData] = useState<SignupFormState>({
     name: "",
@@ -194,7 +196,10 @@ export default function Signup() {
           contentType: profileImage.type,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error uploading profile image:", error);
+        return null;
+      }
 
       const { data: urlData } = supabase.storage
         .from("portfolio_uploads")
@@ -203,7 +208,7 @@ export default function Signup() {
       return urlData.publicUrl;
     } catch (error: any) {
       console.error("Error uploading profile image:", error);
-      setErrors({ general: "Failed to upload image. Please try again." });
+      showSnackbar("Failed to upload image. Please try again.", "error");
       return null;
     } finally {
       setIsUploadingImage(false);
@@ -269,21 +274,33 @@ export default function Signup() {
       // For now, we'll pass it in a custom way or update after signup
       const response = await signup(payload);
       
+      // Check if signup failed (response is null)
+      if (!response || !response.user) {
+        // Error is already shown in snackbar via useAuth hook
+        setIsLoading(false);
+        return;
+      }
+      
       // Update profile image if we have one
-      if (imageUrl && response?.user?.id) {
-        await fetch('/api/user/upload-avatar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: response.user.id,
-            imageUrl,
-          }),
-        });
+      if (imageUrl && response.user.id) {
+        try {
+          await fetch('/api/user/upload-avatar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: response.user.id,
+              imageUrl,
+            }),
+          });
+        } catch (error) {
+          // Image upload failed, but signup succeeded - continue
+          console.error('Failed to upload profile image:', error);
+        }
       }
       console.log('✅ Signup successful - storing user data...');
       
       // Use is_recruiter from backend API response (mapped from is_recruiter to isRecruiter in AuthContext)
-      const isRecruiterFromBackend = Boolean(response?.user?.isRecruiter);
+      const isRecruiterFromBackend = Boolean(response.user.isRecruiter);
       
       // 🔴 CRITICAL FIX: Store both flags as false for new users
       const newUserData = {
@@ -328,9 +345,9 @@ export default function Signup() {
         router.replace('/onboard/survey');
       }
     } catch (error: any) {
-      // Extract error message from API response
-      const errorMessage = error || "Signup failed. Please try again.";
-      setErrors({ general: errorMessage });
+      // Handle unexpected errors (shouldn't happen since signup doesn't throw anymore)
+      console.error('Unexpected signup error:', error);
+      // Error is already shown in snackbar via useAuth hook
     } finally {
       setIsLoading(false);
     }

@@ -19,6 +19,7 @@ import {
 import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
 import { WelcomeMessage } from "../components/dashboard/WelcomeMessage";
 import DashboardNavigation from "../components/dashboard/DashboardNavigation";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 const formatDateTime = (value?: string | null) => {
   if (!value) return null;
@@ -37,6 +38,7 @@ const formatDateTime = (value?: string | null) => {
 
 function UserDashboardContent() {
   const router = useRouter();
+  const { showSnackbar } = useSnackbar();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,7 +136,9 @@ function UserDashboardContent() {
         }));
 
         if (!response.ok || !data.success) {
-          throw new Error(data.error || "Failed to fetch Velric score");
+          const errorMessage = data.error || "Failed to fetch Velric score";
+          showSnackbar(errorMessage, "error");
+          return;
         }
 
         if (isMounted) {
@@ -174,7 +178,9 @@ function UserDashboardContent() {
         }));
 
         if (!response.ok || !data.success) {
-          throw new Error(data.error || "Failed to calculate score growth");
+          const errorMessage = data.error || "Failed to calculate score growth";
+          showSnackbar(errorMessage, "error");
+          return;
         }
 
         if (isMounted) {
@@ -220,7 +226,9 @@ function UserDashboardContent() {
         }));
 
         if (!response.ok || !data.success) {
-          throw new Error(data.error || "Failed to fetch quick stats");
+          const errorMessage = data.error || "Failed to fetch quick stats";
+          showSnackbar(errorMessage, "error");
+          return;
         }
 
         if (isMounted && data.stats) {
