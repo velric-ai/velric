@@ -8,6 +8,7 @@ interface Candidate {
   onboarded: boolean;
   profile_complete: boolean;
   velricScore?: number;
+  missionsCompleted?: number;
   domain?: string;
   location?: string;
   industry?: string;
@@ -62,6 +63,7 @@ export default async function handler(
           onboarded: true,
           profile_complete: true,
           velricScore: 8.5,
+          missionsCompleted: 3,
           domain: "Frontend Development",
           industry: "Technology",
           mission_focus: ["Frontend Development"],
@@ -79,6 +81,7 @@ export default async function handler(
           onboarded: true,
           profile_complete: true,
           velricScore: 9.2,
+          missionsCompleted: 5,
           domain: "Full Stack Development",
           industry: "Technology",
           mission_focus: ["Full Stack Development"],
@@ -164,7 +167,7 @@ export default async function handler(
     const { data: surveyData, error: surveyError } = await supabase
       .from("survey_responses")
       .select(
-        "user_id, industry, mission_focus, strength_areas, experience_summary, education_level, learning_preference"
+        "user_id, industry, mission_focus, strength_areas, experience_summary, education_level, learning_preference, logistics_preferences, interview_availability"
       )
       .in("user_id", userIds)
       .order("created_at", { ascending: false });
@@ -176,12 +179,23 @@ export default async function handler(
 
     const { data: missionScores, error: missionError } = await supabase
       .from("user_mission")
-      .select("user_id, velric_score")
+      .select("user_id, velric_score, status")
       .in("user_id", userIds)
       .not("velric_score", "is", null);
 
     if (missionError) {
       console.error("Error fetching mission grades:", missionError);
+    }
+
+    // Fetch completed missions count
+    const { data: completedMissions, error: completedError } = await supabase
+      .from("user_mission")
+      .select("user_id")
+      .in("user_id", userIds)
+      .in("status", ["completed", "graded"]);
+
+    if (completedError) {
+      console.error("Error fetching completed missions:", completedError);
     }
 
     const surveyMap = new Map((surveyData || []).map((s) => [s.user_id, s]));
@@ -205,6 +219,13 @@ export default async function handler(
       });
     });
 
+    // Count completed missions per user
+    const completedMissionsMap = new Map<string, number>();
+    (completedMissions || []).forEach((mission) => {
+      const existing = completedMissionsMap.get(mission.user_id) || 0;
+      completedMissionsMap.set(mission.user_id, existing + 1);
+    });
+
     let candidates: Candidate[] = users.map((user) => {
       const survey = surveyMap.get(user.id);
       const missionScore = missionScoreMap.get(user.id);
@@ -214,6 +235,7 @@ export default async function handler(
           : null;
       const velricScore =
         averageVelric !== null ? parseFloat(averageVelric.toFixed(1)) : 0;
+      const missionsCompleted = completedMissionsMap.get(user.id) || 0;
 
       const domain =
         survey?.mission_focus && Array.isArray(survey.mission_focus) && survey.mission_focus.length > 0
@@ -232,6 +254,7 @@ export default async function handler(
         onboarded: user.onboarded || false,
         profile_complete: user.profile_complete || false,
         velricScore,
+        missionsCompleted,
         domain,
         industry: survey?.industry || undefined,
         mission_focus: survey?.mission_focus || undefined,
@@ -242,6 +265,8 @@ export default async function handler(
         skills: extractSkillsFromExperience(survey?.experience_summary),
         clusters: clusters.size ? Array.from(clusters) : undefined,
         profile_image: user.profile_image || null,
+        logistics_preferences: survey?.logistics_preferences || undefined,
+        interview_availability: survey?.interview_availability || undefined,
       };
     });
 

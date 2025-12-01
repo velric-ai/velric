@@ -17,6 +17,7 @@ interface CandidateProfile {
   name: string;
   email: string;
   velricScore: number;
+  missionsCompleted?: number;
   domain?: string;
   industry?: string;
   location?: string;
@@ -27,6 +28,10 @@ interface CandidateProfile {
   learning_preference?: string;
   skills?: string[];
   profile_image?: string | null;
+  interview_availability?: {
+    timeSlots?: Array<{ day: string; startTime: string; endTime: string }>;
+    timezone?: string;
+  };
   logistics_preferences?: {
     current_region?: string;
     legal_work_regions?: string[];
@@ -83,13 +88,26 @@ export default function CandidateProfileModal({
         });
 
         // Fetch candidate profile data
-        const [userResponse, surveyResponse] = await Promise.all([
+        const [userResponse, surveyResponse, missionsResponse] = await Promise.all([
           fetch(`/api/user/${candidateId}`),
           fetch(`/api/survey/${candidateId}`),
+          fetch(`/api/recruiter/candidate-missions?userId=${candidateId}`).catch(() => null),
         ]);
 
         const userData = await userResponse.json();
         const surveyData = await surveyResponse.json();
+        let missionsCompleted = 0;
+        
+        if (missionsResponse) {
+          try {
+            const missionsData = await missionsResponse.json();
+            if (missionsData.success && missionsData.count !== undefined) {
+              missionsCompleted = missionsData.count;
+            }
+          } catch (e) {
+            console.warn("Could not fetch mission count:", e);
+          }
+        }
 
         if (userData.success && surveyData.success) {
           setProfile({
@@ -97,6 +115,7 @@ export default function CandidateProfileModal({
             name: userData.user.name || candidateName,
             email: userData.user.email || candidateEmail || "",
             velricScore: candidateVelricScore || 0,
+            missionsCompleted,
             domain: surveyData.surveyData?.mission_focus?.[0],
             industry: surveyData.surveyData?.industry,
             location: undefined,
@@ -111,6 +130,7 @@ export default function CandidateProfileModal({
             learning_preference: surveyData.surveyData?.learning_preference,
             skills: [],
             profile_image: userData.user.profile_image || null,
+            interview_availability: surveyData.surveyData?.interview_availability || null,
             logistics_preferences: surveyData.surveyData?.logistics_preferences || null,
           });
         }
@@ -223,21 +243,73 @@ export default function CandidateProfileModal({
 
                       {/* Velric Score */}
                       <div className="p-6 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-4">
                           <div>
                             <p className="text-sm text-white/60 mb-1">Velric Score</p>
                             <p className="text-4xl font-bold text-cyan-300">{profile.velricScore.toFixed(1)}</p>
                           </div>
                           <Trophy className="w-12 h-12 text-yellow-400" />
                         </div>
+                        {/* Missions Completed */}
+                        <div className="pt-4 border-t border-cyan-500/20">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-white/60">Missions Completed</p>
+                            <p className="text-2xl font-bold text-white">
+                              {profile.missionsCompleted || 0}
+                            </p>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Logistics & Interview Preferences */}
+                      {/* Interview Availability */}
+                      {profile.interview_availability && (
+                        <div className="p-6 rounded-xl bg-white/5 border border-white/10">
+                          <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                            <Calendar className="w-5 h-5 mr-2 text-cyan-400" />
+                            Interview Availability
+                          </h3>
+                          {profile.interview_availability.timezone && (
+                            <div className="mb-4">
+                              <p className="text-sm text-white/60 mb-1">Timezone</p>
+                              <p className="text-white font-medium">{profile.interview_availability.timezone}</p>
+                            </div>
+                          )}
+                          {profile.interview_availability.timeSlots && 
+                           profile.interview_availability.timeSlots.length > 0 && (
+                            <div>
+                              <p className="text-sm text-white/60 mb-3">Available Time Slots</p>
+                              <div className="space-y-2">
+                                {profile.interview_availability.timeSlots.map((slot, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="p-3 rounded-lg bg-white/5 border border-white/10"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-white font-medium capitalize">
+                                        {slot.day}
+                                      </span>
+                                      <span className="text-cyan-400 text-sm">
+                                        {slot.startTime} - {slot.endTime}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {(!profile.interview_availability.timeSlots || 
+                            profile.interview_availability.timeSlots.length === 0) && (
+                            <p className="text-white/60 text-sm">No specific time slots provided</p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Logistics & Location Preferences */}
                       {profile.logistics_preferences && (
                         <div className="p-6 rounded-xl bg-white/5 border border-white/10">
                           <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                             <Globe className="w-5 h-5 mr-2 text-cyan-400" />
-                            Logistics & Availability
+                            Location & Logistics
                           </h3>
                           <div className="space-y-2 text-sm">
                             {/* Format: 🌍 South Asia   🛂 No sponsorship (South Asia/EU Remote) */}
