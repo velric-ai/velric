@@ -1,9 +1,10 @@
 import Head from "next/head";
 import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Filter, Search, Bookmark, BookmarkCheck, MapPin, Mail, Linkedin, Github, X, SlidersHorizontal, Calendar, Loader2, User } from "lucide-react";
+import { Filter, Search, Bookmark, BookmarkCheck, MapPin, Mail, Linkedin, Github, X, SlidersHorizontal, Calendar, Loader2, User, CheckCircle, XCircle } from "lucide-react";
 import ScheduleInterviewFormModal from "@/components/recruiter/ScheduleInterviewFormModal";
 import CandidateProfileModal from "@/components/recruiter/CandidateProfileModal";
+import HiringConstraintsModal from "@/components/recruiter/HiringConstraintsModal";
 import { ProtectedDashboardRoute } from "@/components/auth/ProtectedRoute";
 import { useRouter } from "next/router";
 import RecruiterNavbar from "@/components/recruiter/RecruiterNavbar";
@@ -63,6 +64,7 @@ interface DisplayCandidate {
   domain: string;
   industry?: string;
   velricScore: number;
+  missionsCompleted?: number;
   location?: string;
   skills: string[];
   clusters: CandidateClustersDisplay;
@@ -120,6 +122,7 @@ interface ApiCandidate {
   onboarded: boolean;
   profile_complete: boolean;
   velricScore?: number;
+  missionsCompleted?: number;
   domain?: string;
   location?: string;
   industry?: string;
@@ -131,6 +134,33 @@ interface ApiCandidate {
   skills?: string[];
   clusters?: string[];
   profile_image?: string | null;
+  logistics_preferences?: {
+    current_region?: string;
+    legal_work_regions?: string[];
+    sponsorship_consideration?: string;
+    sponsorship_regions?: string[];
+    relocation_openness?: string;
+    relocation_regions?: string;
+    remote_work_international?: string;
+  };
+  interview_availability?: {
+    timeSlots?: Array<{ day: string; startTime: string; endTime: string }>;
+    timezone?: string;
+  };
+}
+
+interface HiringConstraints {
+  location?: string[];
+  visaSponsorshipAllowed: boolean;
+  relocationRequired: boolean;
+  preferredTimezone?: string;
+}
+
+interface CompatibilityResult {
+  location: boolean | null;
+  visaSponsorship: boolean | null;
+  relocation: boolean | null;
+  timezone: boolean | null;
 }
 
 function CandidatesPageContent() {
@@ -158,12 +188,123 @@ function CandidatesPageContent() {
   const [candidates, setCandidates] = useState<ApiCandidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalCandidates, setTotalCandidates] = useState(0);
+  const [showConstraintsModal, setShowConstraintsModal] = useState(false);
+  const [hiringConstraints, setHiringConstraints] = useState<HiringConstraints | null>(null);
 
   // Debounce search query and filters to prevent excessive API calls
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const debouncedDomainFilter = useDebounce(domainFilter, 300);
   const debouncedScoreRange = useDebounce(scoreRange, 300);
   const debouncedClusterFilters = useDebounce(clusterFilters, 300);
+
+  // Check if constraints modal should be shown on first load
+  useEffect(() => {
+    const hasSeenModal = sessionStorage.getItem("recruiter_constraints_seen");
+    const savedConstraints = sessionStorage.getItem("recruiter_hiring_constraints");
+    
+    if (!hasSeenModal && !savedConstraints) {
+      setShowConstraintsModal(true);
+    } else if (savedConstraints) {
+      try {
+        const parsed = JSON.parse(savedConstraints);
+        setHiringConstraints(parsed);
+      } catch (e) {
+        console.warn("Failed to parse saved constraints:", e);
+      }
+    }
+  }, []);
+
+  // Function to check compatibility
+  const checkCompatibility = (candidate: ApiCandidate): CompatibilityResult => {
+    if (!hiringConstraints) {
+      return {
+        location: null,
+        visaSponsorship: null,
+        relocation: null,
+        timezone: null,
+      };
+    }
+
+    const result: CompatibilityResult = {
+      location: null,
+      visaSponsorship: null,
+      relocation: null,
+      timezone: null,
+    };
+
+    // Check location compatibility
+    if (hiringConstraints.location && hiringConstraints.location.length > 0) {
+      const candidateRegion = candidate.location || 
+        candidate.logistics_preferences?.current_region;
+      if (candidateRegion) {
+        // Simple region matching - can be enhanced
+        const regionLower = candidateRegion.toLowerCase();
+        result.location = hiringConstraints.location.some(loc => 
+          regionLower.includes(loc.toLowerCase()) || 
+          loc.toLowerCase().includes(regionLower)
+        );
+      } else {
+        result.location = false; // No location info = incompatible
+      }
+    }
+
+    // Check visa sponsorship
+    const logistics = candidate.logistics_preferences;
+    if (logistics) {
+      const needsSponsorship = logistics.sponsorship_consideration === "yes" || 
+                              (logistics.sponsorship_consideration === "depends" && 
+                               logistics.sponsorship_regions && 
+                               logistics.sponsorship_regions.length > 0);
+      
+      if (needsSponsorship) {
+        result.visaSponsorship = hiringConstraints.visaSponsorshipAllowed;
+      } else {
+        result.visaSponsorship = true; // Doesn't need sponsorship = compatible
+      }
+    }
+
+    // Check relocation
+    if (hiringConstraints.relocationRequired) {
+      const relocationOpenness = logistics?.relocation_openness;
+      if (relocationOpenness) {
+        result.relocation = relocationOpenness === "anywhere" || 
+                           relocationOpenness === "only_some" ||
+                           relocationOpenness === "depends";
+      } else {
+        result.relocation = false; // No info = assume not open
+      }
+    } else {
+      result.relocation = true; // Relocation not required = compatible
+    }
+
+    // Check timezone
+    if (hiringConstraints.preferredTimezone) {
+      const candidateTimezone = candidate.interview_availability?.timezone;
+      if (candidateTimezone) {
+        // Simple timezone matching - can be enhanced
+        result.timezone = candidateTimezone.toLowerCase().includes(
+          hiringConstraints.preferredTimezone.toLowerCase().split(" ")[0]
+        ) || hiringConstraints.preferredTimezone.toLowerCase().includes(
+          candidateTimezone.toLowerCase()
+        );
+      } else {
+        result.timezone = false; // No timezone info = incompatible
+      }
+    }
+
+    return result;
+  };
+
+  const handleConstraintsSave = (constraints: HiringConstraints) => {
+    setHiringConstraints(constraints);
+    setShowConstraintsModal(false);
+    sessionStorage.setItem("recruiter_constraints_seen", "true");
+  };
+
+  const handleConstraintsSkip = () => {
+    setShowConstraintsModal(false);
+    sessionStorage.setItem("recruiter_constraints_seen", "true");
+  };
 
   // Fetch candidates from API with debounced values
   useEffect(() => {
@@ -199,7 +340,8 @@ function CandidatesPageContent() {
     };
 
     fetchCandidates();
-  }, [debouncedSearchQuery, debouncedDomainFilter, debouncedScoreRange, debouncedClusterFilters, showSnackbar]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchQuery, debouncedDomainFilter, debouncedScoreRange, debouncedClusterFilters]);
 
   // Get industry options (clusters) based on selected domain/industry
   const availableIndustryOptions = useMemo(() => {
@@ -239,6 +381,7 @@ function CandidatesPageContent() {
       domain: displayDomain,
       industry: apiCandidate.industry,
       velricScore: typeof apiCandidate.velricScore === "number" ? Number(apiCandidate.velricScore.toFixed(1)) : 0,
+      missionsCompleted: apiCandidate.missionsCompleted || 0,
       location: apiCandidate.location || undefined,
       skills: apiCandidate.skills || [],
       clusters: generateMockClusters(),
@@ -320,8 +463,8 @@ function CandidatesPageContent() {
             <p className="text-sm text-white/60 mb-2">Recruiter • Talent Search</p>
             <h1 className="text-3xl font-bold mb-6">Search Candidates</h1>
             
-            {/* Search and Filtier Bar */}
-            <div className="flex tems-center gap-3">
+            {/* Search and Filter Bar */}
+            <div className="flex items-center gap-3">
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40" />
                 <input
@@ -332,6 +475,19 @@ function CandidatesPageContent() {
                   placeholder="Search by name, skill, or cluster..."
                 />
               </div>
+              
+              {hiringConstraints && (
+                <motion.button
+                  onClick={() => setShowConstraintsModal(true)}
+                  className="px-4 py-3 rounded-xl border border-white/10 text-white/70 hover:border-white/30 hover:text-white bg-white/5 transition-all flex items-center gap-2"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  title="Update hiring constraints"
+                >
+                  <Filter className="w-4 h-4" />
+                  <span className="text-xs font-medium">Constraints</span>
+                </motion.button>
+              )}
               
               <motion.button
                 onClick={() => setShowFilters(!showFilters)}
@@ -525,6 +681,10 @@ function CandidatesPageContent() {
               <AnimatePresence>
                 {filteredCandidates.map((candidate, index) => {
                   const isSaved = savedCandidates.has(candidate.id);
+                  // Find the original API candidate for compatibility check
+                  const apiCandidate = candidates.find(c => c.id === candidate.id);
+                  const compatibility = apiCandidate ? checkCompatibility(apiCandidate) : null;
+                  
                   return (
                     <motion.div
                       key={candidate.id}
@@ -543,6 +703,68 @@ function CandidatesPageContent() {
                         setIsProfileModalOpen(true);
                       }}
                     >
+                      {/* Compatibility Badges */}
+                      {hiringConstraints && compatibility && (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {compatibility.location !== null && (
+                            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+                              compatibility.location
+                                ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                                : "bg-red-500/20 text-red-400 border border-red-500/30"
+                            }`}>
+                              {compatibility.location ? (
+                                <CheckCircle className="w-3 h-3" />
+                              ) : (
+                                <XCircle className="w-3 h-3" />
+                              )}
+                              <span>Location</span>
+                            </div>
+                          )}
+                          {compatibility.visaSponsorship !== null && (
+                            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+                              compatibility.visaSponsorship
+                                ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                                : "bg-red-500/20 text-red-400 border border-red-500/30"
+                            }`}>
+                              {compatibility.visaSponsorship ? (
+                                <CheckCircle className="w-3 h-3" />
+                              ) : (
+                                <XCircle className="w-3 h-3" />
+                              )}
+                              <span>Visa</span>
+                            </div>
+                          )}
+                          {compatibility.relocation !== null && (
+                            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+                              compatibility.relocation
+                                ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                                : "bg-red-500/20 text-red-400 border border-red-500/30"
+                            }`}>
+                              {compatibility.relocation ? (
+                                <CheckCircle className="w-3 h-3" />
+                              ) : (
+                                <XCircle className="w-3 h-3" />
+                              )}
+                              <span>Relocation</span>
+                            </div>
+                          )}
+                          {compatibility.timezone !== null && (
+                            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+                              compatibility.timezone
+                                ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                                : "bg-red-500/20 text-red-400 border border-red-500/30"
+                            }`}>
+                              {compatibility.timezone ? (
+                                <CheckCircle className="w-3 h-3" />
+                              ) : (
+                                <XCircle className="w-3 h-3" />
+                              )}
+                              <span>Timezone</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
                       {/* Header */}
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-start space-x-3 flex-1">
@@ -594,11 +816,20 @@ function CandidatesPageContent() {
 
                       {/* Velric Score */}
                       <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-3">
                           <div>
                             <p className="text-xs text-white/60 mb-1">Velric Score (Avg mission score)</p>
                             <p className="text-3xl font-bold text-cyan-300 flex items-baseline gap-1">
                               {candidate.velricScore.toFixed(1)}
+                            </p>
+                          </div>
+                        </div>
+                        {/* Missions Completed */}
+                        <div className="pt-3 border-t border-cyan-500/20">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-white/60">Missions Completed</p>
+                            <p className="text-lg font-bold text-white">
+                              {candidate.missionsCompleted || 0}
                             </p>
                           </div>
                         </div>
@@ -724,6 +955,13 @@ function CandidatesPageContent() {
             candidateVelricScore={selectedProfileCandidate.velricScore}
           />
         )}
+
+        {/* Hiring Constraints Modal */}
+        <HiringConstraintsModal
+          isOpen={showConstraintsModal}
+          onSave={handleConstraintsSave}
+          onSkip={handleConstraintsSkip}
+        />
       </div>
     </>
   );
