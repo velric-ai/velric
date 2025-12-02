@@ -20,6 +20,8 @@ export interface StaticMission {
   started_at?: string;
   submitted_at?: string;
   completed_at?: string;
+  type?: "technical" | "non-technical";
+  language?: string; // e.g., "python", "javascript", "java", "cpp", "sql", "typescript"
 }
 
 export const staticMissions: StaticMission[] = [

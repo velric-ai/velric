@@ -9,6 +9,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { StaticMission } from "@/data/staticMissions";
 import { AlertCircle, ArrowLeft, X } from "lucide-react";
 import SubmissionForm from "@/components/SubmissionForm";
+import TechnicalInterviewIDE from "@/components/TechnicalInterviewIDE";
 import { useSnackbar } from "@/hooks/useSnackbar";
 
 export default function MissionDetailPage() {
@@ -97,6 +98,9 @@ export default function MissionDetailPage() {
           skillCount: missionData.mission?.skills?.length || 0,
           evaluationMetricsCount:
             missionData.mission?.evaluationMetrics?.length || 0,
+          type: missionData.mission?.type,
+          language: missionData.mission?.language,
+          field: missionData.mission?.field,
         });
 
         // Fetch user's mission status (only if logged in)
@@ -373,6 +377,80 @@ export default function MissionDetailPage() {
                     </ol>
                   </div>
                 )}
+
+                {/* IDE Section for Technical Missions */}
+                {(() => {
+                  // Check if mission is technical-related
+                  const isTechnical = 
+                    mission.type === "technical" ||
+                    (mission.field && (
+                      mission.field.toLowerCase().includes("technical") ||
+                      mission.field.toLowerCase().includes("engineering") ||
+                      mission.field.toLowerCase().includes("development") ||
+                      mission.field.toLowerCase().includes("programming") ||
+                      mission.field.toLowerCase().includes("software") ||
+                      mission.field.toLowerCase().includes("coding") ||
+                      mission.field.toLowerCase().includes("backend") ||
+                      mission.field.toLowerCase().includes("frontend") ||
+                      mission.field.toLowerCase().includes("full stack") ||
+                      mission.field.toLowerCase().includes("data engineering") ||
+                      mission.field.toLowerCase().includes("devops") ||
+                      mission.field.toLowerCase().includes("machine learning") ||
+                      mission.field.toLowerCase().includes("ai") ||
+                      mission.field.toLowerCase().includes("blockchain")
+                    )) ||
+                    (mission.skills && mission.skills.some(skill => 
+                      skill.toLowerCase().includes("programming") ||
+                      skill.toLowerCase().includes("coding") ||
+                      skill.toLowerCase().includes("python") ||
+                      skill.toLowerCase().includes("javascript") ||
+                      skill.toLowerCase().includes("java") ||
+                      skill.toLowerCase().includes("react") ||
+                      skill.toLowerCase().includes("node") ||
+                      skill.toLowerCase().includes("typescript") ||
+                      skill.toLowerCase().includes("c++") ||
+                      skill.toLowerCase().includes("software") ||
+                      skill.toLowerCase().includes("development")
+                    ));
+
+                  // Detect language from skills or field if not explicitly set
+                  let detectedLanguage = mission.language;
+                  if (!detectedLanguage && isTechnical) {
+                    const allText = [...(mission.skills || []), mission.field || '', mission.category || ''].join(' ').toLowerCase();
+                    if (allText.includes('python') || allText.includes('django') || allText.includes('flask')) {
+                      detectedLanguage = 'python';
+                    } else if (allText.includes('javascript') || allText.includes('react') || allText.includes('node') || allText.includes('js')) {
+                      detectedLanguage = 'javascript';
+                    } else if (allText.includes('typescript') || allText.includes('ts')) {
+                      detectedLanguage = 'typescript';
+                    } else if (allText.includes('java')) {
+                      detectedLanguage = 'java';
+                    } else if (allText.includes('c++') || allText.includes('cpp')) {
+                      detectedLanguage = 'cpp';
+                    } else if (allText.includes('go') || allText.includes('golang')) {
+                      detectedLanguage = 'go';
+                    } else if (allText.includes('rust')) {
+                      detectedLanguage = 'rust';
+                    } else {
+                      // Default to python for technical missions
+                      detectedLanguage = 'python';
+                    }
+                  }
+
+                  return isTechnical ? (
+                    <div className="bg-[#1C1C1E] rounded-lg border border-gray-800 p-8">
+                      <h3 className="text-xl font-semibold text-white mb-6 pb-3 border-b border-gray-800">
+                        Code Editor
+                      </h3>
+                      <div className="h-[600px]">
+                        <TechnicalInterviewIDE
+                          interviewId={mission.id}
+                          initialLanguage={detectedLanguage || "python"}
+                        />
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
 
                 {/* Skills Section */}
                 {mission.skills && (

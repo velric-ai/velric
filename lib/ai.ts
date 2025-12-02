@@ -66,6 +66,8 @@ MISSION OUTPUT (JSON):
 {
   "title": "Engaging, specific mission title directly related to user's resume skills and experience",
   "description": "Detailed 3-4 sentence description explaining scenario, impact, constraints, and outcome. Reference user's relevant experience/skills from resume.",
+  "type": "technical" or "non-technical" - MUST be determined based on classification above,
+  "language": "primary programming language for technical missions (e.g., 'python', 'javascript', 'java', 'cpp', 'sql', 'typescript', 'go', 'rust') - null for non-technical missions. Detect from user's resume skills and mission requirements",
   "field": "Match classification: Technical (use technologies from user's resume like 'Backend Engineering with Node.js', 'Frontend Development with React', etc.) or Non-technical",
   "difficulty": "Beginner|Intermediate|Advanced - Must match user's experience level from resume",
   "timeEstimate": "Realistic time estimate",
@@ -285,10 +287,32 @@ export async function generateComprehensiveMission(
       tasksPreview: tasks.slice(0, 2),
     });
 
+    // Determine type and language
+    const missionType = parsedMission.type || 
+      (parsedMission.field?.toLowerCase().includes("non-technical") ? "non-technical" : "technical");
+    
+    // Normalize language to lowercase and handle common variations
+    let language = parsedMission.language;
+    if (language) {
+      language = language.toLowerCase();
+      // Map common variations to standard names
+      const languageMap: Record<string, string> = {
+        "js": "javascript",
+        "ts": "typescript",
+        "c++": "cpp",
+        "c#": "csharp",
+        "py": "python",
+        "go": "golang",
+      };
+      language = languageMap[language] || language;
+    }
+
     const mission: StaticMission = {
       id: `ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       title: parsedMission.title,
       description: parsedMission.description,
+      type: missionType as "technical" | "non-technical",
+      language: missionType === "technical" ? (language || undefined) : undefined,
       field: parsedMission.field,
       difficulty: parsedMission.difficulty,
       timeEstimate: parsedMission.timeEstimate,

@@ -33,13 +33,18 @@ type SearchCandidatesResponse =
         name: string;
         email: string;
         velricScore?: number;
+        missionsCompleted?: number;
         domain?: string;
         location?: string;
+        profile_image?: string | null;
         matchReason?: string;
         industry?: string;
         mission_focus?: string[];
         strength_areas?: string[];
         experience_summary?: string;
+        education_level?: string;
+        learning_preference?: string;
+        skills?: string[];
       }>;
       searchCriteria?: SearchCriteria;
     }
@@ -153,7 +158,7 @@ Extract all relevant criteria. Use null for unmentioned fields.`;
      // Start with base query - fetch users first
      let query = supabase
        .from("users")
-       .select("id, name, email, onboarded, profile_complete")
+       .select("id, name, email, onboarded, profile_complete, profile_image")
     //    .eq("is_recruiter", false)
     //    .eq("onboarded", true);
 
@@ -200,13 +205,74 @@ Extract all relevant criteria. Use null for unmentioned fields.`;
      const userIds = users.map((u) => u.id);
      const { data: surveyData } = await supabase
        .from("survey_responses")
-       .select("user_id, industry, mission_focus, strength_areas, experience_summary, education_level, learning_preference")
+       .select("user_id, industry, mission_focus, strength_areas, experience_summary, education_level, learning_preference, logistics_preferences")
        .in("user_id", userIds);
+
+     // Fetch mission scores to calculate velricScore
+     const { data: missionScores } = await supabase
+       .from("user_mission")
+       .select("user_id, velric_score, status")
+       .in("user_id", userIds)
+       .not("velric_score", "is", null);
+
+     // Fetch completed missions count
+     const { data: completedMissions } = await supabase
+       .from("user_mission")
+       .select("user_id")
+       .in("user_id", userIds)
+       .in("status", ["completed", "graded"]);
 
      // Create a map of user_id to survey data
      const surveyMap = new Map(
        (surveyData || []).map((s) => [s.user_id, s])
      );
+
+     // Calculate velricScore for each user
+     const missionScoreMap = new Map<
+       string,
+       { total: number; count: number }
+     >();
+
+     (missionScores || []).forEach((mission: any) => {
+       if (mission.velric_score === null || mission.velric_score === undefined) return;
+       const numericGrade =
+         typeof mission.velric_score === "number"
+           ? mission.velric_score
+           : parseFloat(mission.velric_score);
+       if (isNaN(numericGrade)) return;
+       const existing = missionScoreMap.get(mission.user_id) || { total: 0, count: 0 };
+       missionScoreMap.set(mission.user_id, {
+         total: existing.total + numericGrade,
+         count: existing.count + 1,
+       });
+     });
+
+     // Count completed missions per user
+     const completedMissionsMap = new Map<string, number>();
+     (completedMissions || []).forEach((mission: any) => {
+       const existing = completedMissionsMap.get(mission.user_id) || 0;
+       completedMissionsMap.set(mission.user_id, existing + 1);
+     });
+
+     // Helper function to extract skills from experience summary
+     const extractSkillsFromExperience = (experienceSummary?: string): string[] => {
+       if (!experienceSummary) return [];
+       const commonSkills = [
+         "React", "TypeScript", "JavaScript", "Python", "Node.js", "Java", "C++", "C#",
+         "SQL", "MongoDB", "PostgreSQL", "AWS", "Docker", "Kubernetes", "Git",
+         "HTML", "CSS", "Vue", "Angular", "Next.js", "Express", "Django", "Flask",
+         "Machine Learning", "AI", "Data Science", "TensorFlow", "PyTorch",
+         "Frontend", "Backend", "Full Stack", "DevOps", "Cloud", "Azure", "GCP"
+       ];
+       const foundSkills: string[] = [];
+       const lowerSummary = experienceSummary.toLowerCase();
+       commonSkills.forEach(skill => {
+         if (lowerSummary.includes(skill.toLowerCase())) {
+           foundSkills.push(skill);
+         }
+       });
+       return foundSkills;
+     };
 
      // Step 4: Score and rank candidates
      console.log("🎯 Scoring candidates...");
@@ -214,7 +280,15 @@ Extract all relevant criteria. Use null for unmentioned fields.`;
      const scoredCandidates = users
        .map((user: any) => {
          const survey = surveyMap.get(user.id);
-        
+         const missionScore = missionScoreMap.get(user.id);
+         const averageVelric =
+           missionScore && missionScore.count > 0
+             ? missionScore.total / missionScore.count
+             : null;
+         const velricScore =
+           averageVelric !== null ? parseFloat(averageVelric.toFixed(1)) : 0;
+         const missionsCompleted = completedMissionsMap.get(user.id) || 0;
+         
         let matchScore = 0;
         let matchReasons: string[] = [];
 
@@ -256,6 +330,8 @@ Extract all relevant criteria. Use null for unmentioned fields.`;
             survey,
             matchScore,
             matchReasons,
+            velricScore,
+            missionsCompleted,
           };
         }
 
@@ -367,6 +443,8 @@ Extract all relevant criteria. Use null for unmentioned fields.`;
             survey,
             matchScore,
             matchReasons,
+            velricScore,
+            missionsCompleted,
           };
         }
 
@@ -379,20 +457,38 @@ Extract all relevant criteria. Use null for unmentioned fields.`;
     console.log(`✅ Found ${scoredCandidates.length} matching candidates`);
 
     // Step 4: Format response
-    const candidates = scoredCandidates.map((item) => ({
-      id: item.user.id,
-      name: item.user.name || "Unknown",
-      email: item.user.email,
-      matchReason: item.matchReasons.join(" • ") || "Match found",
-      industry: item.survey?.industry,
-      mission_focus: Array.isArray(item.survey?.mission_focus) 
-        ? item.survey.mission_focus 
-        : [],
-      strength_areas: Array.isArray(item.survey?.strength_areas)
-        ? item.survey.strength_areas
-        : [],
-      experience_summary: item.survey?.experience_summary,
-    }));
+    const candidates = scoredCandidates.map((item) => {
+      const domain =
+        item.survey?.mission_focus && Array.isArray(item.survey.mission_focus) && item.survey.mission_focus.length > 0
+          ? item.survey.mission_focus[0]
+          : undefined;
+
+      // Extract location from logistics_preferences
+      const location = item.survey?.logistics_preferences?.current_region || undefined;
+
+      return {
+        id: item.user.id,
+        name: item.user.name || "Unknown",
+        email: item.user.email,
+        velricScore: item.velricScore,
+        missionsCompleted: item.missionsCompleted,
+        domain,
+        location,
+        profile_image: item.user.profile_image || null,
+        matchReason: item.matchReasons.join(" • ") || "Match found",
+        industry: item.survey?.industry,
+        mission_focus: Array.isArray(item.survey?.mission_focus) 
+          ? item.survey.mission_focus 
+          : [],
+        strength_areas: Array.isArray(item.survey?.strength_areas)
+          ? item.survey.strength_areas
+          : [],
+        experience_summary: item.survey?.experience_summary,
+        education_level: item.survey?.education_level,
+        learning_preference: item.survey?.learning_preference,
+        skills: extractSkillsFromExperience(item.survey?.experience_summary),
+      };
+    });
 
     // Handle dummy mode
     if (USE_DUMMY) {
@@ -401,21 +497,37 @@ Extract all relevant criteria. Use null for unmentioned fields.`;
           id: "user_1",
           name: "Arvind Khandal",
           email: "arvind@example.com",
-          velricScore: 85,
+          velricScore: 8.5,
+          missionsCompleted: 12,
+          domain: "Frontend Development",
+          location: "San Francisco, CA",
+          profile_image: null,
           matchReason: "Exact name match",
           industry: "Technology & Software",
-          mission_focus: ["Frontend Development"],
-          strength_areas: ["Problem Solving"],
+          mission_focus: ["Frontend Development", "React", "TypeScript"],
+          strength_areas: ["Problem Solving", "Technical Implementation"],
+          experience_summary: "Experienced frontend developer with 5+ years working with React, TypeScript, and modern web technologies. Passionate about building user-friendly interfaces and optimizing performance.",
+          education_level: "Bachelor's Degree",
+          learning_preference: "Hands-on projects",
+          skills: ["React", "TypeScript", "JavaScript", "HTML", "CSS", "Next.js"],
         },
         {
           id: "user_2",
           name: "Jane Smith",
           email: "jane@example.com",
-          velricScore: 92,
+          velricScore: 9.2,
+          missionsCompleted: 18,
+          domain: "Full Stack Development",
+          location: "New York, NY",
+          profile_image: null,
           matchReason: "Skills: React, TypeScript",
           industry: "Technology & Software",
-          mission_focus: ["Full Stack Development"],
-          strength_areas: ["Technical Implementation"],
+          mission_focus: ["Full Stack Development", "Backend Development"],
+          strength_areas: ["Technical Implementation", "System Design"],
+          experience_summary: "Full stack developer specializing in Node.js, React, and cloud infrastructure. Strong background in building scalable applications and API design.",
+          education_level: "Master's Degree",
+          learning_preference: "Mentorship and collaboration",
+          skills: ["React", "TypeScript", "Node.js", "Python", "AWS", "Docker"],
         },
       ];
 
