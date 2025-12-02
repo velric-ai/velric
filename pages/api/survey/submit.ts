@@ -187,6 +187,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    console.log('[Survey Submit] ✅ Received auth token, userId:', token);
+
     // Parse and validate request body
     const {
       fullName,
@@ -356,6 +358,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Update user's onboarded status in users table
+    console.log('[Survey Submit] 🔄 Updating user record:', { userId, onboarded: true, survey_completed_at: new Date().toISOString() });
     const { error: updateError } = await supabase
       .from("users")
       .update({
@@ -366,8 +369,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq("id", userId);
 
     if (updateError) {
-      console.warn('Failed to update user onboarded status:', updateError);
+      console.error('❌ Failed to update user onboarded status:', updateError);
       // Don't fail the request if user update fails, survey is already saved
+    } else {
+      console.log('✅ Successfully updated user onboarded status');
     }
 
     const completedAt = new Date().toISOString();
