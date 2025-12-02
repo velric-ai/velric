@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, Search, TrendingUp, Calendar } from "lucide-react";
+import { X, Sparkles, Search, TrendingUp, Calendar, MapPin, User, GraduationCap, BookOpen, Code } from "lucide-react";
 import { useSnackbar } from "@/hooks/useSnackbar";
 import ScheduleInterviewFormModal from "./ScheduleInterviewFormModal";
 
@@ -14,13 +14,18 @@ interface SearchResult {
   name: string;
   email: string;
   velricScore?: number;
+  missionsCompleted?: number;
   domain?: string;
   location?: string;
+  profile_image?: string | null;
   matchReason?: string;
   industry?: string;
   mission_focus?: string[];
   strength_areas?: string[];
   experience_summary?: string;
+  education_level?: string;
+  learning_preference?: string;
+  skills?: string[];
 }
 
 export default function AIJobMatchModal({ isOpen, onClose }: AIJobMatchModalProps) {
@@ -230,44 +235,100 @@ export default function AIJobMatchModal({ isOpen, onClose }: AIJobMatchModalProp
                         transition={{ delay: index * 0.1 }}
                         className="p-5 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-400/30 transition-all"
                       >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <h4 className="text-lg font-semibold text-white">
-                                {candidate.name}
-                              </h4>
-                              <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                                #{index + 1}
-                              </span>
+                        {/* Header with Profile Image, Name, and Score */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-start space-x-3 flex-1">
+                            {/* Profile Image */}
+                            <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center border border-cyan-500/30 overflow-hidden flex-shrink-0">
+                              {candidate.profile_image ? (
+                                <img
+                                  src={candidate.profile_image}
+                                  alt={candidate.name}
+                                  className="w-full h-full rounded-full object-cover"
+                                />
+                              ) : (
+                                <User className="w-6 h-6 text-cyan-400" />
+                              )}
                             </div>
-                            <p className="text-sm text-white/60 mb-1">
-                              {candidate.email}
-                            </p>
-                            {candidate.industry && (
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-3 mb-1">
+                                <h4 className="text-lg font-semibold text-white">
+                                  {candidate.name}
+                                </h4>
+                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                  #{index + 1}
+                                </span>
+                              </div>
                               <p className="text-sm text-white/60 mb-1">
-                                {candidate.industry}
+                                {candidate.email}
                               </p>
-                            )}
-                            {candidate.matchReason && (
-                              <p className="text-xs text-cyan-400 mt-2">
-                                {candidate.matchReason}
-                              </p>
-                            )}
+                              {candidate.domain && (
+                                <p className="text-sm text-white/70 mb-1 font-medium">
+                                  {candidate.domain}
+                                </p>
+                              )}
+                              {candidate.industry && (
+                                <p className="text-xs text-white/50 mb-1">
+                                  {candidate.industry}
+                                </p>
+                              )}
+                              {candidate.location && (
+                                <div className="flex items-center text-xs text-white/50 mb-1">
+                                  <MapPin className="w-3 h-3 mr-1" />
+                                  {candidate.location}
+                                </div>
+                              )}
+                              {candidate.matchReason && (
+                                <p className="text-xs text-cyan-400 mt-2">
+                                  {candidate.matchReason}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-right">
-                            {candidate.velricScore && (
+                          <div className="text-right ml-4">
+                            {candidate.velricScore !== undefined && (
                               <>
                                 <div className="flex items-center space-x-2 mb-1">
                                   <TrendingUp className="w-4 h-4 text-cyan-400" />
                                   <span className="text-2xl font-bold text-cyan-300">
-                                    {candidate.velricScore}
+                                    {candidate.velricScore.toFixed(1)}
                                   </span>
                                 </div>
                                 <p className="text-xs text-white/60">Velric Score</p>
+                                {candidate.missionsCompleted !== undefined && (
+                                  <p className="text-xs text-white/50 mt-1">
+                                    {candidate.missionsCompleted} missions
+                                  </p>
+                                )}
                               </>
                             )}
                           </div>
                         </div>
+
+                        {/* Skills */}
+                        {candidate.skills && candidate.skills.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-white/10">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Code className="w-4 h-4 text-white/60" />
+                              <p className="text-xs text-white/60 font-medium">Skills:</p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {candidate.skills.slice(0, 8).map((skill, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-1 rounded-lg text-xs border border-blue-500/30 bg-blue-500/20 text-blue-300"
+                                >
+                                  {skill}
+                                </span>
+                              ))}
+                              {candidate.skills.length > 8 && (
+                                <span className="px-2 py-1 rounded-lg text-xs text-white/60 border border-white/10">
+                                  +{candidate.skills.length - 8} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Mission Focus and Strength Areas */}
                         {(candidate.mission_focus && candidate.mission_focus.length > 0) || 
@@ -275,7 +336,7 @@ export default function AIJobMatchModal({ isOpen, onClose }: AIJobMatchModalProp
                           <div className="mt-3 pt-3 border-t border-white/10">
                             {candidate.mission_focus && candidate.mission_focus.length > 0 && (
                               <div className="mb-2">
-                                <p className="text-xs text-white/60 mb-1">Mission Focus:</p>
+                                <p className="text-xs text-white/60 mb-1 font-medium">Mission Focus:</p>
                                 <div className="flex flex-wrap gap-2">
                                   {candidate.mission_focus.slice(0, 5).map((focus, idx) => (
                                     <span
@@ -295,7 +356,7 @@ export default function AIJobMatchModal({ isOpen, onClose }: AIJobMatchModalProp
                             )}
                             {candidate.strength_areas && candidate.strength_areas.length > 0 && (
                               <div>
-                                <p className="text-xs text-white/60 mb-1">Strengths:</p>
+                                <p className="text-xs text-white/60 mb-1 font-medium">Strengths:</p>
                                 <div className="flex flex-wrap gap-2">
                                   {candidate.strength_areas.slice(0, 5).map((strength, idx) => (
                                     <span
@@ -316,11 +377,36 @@ export default function AIJobMatchModal({ isOpen, onClose }: AIJobMatchModalProp
                           </div>
                         ) : null}
 
+                        {/* Education and Learning Preference */}
+                        {(candidate.education_level || candidate.learning_preference) && (
+                          <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                            {candidate.education_level && (
+                              <div className="flex items-center gap-2">
+                                <GraduationCap className="w-4 h-4 text-white/60" />
+                                <p className="text-xs text-white/60">
+                                  <span className="font-medium">Education:</span> {candidate.education_level}
+                                </p>
+                              </div>
+                            )}
+                            {candidate.learning_preference && (
+                              <div className="flex items-center gap-2">
+                                <BookOpen className="w-4 h-4 text-white/60" />
+                                <p className="text-xs text-white/60">
+                                  <span className="font-medium">Learning Style:</span> {candidate.learning_preference}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         {/* Experience Summary */}
                         {candidate.experience_summary && (
-                          <p className="mt-3 text-sm text-white/70 line-clamp-2">
-                            {candidate.experience_summary}
-                          </p>
+                          <div className="mt-3 pt-3 border-t border-white/10">
+                            <p className="text-xs text-white/60 mb-2 font-medium">Experience Summary:</p>
+                            <p className="text-sm text-white/70 line-clamp-3">
+                              {candidate.experience_summary}
+                            </p>
+                          </div>
                         )}
 
                         {/* Schedule Interview Button */}

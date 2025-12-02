@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, Clock, User, MessageSquare, CheckCircle, XCircle, Clock as ClockIcon } from "lucide-react";
+import { X, Calendar, Clock, User, MessageSquare, CheckCircle, XCircle, Clock as ClockIcon, Code, Play } from "lucide-react";
 import { useSnackbar } from "@/hooks/useSnackbar";
 
 interface InterviewRequest {
@@ -70,9 +71,15 @@ export default function InterviewRequestsModal({
   onClose,
   userId,
 }: InterviewRequestsModalProps) {
+  const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const [interviewRequests, setInterviewRequests] = useState<InterviewRequest[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleStartTechnicalInterview = (requestId: string) => {
+    router.push(`/interview/${requestId}`);
+    onClose();
+  };
 
   useEffect(() => {
     if (isOpen && userId) {
@@ -252,6 +259,67 @@ export default function InterviewRequestsModal({
                               <p className="text-sm text-white/70">{request.message}</p>
                             </div>
                           )}
+
+                          {/* Action Buttons */}
+                          <div className="mt-4 flex gap-3">
+                            {request.interview_type.toLowerCase() === "technical" && request.status === "accepted" && (
+                              <button
+                                onClick={() => handleStartTechnicalInterview(request.id)}
+                                className="flex items-center gap-2 px-4 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors border border-cyan-500/30"
+                              >
+                                <Code className="w-4 h-4" />
+                                <span>Start Coding Interview</span>
+                              </button>
+                            )}
+                            {request.status === "pending" && (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const response = await fetch(`/api/user/interview-requests/${request.id}/accept`, {
+                                        method: "POST",
+                                      });
+                                      const result = await response.json();
+                                      if (result.success) {
+                                        showSnackbar("Interview request accepted", "success");
+                                        fetchInterviewRequests();
+                                      } else {
+                                        showSnackbar(result.error || "Failed to accept", "error");
+                                      }
+                                    } catch (err: any) {
+                                      showSnackbar("Failed to accept interview", "error");
+                                    }
+                                  }}
+                                  className="flex items-center gap-2 px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors border border-green-500/30"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span>Accept</span>
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const response = await fetch(`/api/user/interview-requests/${request.id}/reject`, {
+                                        method: "POST",
+                                      });
+                                      const result = await response.json();
+                                      if (result.success) {
+                                        showSnackbar("Interview request rejected", "success");
+                                        fetchInterviewRequests();
+                                      } else {
+                                        showSnackbar(result.error || "Failed to reject", "error");
+                                      }
+                                    } catch (err: any) {
+                                      showSnackbar("Failed to reject interview", "error");
+                                    }
+                                  }}
+                                  className="flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors border border-red-500/30"
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                  <span>Reject</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </motion.div>
