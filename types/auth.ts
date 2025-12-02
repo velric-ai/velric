@@ -20,6 +20,8 @@ export interface User {
   isRecruiter?: boolean;
   createdAt?: string;
   surveyCompletedAt?: string | null;
+  surveyCompleted?: boolean; // Derived from surveyCompletedAt !== null
+  hasSurveyResponse?: boolean; // Derived from checking survey_responses table
   profileComplete?: boolean;
 }
 
@@ -45,6 +47,8 @@ export interface AuthContextType {
   login: (data: LoginData) => Promise<User | null>;
   signup: (data: SignupData) => Promise<SignupResponse>;
   logout: () => void;
+  googleSignIn: () => Promise<void>;
+  googleSignUp: () => Promise<void>;
   snackbarMessage: string | null;
   isSnackbarVisible: boolean;
   hideSnackbar: () => void;

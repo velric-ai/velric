@@ -119,6 +119,8 @@ export async function submitSurveyData(
     const userData = getLocalStorageItem("velric_user");
     const userId = userData ? JSON.parse(userData).id : "guest";
 
+    console.log('[submitSurveyData] 🚀 Starting survey submission for userId:', userId);
+
     // Validate minimal required data
     if (!formData.fullName.value || !formData.industry.value) {
       throw new ValidationError("Missing required fields before submission");
@@ -185,6 +187,7 @@ export async function submitSurveyData(
     }
 
     // Try to insert into Supabase
+    console.log('[submitSurveyData] 🔄 Attempting to insert survey into Supabase for userId:', userId);
     const { data, error } = await supabase
       .from("survey_responses")
       .insert([payload])
@@ -193,17 +196,14 @@ export async function submitSurveyData(
 
     if (error) {
       console.error("❌ Supabase insert error:", error);
+      console.log('[submitSurveyData] 🔄 Error inserting to Supabase, attempting API endpoint fallback for userId:', userId);
       
-      // If API key is invalid, fallback to API endpoint
-      if (error.message?.includes("Invalid API key") || error.message?.includes("JWT")) {
-        console.warn("⚠️ Invalid API key detected, falling back to API endpoint");
-        return await submitViaAPIEndpoint(payload, userId);
-      }
-      
-      throw new ServerError(error.message || "Failed to save survey data");
+      // Always fallback to API endpoint which handles the user update
+      return await submitViaAPIEndpoint(payload, userId);
     }
 
     console.log("✅ Survey saved to Supabase:", data);
+    console.log('[submitSurveyData] ✅ Survey data successfully persisted, userId:', userId);
 
     return {
       success: true,
@@ -262,11 +262,15 @@ async function submitViaAPIEndpoint(
       body: JSON.stringify(apiPayload),
     });
 
+    console.log('[submitViaAPIEndpoint] 📡 API Response status:', response.status, 'for userId:', userId);
     const result = await response.json();
 
     if (!result.success) {
+      console.error('[submitViaAPIEndpoint] ❌ API returned failure:', result);
       throw new ServerError(result.message || "Failed to save survey data");
     }
+
+    console.log('[submitViaAPIEndpoint] ✅ Survey successfully submitted via API for userId:', userId);
 
     return {
       success: true,

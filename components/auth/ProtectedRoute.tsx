@@ -205,12 +205,17 @@ export function ProtectedSurveyRoute({ children }: { children: React.ReactNode }
         const userData = JSON.parse(userDataStr);
         console.log('🔒 Survey Guard Check:', {
           onboarded: userData.onboarded,
-          surveyCompleted: userData.surveyCompleted
+          hasSurveyResponse: userData.hasSurveyResponse,
+          surveyCompletedAt: userData.surveyCompletedAt,
+          profileComplete: userData.profileComplete
         });
         
-        // If user is onboarded, survey is already completed
-        // Allow access if survey not completed, even if onboarded flag was toggled
-        if (userData.onboarded === true && userData.surveyCompleted === true) {
+        // If user has survey response OR survey is completed, redirect to dashboard
+        // Check if user has completed survey via survey_response table OR via timestamp
+        const hasSurveyResponse = userData.hasSurveyResponse === true;
+        const surveyCompletedViaTimestamp = userData.surveyCompletedAt !== null && userData.surveyCompletedAt !== undefined;
+        
+        if (hasSurveyResponse || surveyCompletedViaTimestamp) {
           console.log('⚠️ Survey guard - user already completed survey, redirecting to dashboard');
           router.replace('/user-dashboard');
           return;
@@ -275,6 +280,7 @@ export function ProtectedDashboardRoute({ children }: { children: React.ReactNod
           path: currentPath,
           isRecruiter,
           onboarded: userData.onboarded,
+          hasSurveyResponse: userData.hasSurveyResponse,
           surveyCompleted: userData.surveyCompleted
         });
         
@@ -284,7 +290,10 @@ export function ProtectedDashboardRoute({ children }: { children: React.ReactNod
         // If accessing recruiter routes, must be a recruiter
         if (isRecruiterRoute && !isRecruiter) {
           console.log('❌ Dashboard guard - non-recruiter trying to access recruiter route, redirecting');
-          if (userData.onboarded === true) {
+          // Check if user has survey response instead of onboarded flag
+          const hasSurveyResponse = userData.hasSurveyResponse === true;
+          const surveyCompletedViaTimestamp = userData.surveyCompletedAt !== null && userData.surveyCompletedAt !== undefined;
+          if (hasSurveyResponse || surveyCompletedViaTimestamp || userData.onboarded === true) {
             router.replace('/user-dashboard');
           } else {
             router.replace('/onboard/survey');
@@ -300,9 +309,13 @@ export function ProtectedDashboardRoute({ children }: { children: React.ReactNod
           return;
         }
         
-        // For professionals or user-dashboard, check if user is onboarded
-        if (!isRecruiter && userData.onboarded !== true) {
-          console.log('❌ Dashboard guard - professional not onboarded, redirecting to survey');
+        // For professionals or user-dashboard, check if user has completed survey
+        // Instead of checking onboarded flag, check hasSurveyResponse
+        const hasSurveyResponse = userData.hasSurveyResponse === true;
+        const surveyCompletedViaTimestamp = userData.surveyCompletedAt !== null && userData.surveyCompletedAt !== undefined;
+        
+        if (!isRecruiter && !hasSurveyResponse && !surveyCompletedViaTimestamp && userData.onboarded !== true) {
+          console.log('❌ Dashboard guard - professional has not completed survey, redirecting to survey');
           router.replace('/onboard/survey');
           return;
         }

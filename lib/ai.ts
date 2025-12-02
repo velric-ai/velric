@@ -1,4 +1,5 @@
 // lib/ai.ts
+// lib/ai.ts
 import { MissionTemplate } from "@/types";
 import { StaticMission } from "@/data/staticMissions";
 import { storeAIGeneratedMission, supabase } from "@/lib/supabaseClient";
@@ -383,6 +384,10 @@ export async function generateAndStoreMissions(
   return generatedMissionIds;
 }
 
+
+
+
+
 /**
  * Download a resume/portfolio file from Supabase storage and return its content.
  * If the file is a text-like file it will return `text`, otherwise it returns `base64`.
@@ -450,6 +455,7 @@ export async function fetchFileFromSupabase(
 /**
  * Use OpenAI to parse a resume (either text or base64 binary) into a structured JSON object.
  */
+
 export async function parseResumeWithOpenAI(
   resumePayload: { text?: string; base64?: string },
   options?: { filename?: string }
