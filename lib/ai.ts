@@ -455,7 +455,7 @@ export async function fetchFileFromSupabase(
 /**
  * Use OpenAI to parse a resume (either text or base64 binary) into a structured JSON object.
  */
-/*
+
 export async function parseResumeWithOpenAI(
   resumePayload: { text?: string; base64?: string },
   options?: { filename?: string }
