@@ -79,6 +79,7 @@ export default async function handler(
         rubric: mission.rubric || null,
         positive_templates: mission.positive_templates || null,
         improvement_templates: mission.improvement_templates || null,
+        tab_switch_count: mission.tab_switch_count || 0,
         started_at: mission.started_at || null,
         completed_at: mission.completed_at || null,
         created_at: mission.created_at,

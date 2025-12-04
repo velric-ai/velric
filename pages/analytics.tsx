@@ -221,8 +221,8 @@ function AnalyticsContent() {
                                 className="space-y-6"
                               >
                                 {/* Scores */}
-                                {(mission.grade || mission.velric_score) && (
-                                  <div className="grid grid-cols-2 gap-4">
+                                {(mission.grade || mission.velric_score || mission.tab_switch_count !== undefined) && (
+                                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                     {mission.grade && (
                                       <div className="bg-white/5 rounded-lg p-4 border border-white/10">
                                         <p className="text-white/60 text-sm mb-1">Grade</p>
@@ -235,10 +235,62 @@ function AnalyticsContent() {
                                         <p className="text-2xl font-bold text-cyan-400">{mission.velric_score}/10</p>
                                       </div>
                                     )}
+                                    {mission.tab_switch_count !== undefined && (
+                                      <div className={`bg-white/5 rounded-lg p-4 border ${
+                                        mission.tab_switch_count > 0 
+                                          ? 'border-red-400/30 bg-red-400/10' 
+                                          : 'border-green-400/30 bg-green-400/10'
+                                      }`}>
+                                        <p className="text-white/60 text-sm mb-1">Tab Switches</p>
+                                        <p className={`text-2xl font-bold ${
+                                          mission.tab_switch_count > 0 
+                                            ? 'text-red-400' 
+                                            : 'text-green-400'
+                                        }`}>{mission.tab_switch_count}</p>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
 
-                                {/* Dates */}
+                                {/* Tab Switch Deduction Notice */}
+                                {mission.tab_switch_count > 0 && (
+                                  <div className="bg-red-400/10 rounded-lg p-4 border border-red-400/30">
+                                    <div className="flex items-start gap-3">
+                                      <div className="flex-shrink-0 mt-1">
+                                        <div className="w-6 h-6 bg-red-400/20 rounded-full flex items-center justify-center">
+                                          <span className="text-red-400 font-bold text-sm">!</span>
+                                        </div>
+                                      </div>
+                                      <div className="flex-1">
+                                        <h4 className="text-red-400 font-semibold mb-1">Score Deduction Applied</h4>
+                                        <p className="text-white/80 text-sm">
+                                          {mission.tab_switch_count === 1
+                                            ? `1 tab switch detected: 10% deduction applied`
+                                            : mission.tab_switch_count === 2
+                                            ? `2 tab switches detected: 20% deduction applied`
+                                            : `${mission.tab_switch_count} tab switches detected: 50% deduction applied`}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Perfect Focus Badge */}
+                                {mission.tab_switch_count === 0 && (
+                                  <div className="bg-green-400/10 rounded-lg p-4 border border-green-400/30">
+                                    <div className="flex items-start gap-3">
+                                      <div className="flex-shrink-0 mt-1">
+                                        <div className="w-6 h-6 bg-green-400/20 rounded-full flex items-center justify-center">
+                                          <span className="text-green-400 font-bold text-sm">✓</span>
+                                        </div>
+                                      </div>
+                                      <div className="flex-1">
+                                        <h4 className="text-green-400 font-semibold mb-1">Perfect Focus Maintained</h4>
+                                        <p className="text-white/80 text-sm">Excellent! No tab switches during this mission.</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                   {mission.started_date && (
                                     <div className="bg-white/5 rounded-lg p-4 border border-white/10">

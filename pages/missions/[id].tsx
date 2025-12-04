@@ -192,6 +192,7 @@ export default function MissionDetailPage() {
           submissionText: form.submissionText,
           missionId: id,
           userId,
+          tabSwitchCount,
         }),
       });
       const data = await res.json();

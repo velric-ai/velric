@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Code, Play, Save, FileText, X } from 'lucide-react';
+import { Code, Play, Save, FileText, X, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface MissionIDEProps {
@@ -28,8 +28,16 @@ export default function MissionIDE({ language, missionId, initialCode = '', onCo
   const [output, setOutput] = useState('');
   const [showOutput, setShowOutput] = useState(false);
   const [fileName, setFileName] = useState(`solution${languageConfig[language]?.extension || '.txt'}`);
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState('');
 
   const langConfig = languageConfig[language.toLowerCase()] || { name: language, extension: '.txt', comment: '//' };
+
+  const showWarningMessage = (message: string) => {
+    setWarningMessage(message);
+    setShowWarning(true);
+    setTimeout(() => setShowWarning(false), 3000);
+  };
 
   useEffect(() => {
     // Load saved code from localStorage
@@ -148,6 +156,23 @@ export default function MissionIDE({ language, missionId, initialCode = '', onCo
             <textarea
               value={code}
               onChange={(e) => setCode(e.target.value)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                showWarningMessage('❌ Right-click is disabled');
+              }}
+              onKeyDown={(e) => {
+                if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+                  e.preventDefault();
+                  showWarningMessage('❌ Copy is not allowed');
+                } else if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+                  e.preventDefault();
+                  showWarningMessage('❌ Paste is not allowed');
+                }
+              }}
+              onPaste={(e) => {
+                e.preventDefault();
+                showWarningMessage('❌ Paste is not allowed');
+              }}
               className="w-full h-full bg-transparent text-white font-mono text-sm p-4 pl-16 focus:outline-none resize-none"
               placeholder={`// Start coding in ${langConfig.name}...\n// Your code will be auto-saved\n`}
               spellCheck={false}
@@ -190,6 +215,19 @@ export default function MissionIDE({ language, missionId, initialCode = '', onCo
         <span>Lines: {lineCount} | Characters: {code.length}</span>
         <span className="text-cyan-400">Auto-save enabled</span>
       </div>
+
+      {/* Warning Message */}
+      {showWarning && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-500/90 text-white px-6 py-3 rounded-lg flex items-center gap-2 shadow-lg z-50"
+        >
+          <AlertCircle className="w-5 h-5" />
+          <span className="font-medium">{warningMessage}</span>
+        </motion.div>
+      )}
     </div>
   );
 }
