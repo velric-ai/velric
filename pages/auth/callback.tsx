@@ -1,238 +1,137 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
 import { supabase } from '@/lib/supabaseClient';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { getUser, createUser, checkUserExists } from '@/lib/auth';
+import { useSnackbar } from '@/hooks/useSnackbar';
 
 export default function AuthCallback() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { showSnackbar } = useSnackbar();
 
   useEffect(() => {
     const handleCallback = async () => {
+      if (status === 'loading') {
+        return; // Still loading
+      }
+
+      if (status === 'unauthenticated') {
+        showSnackbar('Authentication failed. Please try again.', 'error');
+        setTimeout(() => router.push('/login'), 2000);
+        return;
+      }
+
+      if (!session?.user) {
+        showSnackbar('No session found. Please try again.', 'error');
+        setTimeout(() => router.push('/login'), 2000);
+        return;
+      }
+
       try {
-        // Get the session from the URL hash (Supabase sets this)
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-        if (sessionError || !session) {
-          setError('Failed to get session from Google OAuth');
-          setTimeout(() => router.push('/login'), 2000);
+        const authUser = session.user as any;
+        const mode = router.query.mode as string || 'login'; // Get mode from query params
+        
+        let userData;
+        if (mode === 'signup') {
+          // For signup: check if user exists first
+          const userExists = await checkUserExists(session.user.email!);
+          
+          if (userExists) {
+            // User already exists, show error and redirect to login
+            showSnackbar('This email is already registered. Please sign in instead.', 'error');
+            setLoading(false);
+            setTimeout(() => router.push('/login'), 2000);
+            return;
+          }
+          
+          // User doesn't exist, redirect to user type selection
+          // The select-user-type page will get data from NextAuth session
+          setLoading(false);
+          router.push('/auth/select-user-type');
           return;
-        }
-
-        const authUser = session.user;
-
-        // Check if user exists in our users table
-        const { data: existingUser, error: checkError } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", authUser.id)
-          .maybeSingle();
-
-        if (checkError && checkError.code !== "PGRST116") {
-          console.error("Error checking user:", checkError);
-          setError('Failed to check user account');
-          setTimeout(() => router.push('/login'), 2000);
-          return;
-        }
-
-        // If user already exists, load their profile
-        if (existingUser) {
-          console.log('🔍 [OAuth Callback] User found in DB:', {
-            id: existingUser.id,
-            email: existingUser.email,
-            onboarded: existingUser.onboarded,
-            is_recruiter: existingUser.is_recruiter,
-            survey_completed_at: existingUser.survey_completed_at,
-            profile_complete: existingUser.profile_complete,
+        } else {
+          // For login: get existing user and store tokens
+          const sessionWithTokens = session as any;
+          console.log('[Callback] Login - Session tokens:', {
+            hasAccessToken: !!sessionWithTokens.accessToken,
+            hasRefreshToken: !!sessionWithTokens.refreshToken,
+            expiresAt: sessionWithTokens.expiresAt,
+            userId: authUser.id,
+            email: session.user.email,
+          });
+          
+          const result = await getUser({
+            id: authUser.id,
+            email: session.user.email!,
+            accessToken: sessionWithTokens.accessToken,
+            refreshToken: sessionWithTokens.refreshToken,
+            expiresAt: sessionWithTokens.expiresAt,
           });
 
-          // CHECK IF USER HAS COMPLETED SURVEY BY LOOKING FOR SURVEY RESPONSE
-          const { data: surveyResponse, error: surveyError } = await supabase
-            .from("survey_responses")
-            .select("id")
-            .eq("user_id", existingUser.id)
-            .maybeSingle();
-
-          console.log('🔍 [OAuth Callback] Survey response check:', { hasSurvey: !!surveyResponse, surveyError });
-
-          // CRITICAL: Clear any old survey data for existing users
-          localStorage.removeItem('velric_survey_draft');
-          localStorage.removeItem('velric_survey_state');
-
-          // User already exists, store in localStorage and redirect to dashboard
-          const userObject = {
-            id: existingUser.id,
-            email: existingUser.email,
-            name: existingUser.name,
-            onboarded: existingUser.onboarded,
-            isRecruiter: Boolean(existingUser.is_recruiter),
-            createdAt: existingUser.created_at,
-            surveyCompletedAt: existingUser.survey_completed_at,
-            surveyCompleted: existingUser.survey_completed_at !== null, // Set based on timestamp
-            profileComplete: existingUser.profile_complete,
-            hasSurveyResponse: !!surveyResponse, // New flag based on actual survey response
-          };
-          localStorage.setItem('velric_user', JSON.stringify(userObject));
-
-          console.log('✅ [OAuth Callback] Stored user in localStorage:', userObject);
-          console.log('✅ [OAuth Callback] surveyCompleted flag:', userObject.surveyCompleted);
-          console.log('✅ [OAuth Callback] hasSurveyResponse flag:', userObject.hasSurveyResponse);
-          console.log('✅ [OAuth Callback] Condition check - isRecruiter:', existingUser.is_recruiter, '| hasSurvey:', !!surveyResponse);
-
-          // Redirect based on user type and onboarding status (same logic as email/password login)
-          if (existingUser.is_recruiter) {
-            console.log('🔄 [OAuth Callback] Redirecting recruiter to /recruiter-dashboard');
-            router.push('/recruiter-dashboard');
-          } else if (surveyResponse) {
-            // User has completed survey (has survey response), send to dashboard
-            console.log('🔄 [OAuth Callback] User has survey response, redirecting to /user-dashboard');
-            // Small delay to ensure localStorage is fully synced before navigation
-            setTimeout(() => {
-              router.push('/user-dashboard');
-            }, 100);
-          } else {
-            // User hasn't completed survey yet, send to survey
-            console.log('🔄 [OAuth Callback] No survey response found, sending to survey');
-            localStorage.removeItem('velric_survey_draft');
-            localStorage.removeItem('velric_survey_state');
-            const freshSurveyState = {
-              currentStep: 1,
-              currentStepIndex: 0,
-              totalSteps: 9,
-              completedSteps: [],
-              surveyData: {},
-              startedAt: new Date().toISOString()
-            };
-            localStorage.setItem('velric_survey_state', JSON.stringify(freshSurveyState));
-            router.push('/onboard/survey');
-          }
-          return;
-        }
-
-        // User doesn't exist, create them
-        // Determine if recruiter based on email domain or metadata
-        const isRecruiter = authUser.user_metadata?.is_recruiter || false;
-        const name = authUser.user_metadata?.full_name || authUser.email?.split("@")[0] || "User";
-
-        const { data: newUser, error: createError } = await supabase
-          .from("users")
-          .insert([
-            {
-              id: authUser.id,
-              email: authUser.email,
-              name: name,
-              onboarded: false,
-              is_recruiter: isRecruiter,
-              created_at: new Date().toISOString(),
-              survey_completed_at: null,
-              profile_complete: false,
-            },
-          ])
-          .select()
-          .single();
-
-        if (createError) {
-          // Handle unique constraint violation (409) - try to load user instead
-          if (createError.code === "23505") {
-            console.warn("User already exists (409), attempting to load...");
-            // User might have been created by another request, try loading again
-            const { data: loadedUser, error: loadError } = await supabase
-              .from("users")
-              .select("*")
-              .eq("id", authUser.id)
-              .maybeSingle();
-
-            if (loadError || !loadedUser) {
-              console.error("Failed to load user after 409:", loadError);
-              setError('User creation conflict. Please try again.');
-              setTimeout(() => router.push('/login'), 2000);
-              return;
-            }
-
-            // Load the user that was created
-            const userObject = {
-              id: loadedUser.id,
-              email: loadedUser.email,
-              name: loadedUser.name,
-              onboarded: loadedUser.onboarded,
-              isRecruiter: Boolean(loadedUser.is_recruiter),
-              createdAt: loadedUser.created_at,
-              surveyCompletedAt: loadedUser.survey_completed_at,
-              surveyCompleted: loadedUser.survey_completed_at !== null, // Set based on timestamp
-              profileComplete: loadedUser.profile_complete,
-            };
-            localStorage.setItem('velric_user', JSON.stringify(userObject));
-
-            // Check if user has survey response
-            const { data: surveyResp } = await supabase
-              .from("survey_responses")
-              .select("id")
-              .eq("user_id", loadedUser.id)
-              .maybeSingle();
-
-            // Initialize survey for new user if no survey response exists
-            if (!surveyResp) {
-              localStorage.removeItem('velric_survey_draft');
-              localStorage.removeItem('velric_survey_state');
-              const freshSurveyState = {
-                currentStep: 1,
-                currentStepIndex: 0,
-                totalSteps: 9,
-                completedSteps: [],
-                surveyData: {},
-                startedAt: new Date().toISOString()
-              };
-              localStorage.setItem('velric_survey_state', JSON.stringify(freshSurveyState));
-              router.push('/onboard/survey');
-            } else {
-              router.push('/user-dashboard');
-            }
+          if (!result.success) {
+            // User not found, show error and redirect to signup
+            showSnackbar(result.error, 'error');
+            setLoading(false);
+            setTimeout(() => router.push('/signup'), 2000);
             return;
           }
 
-          console.error("Error creating user:", createError);
-          setError('Failed to create user account: ' + (createError.message || 'Unknown error'));
-          setTimeout(() => router.push('/login'), 2000);
-          return;
+          userData = result.data;
         }
 
-        // Successfully created new user
-        // CRITICAL: Clear any old survey data for new users
-        localStorage.removeItem('velric_survey_draft');
-        localStorage.removeItem('velric_survey_state');
-
-        // Store user in localStorage
+        // Store user in localStorage for compatibility with existing code
         const userObject = {
-          id: newUser.id,
-          email: newUser.email,
-          name: newUser.name,
-          onboarded: newUser.onboarded,
-          isRecruiter: Boolean(newUser.is_recruiter),
-          createdAt: newUser.created_at,
-          surveyCompletedAt: newUser.survey_completed_at,
-          surveyCompleted: newUser.survey_completed_at !== null, // Set based on timestamp
-          profileComplete: newUser.profile_complete,
+          id: userData.id,
+          email: userData.email,
+          name: userData.name,
+          onboarded: userData.onboarded,
+          isRecruiter: userData.isRecruiter,
+          createdAt: userData.createdAt,
+          surveyCompletedAt: userData.surveyCompletedAt,
+          surveyCompleted: userData.surveyCompleted,
+          profileComplete: userData.profileComplete,
         };
         localStorage.setItem('velric_user', JSON.stringify(userObject));
 
-        // Initialize fresh survey state for new user (Step 1)
-        const freshSurveyState = {
-          currentStep: 1,
-          currentStepIndex: 0,
-          totalSteps: 9,
-          completedSteps: [],
-          surveyData: {},
-          startedAt: new Date().toISOString()
-        };
-        localStorage.setItem('velric_survey_state', JSON.stringify(freshSurveyState));
+        // Check if user has survey response
+        const { data: surveyResponse } = await supabase
+          .from("survey_responses")
+          .select("id")
+          .eq("user_id", userData.id)
+          .maybeSingle();
 
-        // For new signup users, redirect to survey (Step 1)
-        const redirectUrl = new URL(window.location.href).searchParams.get('redirect') || '/onboard/survey';
-        router.push(redirectUrl);
+        // Redirect based on user type and onboarding status
+        if (userData.isRecruiter) {
+          router.push('/recruiter-dashboard');
+        } else if (surveyResponse) {
+          // User has completed survey, send to dashboard
+          setTimeout(() => {
+            router.push('/user-dashboard');
+          }, 100);
+        } else {
+          // User hasn't completed survey yet, send to survey
+          localStorage.removeItem('velric_survey_draft');
+          localStorage.removeItem('velric_survey_state');
+          const freshSurveyState = {
+            currentStep: 1,
+            currentStepIndex: 0,
+            totalSteps: 9,
+            completedSteps: [],
+            surveyData: {},
+            startedAt: new Date().toISOString()
+          };
+          localStorage.setItem('velric_survey_state', JSON.stringify(freshSurveyState));
+          router.push('/onboard/survey');
+        }
       } catch (error: any) {
         console.error('OAuth callback error:', error);
-        setError(error.message || 'An error occurred during authentication');
+        const errorMessage = error.message || 'An error occurred during authentication';
+        
+        // Show error in snackbar
+        showSnackbar(errorMessage, 'error');
         setTimeout(() => router.push('/login'), 2000);
       } finally {
         setLoading(false);
@@ -240,25 +139,14 @@ export default function AuthCallback() {
     };
 
     handleCallback();
-  }, [router]);
+  }, [session, status, router, showSnackbar]);
 
-  if (loading) {
+  if (loading || status === 'loading') {
     return (
       <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
         <div className="text-center">
           <LoadingSpinner />
           <p className="text-white mt-4">Signing you in...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-400 mb-4">{error}</p>
-          <p className="text-white/70">Redirecting to login...</p>
         </div>
       </div>
     );

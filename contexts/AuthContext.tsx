@@ -175,41 +175,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const googleSignIn = async (): Promise<void> => {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback?redirect=/user-dashboard`,
-        },
-      });
-      if (error) throw error;
-    } catch (error: any) {
-      console.error('Google sign in error:', error);
-      setSnackbarMessage(error.message || 'Failed to sign in with Google');
-      setIsSnackbarVisible(true);
-    } finally {
-      setIsLoading(false);
-    }
+    // Removed - using NextAuth directly from pages
   };
 
   const googleSignUp = async (): Promise<void> => {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback?redirect=/onboard/survey`,
-        },
-      });
-      if (error) throw error;
-    } catch (error: any) {
-      console.error('Google sign up error:', error);
-      setSnackbarMessage(error.message || 'Failed to sign up with Google');
-      setIsSnackbarVisible(true);
-    } finally {
-      setIsLoading(false);
-    }
+    // Removed - using NextAuth directly from pages
   };
 
   const hideSnackbar = (): void => {
