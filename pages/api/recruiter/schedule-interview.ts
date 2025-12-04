@@ -182,6 +182,9 @@ export default async function handler(
       });
     }
 
+    // Calendar events will be created when candidate accepts the interview request
+    // Do NOT create calendar events here - wait for candidate acceptance
+
     return res.status(201).json({
       success: true,
       interviewRequest: {
@@ -194,11 +197,14 @@ export default async function handler(
         preferred_time: interviewRequest.preferred_time,
         start_time: interviewRequest.start_time || null,
         end_time: interviewRequest.end_time || null,
+        scheduled_datetime: null, // Will be set when candidate accepts
+        google_calendar_event_id: null, // Will be set when candidate accepts
+        google_meet_link: null, // Will be set when candidate accepts
         message: interviewRequest.message,
-        status: interviewRequest.status,
+        status: interviewRequest.status, // Keep as pending until candidate accepts
         created_at: interviewRequest.created_at,
       },
-      message: "Interview request created successfully",
+      message: "Interview request created successfully. Calendar events will be created when candidate accepts.",
     });
   } catch (err: any) {
     console.error("/api/recruiter/schedule-interview error:", err);
