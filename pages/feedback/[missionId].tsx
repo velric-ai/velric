@@ -110,6 +110,62 @@ const FeedbackPage: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Tab Switch Deduction Notice */}
+                {submission?.tabSwitchCount !== undefined && submission.tabSwitchCount > 0 && (
+                  <div className="mb-12">
+                    <div className="bg-[#FF6B6B]/10 border-2 border-[#FF6B6B]/40 rounded-2xl p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-[#FF6B6B]/20 rounded-full flex items-center justify-center">
+                            <span className="text-[#FF6B6B] font-bold text-lg">!</span>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-[18px] font-semibold text-[#FF6B6B] font-sora mb-2">
+                            Score Deduction Applied
+                          </h3>
+                          <p className="text-[15px] text-[#F5F5F5] font-inter mb-3">
+                            {submission.tabSwitchCount === 1
+                              ? `You switched to another tab 1 time during the mission. A 10% deduction has been applied to your score.`
+                              : submission.tabSwitchCount === 2
+                              ? `You switched to another tab 2 times during the mission. A 20% deduction has been applied to your score.`
+                              : `You switched to another tab ${submission.tabSwitchCount} times during the mission. A 50% deduction has been applied to your score.`}
+                          </p>
+                          <div className="flex items-center gap-2 pt-2 border-t border-[#FF6B6B]/20">
+                            <span className="text-[13px] text-[#F5F5F5]/70 font-inter">Tab Switches:</span>
+                            <span className="text-[16px] font-bold text-[#FF6B6B] font-sora">{submission.tabSwitchCount}</span>
+                            <span className="text-[13px] text-[#F5F5F5]/70 font-inter ml-4">Deduction:</span>
+                            <span className="text-[16px] font-bold text-[#FF6B6B] font-sora">{submission.tabSwitchDeduction}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* No Tab Switches Notice */}
+                {submission?.tabSwitchCount === 0 && (
+                  <div className="mb-12">
+                    <div className="bg-[#00D9FF]/10 border-2 border-[#00D9FF]/40 rounded-2xl p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-[#00D9FF]/20 rounded-full flex items-center justify-center">
+                            <span className="text-[#00D9FF] font-bold text-lg">✓</span>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-[18px] font-semibold text-[#00D9FF] font-sora">
+                            Perfect Focus Maintained
+                          </h3>
+                          <p className="text-[15px] text-[#F5F5F5] font-inter">
+                            Excellent! You maintained perfect focus throughout the mission without switching tabs. No deduction applied.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Velric Score Section - PROMINENT DISPLAY */}
                 {submission?.velric_score !== undefined &&
                   submission?.velric_score !== null && (

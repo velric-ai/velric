@@ -795,6 +795,7 @@ export async function createSubmission(submissionData: {
   userId: string;
   missionId: string;
   submissionText: string;
+  tabSwitchCount?: number;
 }): Promise<any> {
   if (USE_DUMMY) {
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -805,6 +806,7 @@ export async function createSubmission(submissionData: {
       mission_id: submissionData.missionId,
       submission_text: submissionData.submissionText,
       status: "submitted",
+      tab_switch_count: submissionData.tabSwitchCount || 0,
       created_at: new Date().toISOString(),
     } as any;
 
@@ -820,6 +822,7 @@ export async function createSubmission(submissionData: {
         mission_id: parseInt(submissionData.missionId) || 0,
         status: "submitted",
         submission_text: submissionData.submissionText,
+        tab_switch_count: submissionData.tabSwitchCount || 0,
       })
       .select()
       .single();
@@ -836,6 +839,7 @@ export async function createSubmission(submissionData: {
         mission_id: submissionData.missionId,
         submission_text: submissionData.submissionText,
         status: "submitted",
+        tab_switch_count: submissionData.tabSwitchCount || 0,
         created_at: new Date().toISOString(),
       } as any;
       console.log(
@@ -893,10 +897,18 @@ export async function updateSubmission(
   try {
     const userMissionUpdate: any = {};
     
+    // Build update object - only include defined fields
     if (updates.status !== undefined) userMissionUpdate.status = updates.status;
     if (updates.overall_score !== undefined) userMissionUpdate.grade = updates.overall_score;
     if (updates.velricScore !== undefined) userMissionUpdate.velric_score = updates.velricScore;
-    if (updates.feedback !== undefined) userMissionUpdate.feedback_text = updates.feedback;
+    
+    // Handle feedback - try both field names (feedback and feedback_text)
+    if (updates.feedback !== undefined && updates.feedback !== null) {
+      userMissionUpdate.feedback_text = updates.feedback;
+    } else if (updates.feedback === null) {
+      userMissionUpdate.feedback_text = null;
+    }
+    
     if (updates.summary !== undefined) userMissionUpdate.summary = updates.summary;
     if (updates.letter_grade !== undefined) userMissionUpdate.letter_grade = updates.letter_grade;
     if (updates.grades !== undefined) userMissionUpdate.grades = updates.grades;
@@ -907,13 +919,38 @@ export async function updateSubmission(
       userMissionUpdate.completed_at = new Date().toISOString();
     }
 
+    console.log(`[updateSubmission] Updating submission ${submissionId} with:`, {
+      hasStatus: updates.status !== undefined,
+      hasGrade: updates.overall_score !== undefined,
+      hasVelricScore: updates.velricScore !== undefined,
+      hasFeedback: updates.feedback !== undefined && updates.feedback !== null ? "yes (length: " + updates.feedback.length + ")" : "no",
+      hasSummary: updates.summary !== undefined,
+      hasLetterGrade: updates.letter_grade !== undefined,
+      hasGrades: updates.grades !== undefined,
+      hasRubric: updates.rubric !== undefined,
+      hasPositiveTemplates: updates.positiveTemplates !== undefined,
+      hasImprovementTemplates: updates.improvementTemplates !== undefined,
+    });
+
     const { data, error } = await supabase
       .from("user_mission")
       .update(userMissionUpdate)
       .eq("id", submissionId)
       .select()
       .single();
-    if (error) throw error;
+    
+    if (error) {
+      console.error(`[updateSubmission] Supabase error for submission ${submissionId}:`, {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        updatePayload: userMissionUpdate,
+      });
+      throw error;
+    }
+    
+    console.log(`[updateSubmission] Successfully updated submission ${submissionId}`);
     return data;
   } catch (error: any) {
     if (error?.code === "PGRST205" || error?.code === "42P01") {

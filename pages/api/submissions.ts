@@ -52,14 +52,33 @@ async function analyzeSubmissionText(text: string): Promise<string> {
   return analysis;
 }
 
+// Helper function to calculate grade deduction based on tab switches
+function calculateTabSwitchDeduction(tabSwitchCount: number): number {
+  if (tabSwitchCount === 0) {
+    return 0; // No deduction
+  } else if (tabSwitchCount === 1) {
+    return 10; // 10% deduction
+  } else if (tabSwitchCount === 2) {
+    return 20; // 20% deduction
+  } else {
+    return 50; // 50% deduction for 3 or more
+  }
+}
+
 // Second API call: Generate comprehensive grading based on analysis
 async function generateGradingResponse(
   text: string,
-  analysis: string
+  analysis: string,
+  tabSwitchCount: number = 0
 ): Promise<any> {
   if (!OPENAI_KEY) {
     throw new Error("OpenAI API key not set");
   }
+
+  const tabSwitchDeduction = calculateTabSwitchDeduction(tabSwitchCount);
+  const tabSwitchNote = tabSwitchCount === 0 
+    ? "The user did not switch tabs during the mission, which is excellent."
+    : `The user switched tabs ${tabSwitchCount} time(s) during the mission. Apply a ${tabSwitchDeduction}% deduction to the final grade as a result.`;
 
   const system = `You are a HR panelist and expert evaluator. You will grade a submission based on the provided analysis and submission text. Return ONLY a single JSON object (no surrounding text) with the following keys:
 - grade: a decimal value from 0-10 (to 1 decimal place) representing the overall mission score.you can give the user 0 also if the user has not done anything in that category
@@ -71,7 +90,11 @@ async function generateGradingResponse(
 - positiveTemplates: an array of 2-4 short positive feedback templates (strings)
 - improvementTemplates: an array of 2-4 short improvement suggestion templates (strings)
 
-The grade (0-10) should directly reflect the quality of work.This grade can be 0 also if something irrelevant or unusual is provided. Letter grades must be ONLY from the allowed list (A, A+, B, B+, C, C+, D, F). Make sure the JSON is valid and contains all keys.`;
+IMPORTANT - Tab Switch Penalty:
+${tabSwitchNote}
+After calculating the base grade, apply this deduction to get the final grade value. For example, if the base grade would be 8.0 and there is a 10% deduction, the final grade should be 7.2 (8.0 - 0.8).
+
+The grade (0-10) should directly reflect the quality of work and include the tab switch deduction.This grade can be 0 also if something irrelevant or unusual is provided. Letter grades must be ONLY from the allowed list (A, A+, B, B+, C, C+, D, F). Make sure the JSON is valid and contains all keys.`;
 
   const user = `Submission analysis:\n${analysis}\n\nSubmission text:\n${text}`;
 
@@ -110,6 +133,7 @@ The grade (0-10) should directly reflect the quality of work.This grade can be 0
     grades: parsed.grades,
     letter_grade: parsed.letter_grade,
     hasFeedback: !!parsed.feedback,
+    tabSwitchDeduction: calculateTabSwitchDeduction(tabSwitchCount),
   });
 
   return parsed;
@@ -125,15 +149,19 @@ export default async function handler(
       .status(405)
       .json({ success: false, error: "Method not allowed" });
 
-  const { submissionText, missionId, userId } = req.body as {
+  const { submissionText, missionId, userId, tabSwitchCount } = req.body as {
     submissionText?: string;
     missionId?: string;
     userId?: string;
+    tabSwitchCount?: number;
   };
   if (!submissionText || !userId)
     return res
       .status(400)
       .json({ success: false, error: "Missing submissionText or userId" });
+  
+  const finalTabSwitchCount = tabSwitchCount || 0;
+  console.log(`[Grading] Tab Switch Count: ${finalTabSwitchCount}`);
 
   try {
     // 0) Determine if mission is technical or non-technical
@@ -170,6 +198,7 @@ export default async function handler(
       userId: userId!,
       missionId: missionId || "",
       submissionText: submissionText!,
+      tabSwitchCount: finalTabSwitchCount,
     });
 
     // 2) First API call: Analyze the submission text
@@ -178,7 +207,7 @@ export default async function handler(
 
     // 3) Second API call: Generate comprehensive grading based on analysis
     console.log("[Grading] Generating grading response based on analysis");
-    const grading = await generateGradingResponse(submissionText, analysis);
+    const grading = await generateGradingResponse(submissionText, analysis, finalTabSwitchCount);
 
     // 4) Use the grade (0-10) directly as the velric mission score
     const velricMissionScore = grading.grade;
@@ -210,7 +239,8 @@ export default async function handler(
 
       // 6) Update submission with grading details (use analysis as the main feedback)
       await updateSubmission(submission.id, {
-        feedback: analysis || null,
+        feedback: grading.feedback || analysis || null,
+        overall_score: grading.grade || null,
         grades: grading.grades || null,
         summary: grading.summary || null,
         letter_grade: grading.letter_grade ?? null,
