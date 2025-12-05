@@ -107,10 +107,7 @@ export default function AuthCallback() {
         if (userData.isRecruiter) {
           router.push('/recruiter-dashboard');
         } else if (surveyResponse) {
-          // User has completed survey, send to dashboard
-          setTimeout(() => {
             router.push('/user-dashboard');
-          }, 100);
         } else {
           // User hasn't completed survey yet, send to survey
           localStorage.removeItem('velric_survey_draft');
