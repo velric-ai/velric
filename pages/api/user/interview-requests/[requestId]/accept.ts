@@ -245,7 +245,7 @@ export default async function handler(
         );
         
         if (recruiterResult.success) {
-          recruiterCalendarEventId = recruiterResult.eventId;
+          recruiterCalendarEventId = recruiterResult.eventId as string;
           meetLink = recruiterResult.meetLink || null;
           debugLog.push(`[DEBUG] ✅ Calendar event created in recruiter's calendar: ${recruiterCalendarEventId}`);
           debugLog.push(`[DEBUG] ✅ Candidate will receive invitation to this event automatically`);
@@ -267,7 +267,7 @@ export default async function handler(
             );
             
             if (candidateResult.success) {
-              candidateCalendarEventId = candidateResult.eventId;
+              candidateCalendarEventId = candidateResult.eventId as string;
               meetLink = candidateResult.meetLink || null;
               debugLog.push(`[DEBUG] ✅ Fallback: Calendar event created in candidate's calendar: ${candidateCalendarEventId}`);
               debugLog.push(`[DEBUG] ✅ Recruiter will receive invitation to this event automatically`);
@@ -377,7 +377,7 @@ export default async function handler(
         const oauth2Client = new google.auth.OAuth2(
           process.env.GOOGLE_CLIENT_ID,
           process.env.GOOGLE_CLIENT_SECRET,
-          process.env.GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`
+          process.env.GOOGLE_REDIRECT_URI || `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/callback`
         );
 
         oauth2Client.setCredentials({ access_token: accessToken });
@@ -500,7 +500,7 @@ export default async function handler(
       endTime: endTimeISO,
       organizerEmail: recruiterEmail,
       attendeeEmails: [candidateEmail, recruiterEmail],
-      meetLink,
+      meetLink: meetLink as string,
       location: "Google Meet",
     });
 
