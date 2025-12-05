@@ -86,10 +86,30 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async redirect({ url, baseUrl }) {
-      // Allow relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      // Allow callback URLs on the same origin
-      if (new URL(url).origin === baseUrl) return url;
+      // Allow relative callback URLs (e.g., "/auth/callback?mode=login")
+      if (url.startsWith("/")) {
+        const fullUrl = `${baseUrl}${url}`;
+        return fullUrl;
+      }
+      
+      // Allow callback URLs on the same origin (full URLs)
+      try {
+        const urlObj = new URL(url);
+        const urlOrigin = urlObj.origin;
+        
+        // Compare origins - baseUrl might be just origin or full URL
+        const baseUrlOrigin = baseUrl.startsWith('http') 
+          ? new URL(baseUrl).origin 
+          : baseUrl;
+        
+        if (urlOrigin === baseUrlOrigin) {
+          return url;
+        }
+      } catch (error) {
+        console.error('[NextAuth Redirect] Error parsing URL:', error, { url });
+      }
+      
+      // Default: return baseUrl
       return baseUrl;
     },
   },
