@@ -44,7 +44,7 @@ export const authOptions: NextAuthOptions = {
           console.log('[NextAuth] Session - Tokens available:', {
             hasAccessToken: !!token.accessToken,
             hasRefreshToken: !!token.refreshToken,
-            expiresAt: token.expiresAt ? new Date(token.expiresAt).toISOString() : null,
+            expiresAt: token.expiresAt ? new Date(token.expiresAt as number).toISOString() : null,
             userId: token.sub,
             email: session.user.email,
           });
@@ -71,14 +71,14 @@ export const authOptions: NextAuthOptions = {
         console.log('[NextAuth] JWT - Stored tokens on initial sign-in:', {
           hasAccessToken: !!token.accessToken,
           hasRefreshToken: !!token.refreshToken,
-          expiresAt: token.expiresAt ? new Date(token.expiresAt).toISOString() : null,
+          expiresAt: token.expiresAt ? new Date(token.expiresAt as number).toISOString() : null,
           userId: token.id,
           email: token.email,
         });
       } else if (token.accessToken) {
         // Subsequent requests: tokens should already be in token
         // Check if token is expired and refresh if needed
-        if (token.expiresAt && token.expiresAt < Date.now()) {
+        if (token.expiresAt && (token.expiresAt as number) < Date.now()) {
           console.log('[NextAuth] JWT - Token expired, attempting refresh...');
           // Token refresh will be handled when needed in calendar creation
         }
