@@ -4,13 +4,17 @@ import { AlertCircle } from "lucide-react";
 import LoadingSpinner from "./LoadingSpinner";
 
 interface SubmissionFormProps {
-  onSubmit: (data: { submissionText: string }) => void;
+  onSubmit: (data: { submissionText: string; code?: string; language?: string }) => void;
   isLoading: boolean;
+  code?: string;
+  language?: string;
 }
 
 export default function SubmissionForm({
   onSubmit,
   isLoading,
+  code = '',
+  language = 'python',
 }: SubmissionFormProps) {
   const [submissionText, setSubmissionText] = useState("");
   const [showWarning, setShowWarning] = useState(false);
@@ -25,7 +29,11 @@ export default function SubmissionForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!submissionText.trim()) return;
-    onSubmit({ submissionText: submissionText.trim() });
+    onSubmit({ 
+      submissionText: submissionText.trim(),
+      code,
+      language,
+    });
   };
 
   return (
