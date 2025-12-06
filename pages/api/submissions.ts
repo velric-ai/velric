@@ -69,7 +69,9 @@ function calculateTabSwitchDeduction(tabSwitchCount: number): number {
 async function generateGradingResponse(
   text: string,
   analysis: string,
-  tabSwitchCount: number = 0
+  tabSwitchCount: number = 0,
+  code: string = "",
+  language: string = ""
 ): Promise<any> {
   if (!OPENAI_KEY) {
     throw new Error("OpenAI API key not set");
@@ -79,6 +81,10 @@ async function generateGradingResponse(
   const tabSwitchNote = tabSwitchCount === 0 
     ? "The user did not switch tabs during the mission, which is excellent."
     : `The user switched tabs ${tabSwitchCount} time(s) during the mission. Apply a ${tabSwitchDeduction}% deduction to the final grade as a result.`;
+
+  const codeSection = code 
+    ? `\n\nCode Submitted:\nLanguage: ${language}\n\`\`\`${language}\n${code}\n\`\`\``
+    : "";
 
   const system = `You are a HR panelist and expert evaluator. You will grade a submission based on the provided analysis and submission text. Return ONLY a single JSON object (no surrounding text) with the following keys:
 - grade: a decimal value from 0-10 (to 1 decimal place) representing the overall mission score.you can give the user 0 also if the user has not done anything in that category
@@ -96,7 +102,7 @@ After calculating the base grade, apply this deduction to get the final grade va
 
 The grade (0-10) should directly reflect the quality of work and include the tab switch deduction.This grade can be 0 also if something irrelevant or unusual is provided. Letter grades must be ONLY from the allowed list (A, A+, B, B+, C, C+, D, F). Make sure the JSON is valid and contains all keys.`;
 
-  const user = `Submission analysis:\n${analysis}\n\nSubmission text:\n${text}`;
+  const user = `Submission analysis:\n${analysis}\n\nSubmission text:\n${text}${codeSection}`;
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -149,11 +155,13 @@ export default async function handler(
       .status(405)
       .json({ success: false, error: "Method not allowed" });
 
-  const { submissionText, missionId, userId, tabSwitchCount } = req.body as {
+  const { submissionText, missionId, userId, tabSwitchCount, code, language } = req.body as {
     submissionText?: string;
     missionId?: string;
     userId?: string;
     tabSwitchCount?: number;
+    code?: string;
+    language?: string;
   };
   if (!submissionText || !userId)
     return res
@@ -199,6 +207,8 @@ export default async function handler(
       missionId: missionId || "",
       submissionText: submissionText!,
       tabSwitchCount: finalTabSwitchCount,
+      code: code || "",
+      language: language || "python",
     });
 
     // 2) First API call: Analyze the submission text
@@ -207,7 +217,13 @@ export default async function handler(
 
     // 3) Second API call: Generate comprehensive grading based on analysis
     console.log("[Grading] Generating grading response based on analysis");
-    const grading = await generateGradingResponse(submissionText, analysis, finalTabSwitchCount);
+    const grading = await generateGradingResponse(
+      submissionText, 
+      analysis, 
+      finalTabSwitchCount,
+      code || "",
+      language || ""
+    );
 
     // 4) Use the grade (0-10) directly as the velric mission score
     const velricMissionScore = grading.grade;

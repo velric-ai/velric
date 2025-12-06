@@ -796,6 +796,8 @@ export async function createSubmission(submissionData: {
   missionId: string;
   submissionText: string;
   tabSwitchCount?: number;
+  code?: string;
+  language?: string;
 }): Promise<any> {
   if (USE_DUMMY) {
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -807,6 +809,8 @@ export async function createSubmission(submissionData: {
       submission_text: submissionData.submissionText,
       status: "submitted",
       tab_switch_count: submissionData.tabSwitchCount || 0,
+      code_input: submissionData.code || null,
+      code_language: submissionData.language || null,
       created_at: new Date().toISOString(),
     } as any;
 
@@ -823,6 +827,8 @@ export async function createSubmission(submissionData: {
         status: "submitted",
         submission_text: submissionData.submissionText,
         tab_switch_count: submissionData.tabSwitchCount || 0,
+        code_input: submissionData.code || null,
+        code_language: submissionData.language || null,
       })
       .select()
       .single();

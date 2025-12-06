@@ -145,6 +145,9 @@ CREATE TABLE IF NOT EXISTS user_missions (
   status TEXT NOT NULL DEFAULT 'suggested',
   started_at TIMESTAMPTZ,
   completed_at TIMESTAMPTZ,
+  submission_text TEXT,
+  code_input TEXT,
+  code_language VARCHAR(50),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(user_id, mission_id)

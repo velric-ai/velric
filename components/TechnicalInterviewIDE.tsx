@@ -62,14 +62,18 @@ export default function TechnicalInterviewIDE({
     }
     if (savedLanguage) {
       setSelectedLanguage(savedLanguage);
+      console.log("[IDE] Loaded language from localStorage:", savedLanguage);
+    } else {
+      console.log("[IDE] No saved language, using initial:", initialLanguage);
     }
-  }, [interviewId, initialCode]);
+  }, [interviewId, initialCode, initialLanguage]);
 
   useEffect(() => {
     if (code) {
       localStorage.setItem(`interview_${interviewId}_code`, code);
     }
     localStorage.setItem(`interview_${interviewId}_language`, selectedLanguage);
+    console.log("[IDE] Saved language to localStorage:", selectedLanguage);
   }, [code, selectedLanguage, interviewId]);
 
   const handleRun = async () => {
@@ -104,7 +108,7 @@ export default function TechnicalInterviewIDE({
         const errorText = result.stderr ? `\nErrors:\n${result.stderr}` : '';
         setOutput(`${outputText}${errorText}`);
         if (result.stderr) {
-          showSnackbar('Code executed with warnings', 'warning');
+          showSnackbar('Code executed with warnings', 'info');
         } else {
           showSnackbar('Code executed successfully', 'success');
         }
@@ -153,7 +157,10 @@ export default function TechnicalInterviewIDE({
           <span className="text-sm text-white/60">Compiler:</span>
           <select
             value={selectedLanguage}
-            onChange={(e) => setSelectedLanguage(e.target.value)}
+            onChange={(e) => {
+              console.log("[IDE] Language changed to:", e.target.value);
+              setSelectedLanguage(e.target.value);
+            }}
             className="px-3 py-1.5 text-sm bg-cyan-500/20 text-cyan-400 rounded border border-cyan-500/30 focus:outline-none focus:ring-2 focus:ring-cyan-400"
           >
             {PROGRAMMING_LANGUAGES.map((lang) => (
@@ -176,18 +183,7 @@ export default function TechnicalInterviewIDE({
             )}
             {isRunning ? 'Running...' : 'Run'}
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting || isRunning}
-            className="px-4 py-1.5 text-sm bg-purple-500/20 text-purple-400 rounded hover:bg-purple-500/30 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <CheckCircle className="w-4 h-4" />
-            )}
-            {isSubmitting ? 'Submitting...' : 'Submit'}
-          </button>
+
         </div>
       </div>
 

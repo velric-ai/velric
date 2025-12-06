@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Mail, MapPin, GraduationCap, Briefcase, Code, Trophy, Linkedin, Github, Calendar, User, Globe } from "lucide-react";
+import { X, Mail, MapPin, GraduationCap, Briefcase, Code, Trophy, Linkedin, Github, Calendar, User, Globe, BarChart3 } from "lucide-react";
 import ScheduleInterviewFormModal from "./ScheduleInterviewFormModal";
+import CandidateAnalyticsModal from "./CandidateAnalyticsModal";
 
 interface CandidateProfileModalProps {
   isOpen: boolean;
@@ -55,6 +56,7 @@ export default function CandidateProfileModal({
   const [profile, setProfile] = useState<CandidateProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -250,14 +252,15 @@ export default function CandidateProfileModal({
                           </div>
                           <Trophy className="w-12 h-12 text-yellow-400" />
                         </div>
-                        {/* Missions Completed */}
+                        {/* View Analytics Button */}
                         <div className="pt-4 border-t border-cyan-500/20">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm text-white/60">Missions Completed</p>
-                            <p className="text-2xl font-bold text-white">
-                              {profile.missionsCompleted || 0}
-                            </p>
-                          </div>
+                          <button
+                            onClick={() => setIsAnalyticsModalOpen(true)}
+                            className="w-full px-4 py-3 rounded-lg font-medium text-white transition-all flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 active:scale-95"
+                          >
+                            <BarChart3 className="w-5 h-5" />
+                            <span>View Analytics</span>
+                          </button>
                         </div>
                       </div>
 
@@ -472,6 +475,16 @@ export default function CandidateProfileModal({
           candidateId={candidateId}
           candidateName={profile?.name || candidateName}
           candidateEmail={profile?.email || candidateEmail}
+        />
+      )}
+
+      {/* Analytics Modal */}
+      {isAnalyticsModalOpen && (
+        <CandidateAnalyticsModal
+          isOpen={isAnalyticsModalOpen}
+          onClose={() => setIsAnalyticsModalOpen(false)}
+          candidateId={candidateId}
+          candidateName={profile?.name || candidateName}
         />
       )}
     </>
