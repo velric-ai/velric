@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Clock, User, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Calendar, Clock, User, CheckCircle, XCircle, Loader2, Video } from "lucide-react";
 import { useSnackbar } from "@/hooks/useSnackbar";
 
 interface InterviewRequest {
@@ -17,6 +17,7 @@ interface InterviewRequest {
   end_time?: string | null;
   message: string | null;
   status: string;
+  google_meet_link?: string | null;
   created_at: string;
 }
 
@@ -281,6 +282,20 @@ export default function InterviewRequestsDropdown({
                           <span>{request.preferred_time}</span>
                         </div>
                       </div>
+
+                      {request.google_meet_link && (request.status === "accepted" || request.status === "scheduled") && (
+                        <div className="mb-3">
+                          <a
+                            href={request.google_meet_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-300 text-xs font-medium transition-all"
+                          >
+                            <Video className="w-3 h-3" />
+                            <span>Join Google Meet</span>
+                          </a>
+                        </div>
+                      )}
 
                       {/* Show Accept/Reject buttons only for pending status */}
                       {isPending ? (
