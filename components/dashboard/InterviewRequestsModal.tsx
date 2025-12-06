@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, Clock, User, MessageSquare, CheckCircle, XCircle, Clock as ClockIcon, Code, Play } from "lucide-react";
+import { X, Calendar, Clock, User, MessageSquare, CheckCircle, XCircle, Clock as ClockIcon, Code, Play, Video } from "lucide-react";
 import { useSnackbar } from "@/hooks/useSnackbar";
 
 interface InterviewRequest {
@@ -18,6 +18,7 @@ interface InterviewRequest {
   end_time?: string | null;
   message: string | null;
   status: string;
+  google_meet_link?: string | null;
   created_at: string;
 }
 
@@ -249,6 +250,32 @@ export default function InterviewRequestsModal({
                               <span className="text-sm">{formatDate(request.created_at)}</span>
                             </div>
                           </div>
+
+                          {request.google_meet_link && (request.status === "accepted" || request.status === "scheduled") && (
+                            <div className="mt-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <Video className="w-4 h-4 text-blue-400" />
+                                <span className="text-sm font-medium text-blue-300">Google Meet Link</span>
+                              </div>
+                              <a
+                                href={request.google_meet_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-blue-400 hover:text-blue-300 underline break-all block mb-2"
+                              >
+                                {request.google_meet_link}
+                              </a>
+                              <a
+                                href={request.google_meet_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-300 text-sm font-medium transition-all"
+                              >
+                                <Video className="w-4 h-4" />
+                                <span>Join Meeting</span>
+                              </a>
+                            </div>
+                          )}
 
                           {request.message && (
                             <div className="mt-3 p-3 rounded-lg bg-white/5 border border-white/10">

@@ -18,6 +18,7 @@ type InterviewRequestsResponse =
         end_time?: string | null;
         message: string | null;
         status: string;
+        google_meet_link?: string | null;
         created_at: string;
       }>;
       count: number;
@@ -110,6 +111,7 @@ export default async function handler(
           end_time: request.end_time || null,
           message: request.message,
           status: request.status,
+          google_meet_link: request.google_meet_link || null,
           created_at: request.created_at,
         };
       })
