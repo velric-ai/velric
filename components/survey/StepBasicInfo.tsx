@@ -26,7 +26,6 @@ export function StepBasicInfo({
   const [industrySearch, setIndustrySearch] = useState('');
   const [showIndustryDropdown, setShowIndustryDropdown] = useState(false);
   const [filteredIndustries, setFilteredIndustries] = useState(INDUSTRIES);
-  
   // Interview availability state
   const [timeSlots, setTimeSlots] = useState<Array<{ day: string; startTime: string; endTime: string }>>(
     formData.interviewAvailability?.value || []
@@ -51,6 +50,11 @@ export function StepBasicInfo({
     }
   }, [industrySearch]);
 
+  useEffect(() => {
+    if(formData.industry?.value) {
+      setIndustrySearch(formData.industry?.value);
+    }
+  }, [formData]);
   // Update interview availability in form data
   useEffect(() => {
     updateFormData({
@@ -63,13 +67,18 @@ export function StepBasicInfo({
     });
   }, [timeSlots, timezone, updateFormData]);
 
-  // Auto-detect timezone on mount
+  // Auto-detect timezone on mount and load existing data
   useEffect(() => {
-    if (typeof Intl !== "undefined" && !formData.interviewAvailability?.timezone) {
+    if (formData.interviewAvailability?.value && formData.interviewAvailability.value.length > 0) {
+      setTimeSlots(formData.interviewAvailability.value);
+    }
+    if (formData.interviewAvailability?.timezone) {
+      setTimezone(formData.interviewAvailability.timezone);
+    } else if (typeof Intl !== "undefined") {
       const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       setTimezone(detectedTimezone);
     }
-  }, []);
+  }, [formData.interviewAvailability]);
 
   // Reset subsequent steps when education level or industry changes
   useEffect(() => {

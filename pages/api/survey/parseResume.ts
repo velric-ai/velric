@@ -48,10 +48,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: "Missing or invalid pdfText. PDF should be parsed on client-side." });
     }
 
-    // 2️⃣ Parse resume text into structured JSON using OpenAI
+    // 2️⃣ Sanitize PDF text to remove null characters and invalid Unicode
+    const sanitizedPdfText = pdfText
+      .replace(/\u0000/g, '') // Remove null characters
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, ''); // Remove control characters
+
+    // 3️⃣ Parse resume text into structured JSON using OpenAI
     let resumeJson: any;
     try {
-      resumeJson = await parseResumeTextWithAI(pdfText);
+      resumeJson = await parseResumeTextWithAI(sanitizedPdfText);
     } catch (err) {
       console.error("OpenAI parsing error:", err);
       return res.status(500).json({
@@ -60,11 +65,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // 3️⃣ Update Supabase with structured JSON
+    // 4️⃣ Sanitize the JSON object to remove any null characters or invalid Unicode
+    const sanitizeJsonObject = (obj: any): any => {
+      if (obj === null || obj === undefined) return null;
+      if (typeof obj === 'string') {
+        return obj
+          .replace(/\u0000/g, '')
+          .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '');
+      }
+      if (Array.isArray(obj)) {
+        return obj.map(item => sanitizeJsonObject(item));
+      }
+      if (typeof obj === 'object') {
+        const sanitized: any = {};
+        for (const key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            sanitized[key] = sanitizeJsonObject(obj[key]);
+          }
+        }
+        return sanitized;
+      }
+      return obj;
+    };
+
+    const sanitizedResumeJson = sanitizeJsonObject(resumeJson);
+
+    // 5️⃣ Update Supabase with structured JSON
     try {
       const { error: updateError } = await supabase
         .from("survey_responses")
-        .update({ resume_json: resumeJson })
+        .update({ resume_json: sanitizedResumeJson })
         .eq("id", surveyResponseId);
 
       if (updateError) {
