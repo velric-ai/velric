@@ -235,8 +235,6 @@ function ProfileContent() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      setSnackbarMessage('Please select a valid image file');
-      setIsSnackbarVisible(true);
       return;
     }
 
@@ -316,10 +314,8 @@ function ProfileContent() {
       }
 
       // Update local state
-      setUserData(prev => prev ? { ...prev, avatar: urlData.publicUrl } : prev);
+      setUserData((prev:any) => prev ? { ...prev, avatar: urlData.publicUrl } : prev);
       setProfileImage(null);
-      setSnackbarMessage('Profile image updated successfully');
-      setIsSnackbarVisible(true);
     } catch (error: any) {
       console.error('Error uploading profile image:', error);
       showSnackbar(error.message || 'Failed to upload image. Please try again.', 'error');
