@@ -405,11 +405,6 @@ export default function MissionSubmitPage() {
               <h2 className="text-2xl font-semibold text-white mb-6 pb-4 border-b border-gray-800">
                 Submit Your Response
               </h2>
-              
-              {/* Debug Info */}
-              <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded text-blue-400 text-xs">
-                <p>Language detected: <span className="font-semibold">{languageFromIDE}</span></p>
-              </div>
 
               <SubmissionForm
                 onSubmit={handleSubmission}
