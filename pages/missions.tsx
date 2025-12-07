@@ -18,6 +18,8 @@ export default function MissionsPage() {
   const [source, setSource] = useState<'database' | 'static' | undefined>(undefined);
   const [generating, setGenerating] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [showTabWarning, setShowTabWarning] = useState(false);
   const [previewGenerating, setPreviewGenerating] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [userSurveyData, setUserSurveyData] = useState<any>(null);
@@ -102,6 +104,29 @@ export default function MissionsPage() {
     }, 5000);
     return () => clearTimeout(t);
   }, [surveyLoaded, userSurveyData]);
+
+  // Detect tab switches
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setTabSwitchCount(prev => {
+          const newCount = prev + 1;
+          console.log(`Tab switch detected. Count: ${newCount}`);
+          return newCount;
+        });
+      } else {
+        if (tabSwitchCount > 0) {
+          setShowTabWarning(true);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [tabSwitchCount]);
 
   const fetchUserMissionsOrGenerate = async () => {
     try {
@@ -340,34 +365,17 @@ export default function MissionsPage() {
           <div className="relative max-w-7xl mx-auto px-4 md:px-8 lg:px-16 py-16 md:py-24">
             
             {/* Header Section */}
-    <div className="text-center mb-16 relative z-50">
-      <motion.button
-        type="button"
-        onClick={handleBackToDashboard}
-        className="inline-flex items-center gap-2 text-[#00D9FF] hover:text-[#00D9FF] transition-colors duration-200 mb-8 bg-transparent border border-[#00D9FF] px-4 py-2 rounded-lg cursor-pointer"
-        whileHover={{ x: -5, scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <ArrowLeft className="w-5 h-5" />
-        Back to Dashboard
-      </motion.button>
-
-{/*
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-3 px-6 py-3 bg-[#1C1C1E] border border-[#6A0DAD]/30 rounded-full mb-8"
+            <div className="text-center mb-16 relative z-50">
+              <motion.button
+                type="button"
+                onClick={handleBackToDashboard}
+                className="inline-flex items-center gap-2 text-[#00D9FF] hover:text-[#00D9FF] transition-colors duration-200 mb-8 bg-transparent border border-[#00D9FF] px-4 py-2 rounded-lg cursor-pointer"
+                whileHover={{ x: -5, scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <div className="w-3 h-3 bg-[#00D9FF] rounded-full mr-3 animate-pulse"></div>
-                <span className="text-[#00D9FF] text-[14px] font-inter font-semibold uppercase tracking-wide">
-                  Fresh AI Missions Generated
-                </span>
-
-                <span className="ml-3 px-3 py-1.5 text-xs rounded-lg bg-[#00D9FF]/20 text-[#00D9FF]/70 border border-[#00D9FF]/30">
-                  Refresh page for new missions
-                </span>
-              </motion.div>
-*/}
+                <ArrowLeft className="w-5 h-5" />
+                Back to Dashboard
+              </motion.button>
 
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
@@ -512,21 +520,6 @@ export default function MissionsPage() {
                           </span>
                         )}
                       </div>
-
-                      {/* Start Button */}
-                     {/*
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="w-full py-3 bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-[#6A0DAD]/25 transition-all duration-300"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartMission(mission.id);
-                        }}
-                      >
-                        Start Mission
-                      </motion.button>
-                      */}
                     </div>
                   </motion.div>
                 ))}
@@ -559,6 +552,69 @@ export default function MissionsPage() {
             )}
           </div>
         </div>
+
+        {/* Tab Switch Warning Modal */}
+        {showTabWarning && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowTabWarning(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-[#1C1C1E] border-2 border-orange-500/50 rounded-2xl p-8 max-w-md w-full relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Warning Icon */}
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-2xl font-bold text-white text-center mb-4">
+                Tab Switch Detected!
+              </h3>
+
+              {/* Message */}
+              <p className="text-[#F5F5F5]/80 text-center mb-2">
+                You have switched tabs or left this exam window{' '}
+                <span className="text-orange-500 font-bold text-xl">{tabSwitchCount}</span>{' '}
+                {tabSwitchCount === 1 ? 'time' : 'times'}.
+              </p>
+
+              {/* Warning Box */}
+              <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 mb-6">
+                <p className="text-orange-300 text-sm text-center flex items-start gap-2">
+                  <span className="text-lg">⚠️</span>
+                  <span>
+                    Multiple tab switches may result in exam termination and a recorded academic integrity violation.
+                  </span>
+                </p>
+              </div>
+
+              {/* Additional Info */}
+              <p className="text-[#F5F5F5]/60 text-sm text-center mb-6">
+                Please remain on this tab for the duration of the exam. All activity is being monitored and recorded.
+              </p>
+
+              {/* Button */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowTabWarning(false)}
+                className="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-orange-500/25 transition-all duration-300"
+              >
+                I Understand - Return to Exam
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
 
         <Footer />
       </div>
