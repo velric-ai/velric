@@ -53,13 +53,17 @@ export function ProtectedRoute({
 
           // Check onboarding requirements for other routes
           if (requireOnboarded) {
-            const { data: surveyResponse } = await supabase
-              .from("survey_responses")
-              .select("id")
-              .eq("user_id", userData.id)
-              .maybeSingle();
-
-            if (!surveyResponse) {
+            // Use API endpoint for consistency
+            try {
+              const response = await fetch(`/api/survey/${userData.id}`);
+              const result = await response.json();
+              
+              if (!result.success || !result.surveyData) {
+                router.replace('/onboard/survey');
+                return;
+              }
+            } catch (error) {
+              console.error('[ProtectedRoute] Error checking survey for requireOnboarded:', error);
               router.replace('/onboard/survey');
               return;
             }
@@ -218,20 +222,35 @@ export function ProtectedDashboardRoute({ children }: { children: React.ReactNod
         
         // For professionals, check if user has completed survey
         if (!isRecruiter) {
-          const { data: surveyResponse } = await supabase
-            .from("survey_responses")
-            .select("id")
-            .eq("user_id", userData.id)
-            .maybeSingle();
+          // Use API endpoint for consistency with other parts of the app
+          try {
+            const response = await fetch(`/api/survey/${userData.id}`);
+            if (!response.ok) {
+              console.warn('[ProtectedDashboardRoute] API response not OK:', response.status, response.statusText);
+              router.replace('/onboard/survey');
+              return;
+            }
+            
+            const result = await response.json();
+            
+            // Check if survey exists (API returns success: true with surveyData that can be null)
+            if (!result.success || !result.surveyData) {
+              console.log('[ProtectedDashboardRoute] No survey found for user:', userData.id);
+              router.replace('/onboard/survey');
+              return;
+            }
 
-          if (!surveyResponse) {
-            router.replace('/onboard/survey');
+            console.log('[ProtectedDashboardRoute] Survey found, allowing dashboard access');
+            setShouldRender(true);
+            setIsChecking(false);
+            return;
+          } catch (error) {
+            console.error('[ProtectedDashboardRoute] Error checking survey:', error);
+            // On error, allow access but log it (graceful degradation)
+            setShouldRender(true);
+            setIsChecking(false);
             return;
           }
-
-          setShouldRender(true);
-          setIsChecking(false);
-          return;
         }
         
         // If recruiter trying to access user-dashboard, redirect to recruiter dashboard

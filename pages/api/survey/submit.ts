@@ -133,7 +133,35 @@ function validatePortfolioUrl(url: string): string | null {
 
 function sanitizeInput(input: string): string {
   if (typeof input !== 'string') return '';
-  return input.trim().slice(0, 1000); // Prevent extremely long inputs
+  // Remove null characters and invalid Unicode sequences
+  return input
+    .replace(/\u0000/g, '') // Remove null characters
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '') // Remove control characters
+    .trim()
+    .slice(0, 1000); // Prevent extremely long inputs
+}
+
+// Sanitize JSON objects to remove null characters and invalid Unicode
+function sanitizeJsonObject(obj: any): any {
+  if (obj === null || obj === undefined) return null;
+  if (typeof obj === 'string') {
+    return obj
+      .replace(/\u0000/g, '') // Remove null characters
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, ''); // Remove control characters
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeJsonObject(item));
+  }
+  if (typeof obj === 'object') {
+    const sanitized: any = {};
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        sanitized[key] = sanitizeJsonObject(obj[key]);
+      }
+    }
+    return sanitized;
+  }
+  return obj;
 }
 
 // Main handler
@@ -320,23 +348,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         file: portfolioFilename, // Store just the filename, not the full object
         url: sanitizedData.portfolioUrl,
       },
-      experience_summary: experienceSummary || sanitizedData.metadata?.experienceSummary || null,
+      experience_summary: experienceSummary 
+        ? sanitizeInput(experienceSummary) 
+        : (sanitizedData.metadata?.experienceSummary ? sanitizeInput(sanitizedData.metadata.experienceSummary) : null),
       interview_availability: interviewAvailability ? {
-        timeSlots: interviewAvailability.timeSlots || [],
-        timezone: interviewAvailability.timezone || null,
+        timeSlots: (interviewAvailability.timeSlots || []).map((slot: any) => ({
+          day: sanitizeInput(slot.day || ''),
+          startTime: sanitizeInput(slot.startTime || ''),
+          endTime: sanitizeInput(slot.endTime || ''),
+        })),
+        timezone: interviewAvailability.timezone ? sanitizeInput(interviewAvailability.timezone) : null,
       } : null,
-      platform_connections: sanitizedData.platformConnections,
-      logistics_preferences: sanitizedData.logisticsPreferences ? {
+      platform_connections: sanitizeJsonObject(sanitizedData.platformConnections),
+      logistics_preferences: sanitizedData.logisticsPreferences ? sanitizeJsonObject({
         current_region: sanitizedData.logisticsPreferences.currentRegion?.value || null,
-        legal_work_regions: sanitizedData.logisticsPreferences.legalWorkRegions?.value || [],
+        legal_work_regions: (sanitizedData.logisticsPreferences.legalWorkRegions?.value || []).map((r: string) => sanitizeInput(r)),
         sponsorship_consideration: sanitizedData.logisticsPreferences.sponsorshipConsideration?.value || null,
-        sponsorship_regions: sanitizedData.logisticsPreferences.sponsorshipRegions?.value || [],
-        sponsorship_depends_text: sanitizedData.logisticsPreferences.sponsorshipDependsText?.value || null,
+        sponsorship_regions: (sanitizedData.logisticsPreferences.sponsorshipRegions?.value || []).map((r: string) => sanitizeInput(r)),
+        sponsorship_depends_text: sanitizedData.logisticsPreferences.sponsorshipDependsText?.value ? sanitizeInput(sanitizedData.logisticsPreferences.sponsorshipDependsText.value) : null,
         relocation_openness: sanitizedData.logisticsPreferences.relocationOpenness?.value || null,
         relocation_regions: sanitizedData.logisticsPreferences.relocationRegions?.value || null,
         remote_work_international: sanitizedData.logisticsPreferences.remoteWorkInternational?.value || null,
-      } : null,
-      metadata: sanitizedData.metadata,
+      }) : null,
+      metadata: sanitizeJsonObject(sanitizedData.metadata),
       created_at: new Date().toISOString(),
     };
       console.log('[Survey Submit] Final payload:', JSON.stringify(payload, null, 2));

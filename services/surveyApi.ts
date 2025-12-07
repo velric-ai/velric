@@ -187,19 +187,66 @@ export async function submitSurveyData(
       };
     }
 
-    // Try to insert into Supabase
-    console.log('[submitSurveyData] 🔄 Attempting to insert survey into Supabase for userId:', userId);
-    const { data, error } = await supabase
-      .from("survey_responses")
-      .insert([payload])
-      .select()
-      .single();
+    // Check if survey exists and use update or insert accordingly
+    let data, error;
+    
+    if (surveyExists) {
+      // Get existing survey ID first
+      const { data: existingSurvey, error: fetchError } = await supabase
+        .from("survey_responses")
+        .select("id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error("❌ Error fetching existing survey:", fetchError);
+        // Fallback to API endpoint
+        return await submitViaAPIEndpoint(payload, userId, surveyExists);
+      }
+
+      if (existingSurvey && existingSurvey.id) {
+        console.log('[submitSurveyData] 🔄 Updating existing survey with ID:', existingSurvey.id, 'for userId:', userId);
+        // Remove created_at from update payload
+        const { created_at, ...updatePayload } = payload;
+        const updatePayloadWithTimestamp = {
+          ...updatePayload,
+          updated_at: new Date().toISOString()
+        };
+        
+        const updateResult = await supabase
+          .from("survey_responses")
+          .update(updatePayloadWithTimestamp)
+          .eq("id", existingSurvey.id)
+          .select()
+          .single();
+
+        data = updateResult.data;
+        error = updateResult.error;
+      } else {
+        // Survey was supposed to exist but not found, fallback to API
+        console.warn('[submitSurveyData] ⚠️ Survey was expected to exist but not found, using API endpoint');
+        return await submitViaAPIEndpoint(payload, userId, surveyExists);
+      }
+    } else {
+      // Insert new survey
+      console.log('[submitSurveyData] 🔄 Attempting to insert new survey into Supabase for userId:', userId);
+      const insertResult = await supabase
+        .from("survey_responses")
+        .insert([payload])
+        .select()
+        .single();
+
+      data = insertResult.data;
+      error = insertResult.error;
+    }
 
     if (error) {
-      console.error("❌ Supabase insert error:", error);
-      console.log('[submitSurveyData] 🔄 Error inserting to Supabase, attempting API endpoint fallback for userId:', userId);
+      console.error("❌ Supabase database error:", error);
+      console.log('[submitSurveyData] 🔄 Error with Supabase operation, attempting API endpoint fallback for userId:', userId);
       
-      // Always fallback to API endpoint which handles the user update
+      // Fallback to API endpoint which handles the user update
       return await submitViaAPIEndpoint(payload, userId, surveyExists);
     }
 
@@ -251,6 +298,7 @@ async function submitViaAPIEndpoint(
       portfolioFile: payload.portfolio?.file || null,
       portfolioUrl: payload.portfolio?.url || null,
       experienceSummary: payload.experience_summary,
+      interviewAvailability: payload.interview_availability || null,
       platformConnections: payload.platform_connections,
       metadata: payload.metadata,
     };

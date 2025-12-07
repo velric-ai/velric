@@ -158,6 +158,12 @@ function SurveyPageContent() {
             error: null,
             touched: true,
           },
+          interviewAvailability: {
+            value: survey.interview_availability?.timeSlots || [],
+            timezone: survey.interview_availability?.timezone || (typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC"),
+            error: null,
+            touched: true,
+          },
           logisticsPreferences: survey.logistics_preferences || null,
         });
         setEditMode(true);
