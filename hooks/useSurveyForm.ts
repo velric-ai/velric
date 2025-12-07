@@ -4,6 +4,7 @@ import {
   submitSurveyData,
   SurveyFormData,
   uploadPortfolioFile,
+  parseResumeWithAI,
 } from "../services/surveyApi";
 import { validateStep } from "../utils/surveyValidation";
 import {
@@ -11,6 +12,7 @@ import {
   AuthError,
   ValidationError,
 } from "../utils/surveyValidation";
+import { useSnackbar } from "./useSnackbar";
 
 // Added missing types
 interface PlatformConnection {
@@ -55,6 +57,12 @@ const initialFormData: SurveyFormData = {
     error: null,
     touched: false,
   },
+  interviewAvailability: {
+    value: [],
+    timezone: typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC",
+    error: null,
+    touched: false,
+  },
 
   // Step 2: Mission Questions (dynamic)
   missionFocus: {
@@ -65,21 +73,28 @@ const initialFormData: SurveyFormData = {
     options: [],
   },
 
-  // Step 3: Strength Areas
+  // Step 3: Candidate Level
+  level: {
+    value: "",
+    error: null,
+    touched: false,
+  },
+
+  // Step 4: Strength Areas
   strengthAreas: {
     value: [],
     error: null,
     touched: false,
   },
 
-  // Step 4: Learning Preference
+  // Step 5: Learning Preference
   learningPreference: {
     value: "",
     error: null,
     touched: false,
   },
 
-  // Step 5: Portfolio (Optional)
+  // Step 6: Portfolio (Optional)
   portfolio: {
     file: null,
     filePreview: null,
@@ -88,9 +103,11 @@ const initialFormData: SurveyFormData = {
     url: "",
     urlError: null,
     uploadStatus: null,
+    uploadedUrl: null,
+    uploadedFilename: null,
   },
 
-  // Step 6: Platform Connections (Optional)
+  // Step 7: Platform Connections (Optional)
   platformConnections: {
     github: {
       connected: false,
@@ -123,16 +140,30 @@ const initialFormData: SurveyFormData = {
     },
   },
 
-  // Step 7: Experience Summary
+  // Step 8: Experience Summary
   experienceSummary: {
     value: "",
     error: null,
     touched: false,
   },
 
+  // Step 8: Logistics & Interview Preferences
+  logisticsPreferences: {
+    currentRegion: { value: "", error: null, touched: false },
+    legalWorkRegions: { value: [], error: null, touched: false },
+    sponsorshipConsideration: { value: "", error: null, touched: false },
+    sponsorshipRegions: { value: [], error: null, touched: false },
+    sponsorshipDependsText: { value: "", error: null, touched: false },
+    relocationOpenness: { value: "", error: null, touched: false },
+    relocationRegions: { value: "", error: null, touched: false },
+    remoteWorkInternational: { value: "", error: null, touched: false },
+    error: null,
+    touched: false,
+  },
+
   // Meta/Navigation
   currentStep: 1,
-  totalSteps: 8,
+  totalSteps: 9,
   isSubmitting: false,
   submitError: null,
   completedAt: null,
@@ -149,6 +180,7 @@ const initialFormData: SurveyFormData = {
 
 export function useSurveyForm() {
   const router = useRouter();
+  const { showSnackbar } = useSnackbar();
   const [formData, setFormData] = useState<SurveyFormData>(initialFormData);
   const [stepStartTime, setStepStartTime] = useState<number>(Date.now());
 
@@ -195,29 +227,45 @@ useEffect(() => {
   checkForNewSignup();
 }, []);
 
-  const updateFormData = useCallback((updates: Partial<SurveyFormData>) => {
-    setFormData((prevState) => {
-      const newState = {
-        ...prevState,
-        ...updates,
-        updatedAt: Date.now(),
-      };
+  const updateFormData = useCallback(
+    (
+      updates:
+        | Partial<SurveyFormData>
+        | ((prevState: SurveyFormData) => Partial<SurveyFormData>)
+    ) => {
+      setFormData((prevState) => {
+        const resolvedUpdates =
+          typeof updates === "function" ? updates(prevState) : updates;
 
-      if (updates !== prevState) {
+        if (
+          !resolvedUpdates ||
+          typeof resolvedUpdates !== "object" ||
+          Object.keys(resolvedUpdates).length === 0
+        ) {
+          return prevState;
+        }
+
+        const newState = {
+          ...prevState,
+          ...resolvedUpdates,
+          updatedAt: Date.now(),
+        };
+
         newState.interactions = [
           ...prevState.interactions,
           {
             timestamp: Date.now(),
             step: prevState.currentStep,
             action: "field_update",
-            data: updates,
+            data: resolvedUpdates,
           },
         ];
-      }
 
-      return newState;
-    });
-  }, []);
+        return newState;
+      });
+    },
+    []
+  );
 
   const updateFieldData = useCallback((fieldName: string, fieldData: any) => {
     setFormData((prevState) => ({
@@ -271,6 +319,8 @@ useEffect(() => {
           url: "",
           urlError: null,
           uploadStatus: null,
+          uploadedUrl: null,
+          uploadedFilename: null,
         },
         // Step 6: Platform Connections (Optional)
         platformConnections: {
@@ -307,6 +357,19 @@ useEffect(() => {
         // Step 7: Experience Summary
         experienceSummary: {
           value: "",
+          error: null,
+          touched: false,
+        },
+        // Step 8: Logistics Preferences
+        logisticsPreferences: {
+          currentRegion: { value: "", error: null, touched: false },
+          legalWorkRegions: { value: [], error: null, touched: false },
+          sponsorshipConsideration: { value: "", error: null, touched: false },
+          sponsorshipRegions: { value: [], error: null, touched: false },
+          sponsorshipDependsText: { value: "", error: null, touched: false },
+          relocationOpenness: { value: "", error: null, touched: false },
+          relocationRegions: { value: "", error: null, touched: false },
+          remoteWorkInternational: { value: "", error: null, touched: false },
           error: null,
           touched: false,
         },
@@ -447,6 +510,28 @@ useEffect(() => {
     [formData]
   );
 
+  // Import the parseResumeAndStore function
+  // (You may need to add this import at the top of the file)
+  // import { parseResumeAndStore } from "../services/surveyApi";
+  const parseResumeAndStore = async (surveyResponseId: string, pdfText?: string) => {
+    try {
+      // If we have parsed PDF text from client-side parsing, use the new flow
+      if (pdfText) {
+        console.log("[useSurveyForm] Calling parseResumeWithAI with client-parsed PDF text");
+        const result = await parseResumeWithAI(surveyResponseId, pdfText);
+        return result;
+      } else {
+        // Fallback: old method (if needed)
+        console.log("[useSurveyForm] No PDF text provided, skipping resume parsing");
+        return null;
+      }
+    } catch (err) {
+      console.error("[useSurveyForm] Resume parsing failed:", err);
+      // Don't throw - let survey submission continue even if resume parsing fails
+      return null;
+    }
+  };
+
   const submitSurvey = useCallback(async () => {
     if (formData.isSubmitting) {
       console.warn("Survey submission already in progress");
@@ -460,7 +545,7 @@ useEffect(() => {
     }));
 
     try {
-      for (let step = 1; step <= 7; step++) {
+      for (let step = 1; step <= 8; step++) {
         const validation = validateStep(step, formData);
         if (!validation.isValid && (step <= 4 || step === 7)) {
           throw new ValidationError(
@@ -493,13 +578,26 @@ useEffect(() => {
       // Call API
       const result: SurveySubmissionResponse = await submitSurveyData(submissionData);
 
+      // If survey response has an id, trigger resume parsing with client-parsed PDF text
+      let surveyResponseId = result?.profile?.surveyData?.id;
+      if (result.success && surveyResponseId) {
+        // Get the parsed PDF text from form data if available
+        const pdfText = (formData.portfolio as any)?.parsedPdfText;
+        if (pdfText) {
+          console.log("[submitSurvey] Parsing resume with client-extracted PDF text...");
+          await parseResumeAndStore(surveyResponseId, pdfText);
+        } else {
+          console.log("[submitSurvey] No parsed PDF text available, skipping resume parsing");
+        }
+      }
+
       const surveyStateStr = localStorage.getItem("velric_survey_state");
       const surveyState = surveyStateStr ? JSON.parse(surveyStateStr) : {};
       const finalSurveyState = {
         ...surveyState,
-        currentStep: 8,
-        currentStepIndex: 7,
-        completedSteps: [1, 2, 3, 4, 5, 6, 7],
+        currentStep: 9,
+        currentStepIndex: 8,
+        completedSteps: [1, 2, 3, 4, 5, 6, 7, 8],
         completedAt: new Date().toISOString(),
       };
       localStorage.setItem(
@@ -509,15 +607,26 @@ useEffect(() => {
 
       setFormData((prev) => ({
         ...prev,
-        currentStep: 8,
+        currentStep: 9,
         completedAt: result.completedAt,
         isSubmitting: false,
         isDraft: false,
       }));
 
-      setTimeout(() => {
-        router.push("/user-dashboard");
-      }, 2000);
+      // Mark survey as completed in local storage for route guards
+      try {
+        const userDataStr = localStorage.getItem("velric_user");
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          userData.surveyCompleted = true;
+          userData.onboarded = true;
+          userData.surveyCompletedAt = new Date().toISOString();
+          localStorage.setItem("velric_user", JSON.stringify(userData));
+        }
+      } catch {}
+
+      // Route to dashboard after parsing is complete
+      router.push("/user-dashboard");
     } catch (error) {
       console.error("❌ Survey submission error:", error);
 
@@ -525,13 +634,18 @@ useEffect(() => {
 
       if (error instanceof AuthError) {
         errorMessage = "Session expired. Please sign in again.";
+        showSnackbar(errorMessage, "error");
         setTimeout(() => {
           router.push("/login?redirect=/onboard/survey");
         }, 2000);
       } else if (error instanceof ValidationError) {
         errorMessage = error.message;
+        showSnackbar(errorMessage, "error");
       } else if (error instanceof AppError) {
         errorMessage = error.message;
+        showSnackbar(errorMessage, "error");
+      } else {
+        showSnackbar(errorMessage, "error");
       }
 
       setFormData((prev) => ({

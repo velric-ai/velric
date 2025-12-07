@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, Check, AlertCircle } from "lucide-react";
+import { ChevronDown, Check, AlertCircle, Calendar, Clock, Plus, X, Globe } from "lucide-react";
 import { FormInput } from "./FormInput";
 import { validateFullName, validateEducationLevel, validateIndustry, sanitizeName } from "../../utils/surveyValidation";
+import { EDUCATION_LEVELS, INDUSTRIES, DAYS_OF_WEEK, TIME_SLOTS } from "@/data/surveyConstants";
 
 interface StepBasicInfoProps {
   formData: any;
@@ -13,48 +14,6 @@ interface StepBasicInfoProps {
   isSubmitting: boolean;
   resetSubsequentSteps?: () => void;
 }
-
-const EDUCATION_LEVELS = [
-  'High School',
-  'Some College',
-  'Bachelors Degree',
-  'Masters Degree',
-  'PhD',
-  'Self-Taught',
-  'Other'
-];
-
-const INDUSTRIES = [
-  'Technology & Software',
-  'Artificial Intelligence & ML',
-  'Finance & Banking',
-  'Healthcare & Medical',
-  'E-commerce & Retail',
-  'Education & Learning',
-  'Product Management',
-  'Consulting & Services',
-  'Marketing & Advertising',
-  'Operations & Supply Chain',
-  'Data Science & Analytics',
-  'Design & Creative',
-  'Startup Founder',
-  'Government & Public Sector',
-  'Non-profit',
-  'Transportation & Logistics',
-  'Real Estate & Property',
-  'Manufacturing',
-  'Agriculture & Food',
-  'Media & Entertainment',
-  'Legal Services',
-  'Hospitality & Tourism',
-  'Human Resources',
-  'Sales & Business Development',
-  'Research & Development',
-  'Quality Assurance',
-  'Customer Support',
-  'IT Infrastructure',
-  'Other'
-];
 
 export function StepBasicInfo({ 
   formData, 
@@ -67,6 +26,14 @@ export function StepBasicInfo({
   const [industrySearch, setIndustrySearch] = useState('');
   const [showIndustryDropdown, setShowIndustryDropdown] = useState(false);
   const [filteredIndustries, setFilteredIndustries] = useState(INDUSTRIES);
+  
+  // Interview availability state
+  const [timeSlots, setTimeSlots] = useState<Array<{ day: string; startTime: string; endTime: string }>>(
+    formData.interviewAvailability?.value || []
+  );
+  const [timezone, setTimezone] = useState<string>(
+    formData.interviewAvailability?.timezone || (typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC")
+  );
   
   // Track previous values to detect changes
   const prevEducationLevel = useRef(formData.educationLevel?.value);
@@ -83,6 +50,26 @@ export function StepBasicInfo({
       setFilteredIndustries(INDUSTRIES);
     }
   }, [industrySearch]);
+
+  // Update interview availability in form data
+  useEffect(() => {
+    updateFormData({
+      interviewAvailability: {
+        value: timeSlots,
+        timezone: timezone,
+        error: null,
+        touched: true,
+      },
+    });
+  }, [timeSlots, timezone, updateFormData]);
+
+  // Auto-detect timezone on mount
+  useEffect(() => {
+    if (typeof Intl !== "undefined" && !formData.interviewAvailability?.timezone) {
+      const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      setTimezone(detectedTimezone);
+    }
+  }, []);
 
   // Reset subsequent steps when education level or industry changes
   useEffect(() => {
@@ -105,7 +92,8 @@ export function StepBasicInfo({
 
   const handleNameChange = (value: string) => {
     const sanitized = sanitizeName(value);
-    const error = formData.fullName.touched ? validateFullName(sanitized) : null;
+    // Don't validate during typing, only on blur
+    const error = formData.fullName.touched ? validateFullName(sanitized.trim()) : null;
     
     updateFormData({
       fullName: {
@@ -117,10 +105,12 @@ export function StepBasicInfo({
   };
 
   const handleNameBlur = () => {
-    const error = validateFullName(formData.fullName.value);
+    // Trim only on blur for validation
+    const trimmedValue = formData.fullName.value.trim();
+    const error = validateFullName(trimmedValue);
     updateFormData({
       fullName: {
-        ...formData.fullName,
+        value: trimmedValue,
         error,
         touched: true
       }
@@ -184,6 +174,24 @@ export function StepBasicInfo({
     if (e.key === 'Enter' && canProceed && !isSubmitting) {
       onNext();
     }
+  };
+
+  // Interview availability handlers
+  const addTimeSlot = () => {
+    setTimeSlots([
+      ...timeSlots,
+      { day: "Monday", startTime: "09:00", endTime: "17:00" },
+    ]);
+  };
+
+  const removeTimeSlot = (index: number) => {
+    setTimeSlots(timeSlots.filter((_, i) => i !== index));
+  };
+
+  const updateTimeSlot = (index: number, field: 'day' | 'startTime' | 'endTime', value: string) => {
+    const updated = [...timeSlots];
+    updated[index] = { ...updated[index], [field]: value };
+    setTimeSlots(updated);
   };
 
   return (
@@ -354,11 +362,132 @@ export function StepBasicInfo({
           )}
         </motion.div>
 
-        {/* Navigation */}
+        {/* Interview Availability */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
+        >
+          <label className="block text-sm font-semibold text-white/90 mb-3">
+            <Calendar className="inline w-4 h-4 mr-2" />
+            What time slots are you usually available for interviews each week?
+          </label>
+
+          {/* Timezone Selection */}
+          <div className="mb-4">
+            <label className="flex items-center space-x-2 text-white/70 mb-2 text-sm">
+              <Globe className="w-4 h-4 text-cyan-400" />
+              <span>Your Timezone</span>
+            </label>
+            <select
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm"
+            >
+              {typeof Intl !== "undefined" && Intl.supportedValuesOf("timeZone").map((tz) => (
+                <option key={tz} value={tz} className="bg-gray-800">
+                  {tz.replace(/_/g, " ")}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Time Slots */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between mb-2">
+              <label className="flex items-center space-x-2 text-white/70 text-sm">
+                <Clock className="w-4 h-4 text-cyan-400" />
+                <span>Weekly Availability</span>
+              </label>
+              <button
+                type="button"
+                onClick={addTimeSlot}
+                className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 text-purple-300 transition-colors text-sm"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Add Time Slot</span>
+              </button>
+            </div>
+
+            {timeSlots.length === 0 ? (
+              <div className="text-center py-6 text-white/50 text-sm border border-white/10 rounded-xl bg-white/5">
+                <p className="mb-2">No time slots added yet</p>
+                <button
+                  type="button"
+                  onClick={addTimeSlot}
+                  className="px-4 py-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 text-purple-300 transition-colors text-sm"
+                >
+                  Add Your First Time Slot
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {timeSlots.map((slot, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10"
+                  >
+                    <select
+                      value={slot.day}
+                      onChange={(e) => updateTimeSlot(index, "day", e.target.value)}
+                      className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm flex-shrink-0"
+                    >
+                      {DAYS_OF_WEEK.map((day) => (
+                        <option key={day} value={day} className="bg-gray-800">
+                          {day}
+                        </option>
+                      ))}
+                    </select>
+
+                    <span className="text-white/40 text-sm">from</span>
+
+                    <select
+                      value={slot.startTime}
+                      onChange={(e) => updateTimeSlot(index, "startTime", e.target.value)}
+                      className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm flex-shrink-0"
+                    >
+                      {TIME_SLOTS.map((time) => (
+                        <option key={time} value={time} className="bg-gray-800">
+                          {time}
+                        </option>
+                      ))}
+                    </select>
+
+                    <span className="text-white/40 text-sm">to</span>
+
+                    <select
+                      value={slot.endTime}
+                      onChange={(e) => updateTimeSlot(index, "endTime", e.target.value)}
+                      className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 text-sm flex-shrink-0"
+                    >
+                      {TIME_SLOTS.map((time) => (
+                        <option key={time} value={time} className="bg-gray-800">
+                          {time}
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={() => removeTimeSlot(index)}
+                      className="ml-auto p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors flex-shrink-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Navigation */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
           className="flex justify-end pt-6"
         >
           <button

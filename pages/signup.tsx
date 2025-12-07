@@ -3,245 +3,30 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, User, Briefcase, Mail, Lock } from "lucide-react";
-import { useAuth } from '@/contexts/AuthContext';
-import { SignupData, ValidationError } from '@/types/auth';
-import { validateName, validateEmail, validatePassword } from '@/services/authService';
-
-type SignupFormState = Omit<SignupData, "isRecruiter"> & { isRecruiter: boolean | null };
+import { signIn } from "next-auth/react";
+import { useSnackbar } from "@/hooks/useSnackbar";
 
 export default function Signup() {
   const router = useRouter();
-  const { signup, isAuthenticated, isLoading: authLoading } = useAuth();
-
-  const [formData, setFormData] = useState<SignupFormState>({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    isRecruiter: false
-  });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
-  const roleOptions: Array<{ key: "professional" | "recruiter"; isRecruiter: boolean; title: string; description: string }> = [
-    {
-      key: "professional",
-      isRecruiter: false,
-      title: "I'm a Professional",
-      description: "Complete missions, improve your Velric score, and get matched",
-    },
-    {
-      key: "recruiter",
-      isRecruiter: true,
-      title: "I'm a Recruiter",
-      description: "Discover verified talent, post missions, and manage pipelines",
-    },
-  ];
+  const { showSnackbar } = useSnackbar();
 
-  // Redirect if already authenticated and onboarded
+  // Check for error in query params
   useEffect(() => {
-    // Only redirect if user is authenticated, auth loading is complete,
-    // user is already onboarded, and we're not in the middle of a signup process
-    if (isAuthenticated && !authLoading && !isLoading) {
-      // Check if user is already onboarded
-      const userData = localStorage.getItem('velric_user');
-      if (userData) {
-        try {
-          const user = JSON.parse(userData);
-          // Only redirect if user is already onboarded (existing user)
-          if (user.onboarded === true) {
-            router.replace('/user-dashboard');
-          }
-          // If user is not onboarded, let them stay on signup page
-        } catch (error) {
-          console.error('Error parsing user data:', error);
-        }
-      }
+    if (router.query.error === 'exists') {
+      showSnackbar('Account already exists. Please sign in instead.', 'error');
     }
-  }, [isAuthenticated, authLoading, router, isLoading]);
+  }, [router.query, showSnackbar]);
 
-  // Real-time validation
-  useEffect(() => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (touched.name && formData.name) {
-      const nameError = validateName(formData.name);
-      if (nameError) newErrors.name = nameError;
-    }
-
-    if (touched.email && formData.email) {
-      const emailError = validateEmail(formData.email);
-      if (emailError) newErrors.email = emailError;
-    }
-
-    if (touched.password && formData.password) {
-      const passwordError = validatePassword(formData.password);
-      if (passwordError) newErrors.password = passwordError;
-    }
-
-    if (touched.confirmPassword && formData.confirmPassword) {
-      if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = "Passwords do not match";
-      }
-    }
-
-    if (touched.isRecruiter) {
-      if (formData.isRecruiter === null) {
-        newErrors.role = "Please select an account type";
-      }
-    }
-
-    setErrors(prev => ({ ...prev, ...newErrors, general: prev.general }));
-  }, [formData, touched]);
-
-  const handleInputChange = (field: keyof SignupFormState) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setFormData(prev => ({ ...prev, [field]: value }));
-
-    // Clear field-specific error when user starts typing
-    if (errors[field as string]) {
-      setErrors((prev: { [key: string]: string }) => {
-        const newErrors = { ...prev };
-        delete newErrors[field as string];
-        return newErrors;
-      });
-    }
-    
-    // Clear general error when user starts typing
-    if (errors.general) {
-      setErrors((prev: { [key: string]: string }) => {
-        const newErrors = { ...prev };
-        delete newErrors.general;
-        return newErrors;
-      });
-    }
-  };
-
-  const handleRoleSelect = (isRecruiterSelection: boolean) => {
-    setFormData(prev => ({ ...prev, isRecruiter: isRecruiterSelection }));
-    setTouched(prev => ({ ...prev, isRecruiter: true }));
-
-    if (errors.role) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.role;
-        return newErrors;
-      });
-    }
-
-    if (errors.general) {
-      setErrors((prev: { [key: string]: string }) => {
-        const newErrors = { ...prev };
-        delete newErrors.general;
-        return newErrors;
-      });
-    }
-  };
-
-  const handleBlur = (field: string) => () => {
-    setTouched(prev => ({ ...prev, [field]: true }));
-  };
-
-  const validateForm = () => {
-    const newErrors: { [key: string]: string } = {};
-
-    const nameError = validateName(formData.name);
-    if (nameError) newErrors.name = nameError;
-
-    const emailError = validateEmail(formData.email);
-    if (emailError) newErrors.email = emailError;
-
-    const passwordError = validatePassword(formData.password);
-    if (passwordError) newErrors.password = passwordError;
-
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-
-    if (formData.isRecruiter === null) {
-      newErrors.role = "Please select an account type";
-    }
-
-    setErrors(newErrors);
-    setTouched({ name: true, email: true, password: true, confirmPassword: true, isRecruiter: true });
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsLoading(true);
-
+  const handleGoogleSignUp = async () => {
     try {
-      const isRecruiter = formData.isRecruiter === true;
-      const payload: SignupData = {
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        confirmPassword: formData.confirmPassword,
-        isRecruiter,
-      };
-
-      const response = await signup(payload);
-      console.log('✅ Signup successful - storing user data...');
-      
-      // Use is_recruiter from backend API response (mapped from is_recruiter to isRecruiter in AuthContext)
-      const isRecruiterFromBackend = Boolean(response?.user?.isRecruiter);
-      
-      // 🔴 CRITICAL FIX: Store both flags as false for new users
-      const newUserData = {
-        id: response?.user?.id,
-        email: response?.user?.email,
-        name: response?.user?.name,
-        onboarded: false,              // 🔴 Mark as NOT onboarded
-        surveyCompleted: false,        // 🔴 Mark survey as NOT completed
-        signupCompletedAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
-        isRecruiter: isRecruiterFromBackend, // Use value from backend
-      };
-      
-      // Store with exact key 'velric_user'
-      localStorage.setItem('velric_user', JSON.stringify(newUserData));
-      console.log('✅ User data stored with both flags as false');
-      
-      // Redirect based on is_recruiter from backend
-      if (isRecruiterFromBackend) {
-        console.log('🔄 Redirecting recruiter to dashboard...');
-        router.replace('/recruiter-dashboard');
-      } else {
-        // 🔴 CRITICAL FIX: Clear any existing survey data first
-        localStorage.removeItem('velric_survey_draft');
-        localStorage.removeItem('velric_survey_state');
-        console.log('🧹 Cleared any existing survey data');
-        
-        // 🔴 CRITICAL FIX: Initialize survey state to Step 1
-        const initialSurveyState = {
-          currentStep: 1,
-          currentStepIndex: 0,
-          totalSteps: 8,
-          completedSteps: [],
-          surveyData: {},
-          startedAt: new Date().toISOString()
-        };
-        localStorage.setItem('velric_survey_state', JSON.stringify(initialSurveyState));
-        console.log('✅ Survey state initialized to Step 1');
-        
-        // Redirect to survey for new users
-        console.log('🔄 Redirecting professional to survey...');
-        router.replace('/onboard/survey');
-      }
+      setIsLoading(true);
+      await signIn("google", {
+        callbackUrl: "/auth/callback?mode=signup",
+        redirect: true,
+      });
     } catch (error: any) {
-      // Extract error message from API response
-      const errorMessage = error || "Signup failed. Please try again.";
-      setErrors({ general: errorMessage });
-    } finally {
+      console.error('Google signup error:', error);
       setIsLoading(false);
     }
   };
@@ -276,170 +61,44 @@ export default function Signup() {
             <p className="text-gray-400">Create your account to get started</p>
           </div>
 
-          {/* Signup Form */}
+          {/* Signup Card */}
           <div className="bg-[#1C1C1E] p-8 rounded-2xl border border-purple-500/20">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* General Error */}
-              {errors.general && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">
-                  {errors.general}
+            {/* Google Sign Up Button */}
+            <button
+              type="button"
+              onClick={handleGoogleSignUp}
+              disabled={isLoading}
+              className="w-full flex items-center justify-center space-x-2 bg-white text-[#0D0D0D] py-3 rounded-xl font-semibold hover:bg-white/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-[#0D0D0D]/30 border-t-[#0D0D0D] rounded-full animate-spin mr-2"></div>
+                  Signing Up...
                 </div>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <path
+                      fill="currentColor"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
+                  </svg>
+                  <span>Sign up with Google</span>
+                </>
               )}
-
-              {/* Name Field */}
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange('name')}
-                  onBlur={handleBlur('name')}
-                  className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.name ? 'border-red-500' : 'border-purple-500/20'
-                    }`}
-                  placeholder="Enter your full name"
-                />
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-400">{errors.name}</p>
-                )}
-              </div>
-
-              {/* Email Field */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange('email')}
-                  onBlur={handleBlur('email')}
-                  className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.email ? 'border-red-500' : 'border-purple-500/20'
-                    }`}
-                  placeholder="Enter your email"
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-400">{errors.email}</p>
-                )}
-              </div>
-
-              {/* Password Field */}
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange('password')}
-                  onBlur={handleBlur('password')}
-                  className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.password ? 'border-red-500' : 'border-purple-500/20'
-                    }`}
-                  placeholder="Create a strong password"
-                />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-400">{errors.password}</p>
-                )}
-                <p className="mt-1 text-xs text-gray-500">
-                  Must be 8+ characters with uppercase, lowercase, and number
-                </p>
-              </div>
-
-              {/* Confirm Password Field */}
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange('confirmPassword')}
-                  onBlur={handleBlur('confirmPassword')}
-                  className={`w-full px-4 py-3 bg-[#2A2A2E] border rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${errors.confirmPassword ? 'border-red-500' : 'border-purple-500/20'
-                    }`}
-                  placeholder="Confirm your password"
-                />
-                {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>
-                )}
-              </div>
-
-              {/* Role Selection */}
-              <div>
-                <p className="text-sm font-medium text-gray-300 mb-3">
-                  Choose your account type
-                </p>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {roleOptions.map((option) => {
-                    const isSelected = formData.isRecruiter === option.isRecruiter;
-                    return (
-                      <label
-                        key={option.key}
-                        className={`relative flex cursor-pointer flex-col space-y-2 sm:space-y-3 rounded-2xl border p-4 pr-12 text-left transition-all ${
-                          isSelected
-                            ? "border-transparent bg-gradient-to-r from-[#9333EA]/20 to-[#06B6D4]/20 shadow-lg shadow-purple-500/10"
-                            : "border-white/10 bg-[#27272A]"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="accountType"
-                          value={option.key}
-                          checked={isSelected}
-                          onChange={() => handleRoleSelect(option.isRecruiter)}
-                          className="sr-only"
-                        />
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                              option.isRecruiter
-                                ? "bg-purple-500/20 text-purple-300"
-                                : "bg-cyan-500/20 text-cyan-300"
-                            }`}
-                          >
-                            {option.isRecruiter ? (
-                              <Briefcase className="h-5 w-5" />
-                            ) : (
-                              <User className="h-5 w-5" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-white">{option.title}</p>
-                            <p className="text-xs text-white/60">{option.description}</p>
-                          </div>
-                        </div>
-                        <div
-                          className={`absolute right-4 top-4 h-5 w-5 rounded-full border ${
-                            isSelected ? "border-transparent bg-gradient-to-r from-purple-400 to-cyan-400" : "border-white/30"
-                          }`}
-                        />
-                      </label>
-                    );
-                  })}
-                </div>
-                {errors.role && (
-                  <p className="mt-2 text-sm text-red-400">{errors.role}</p>
-                )}
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-[#9333EA] to-[#06B6D4] text-white py-3 rounded-xl font-semibold hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                {isLoading ? "Creating Account..." : "Create Account"}
-              </button>
-            </form>
+            </button>
 
             {/* Login Link */}
             <div className="mt-6 text-center">

@@ -6,12 +6,14 @@ import { SurveyLayout } from "../../components/survey/SurveyLayout";
 import { ProgressBar } from "../../components/survey/ProgressBar";
 import { StepBasicInfo } from "../../components/survey/StepBasicInfo";
 import { StepMissionQuestions } from "../../components/survey/StepMissionQuestions";
+import { StepCandidateLevel } from "../../components/survey/StepCandidateLevel";
 import { StepStrengthAreas } from "../../components/survey/StepStrengthAreas";
 import { StepLearningPreference } from "../../components/survey/StepLearningPreference";
 import { StepPortfolioUpload } from "../../components/survey/StepPortfolioUpload";
 import { StepPlatformConnections } from "../../components/survey/StepPlatformConnections";
-import { StepCompletion } from "../../components/survey/StepCompletion";
 import { StepExperience } from "../../components/survey/StepExperience";
+import { StepLogisticsPreferences } from "../../components/survey/StepLogisticsPreferences";
+import { StepCompletion } from "../../components/survey/StepCompletion";
 import { useSurveyForm } from "../../hooks/useSurveyForm";
 import { AppError, AuthError } from "../../utils/surveyValidation";
 import { ProtectedSurveyRoute } from "../../components/auth/ProtectedRoute";
@@ -47,7 +49,7 @@ function SurveyPageContent() {
           const newState = {
             currentStep: 1,
             currentStepIndex: 0,
-            totalSteps: 8,
+            totalSteps: 9,
             completedSteps: [],
             surveyData: {},
             startedAt: new Date().toISOString()
@@ -162,16 +164,18 @@ function SurveyPageContent() {
       case 2:
         return <StepMissionQuestions {...baseStepProps} canProceed={canProceed()} />;
       case 3:
-        return <StepStrengthAreas {...baseStepProps} canProceed={canProceed()} />;
+        return <StepCandidateLevel {...baseStepProps} canProceed={canProceed()} />;
       case 4:
-        return <StepLearningPreference {...baseStepProps} canProceed={canProceed()} />;
+        return <StepStrengthAreas {...baseStepProps} canProceed={canProceed()} />;
       case 5:
-        return <StepPortfolioUpload {...baseStepProps} canProceed={canProceed()} />;
+        return <StepLearningPreference {...baseStepProps} canProceed={canProceed()} />;
       case 6:
-        return <StepPlatformConnections {...baseStepProps} canProceed={canProceed()} />;
+        return <StepPortfolioUpload {...baseStepProps} canProceed={canProceed()} />;
       case 7:
-        return <StepExperience {...baseStepProps} canProceed={canProceed} />;
+        return <StepPlatformConnections {...baseStepProps} canProceed={canProceed()} />;
       case 8:
+        return <StepExperience {...baseStepProps} canProceed={canProceed} />;
+      case 9:
         return <StepCompletion {...baseStepProps} canProceed={canProceed()} />;
       default:
         return <StepBasicInfo {...baseStepProps} canProceed={canProceed()} />;

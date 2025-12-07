@@ -601,7 +601,7 @@ export async function saveUserSurvey(
     industryPreferences?: string[];
     availabilityHoursPerWeek?: number;
     preferredProjectTypes?: string[];
-    resumeText?: string;
+    resume_json?: string;
   }
 ): Promise<void> {
   if (USE_DUMMY) {
@@ -618,7 +618,7 @@ export async function saveUserSurvey(
     industry_preferences: surveyData.industryPreferences,
     availability_hours_per_week: surveyData.availabilityHoursPerWeek,
     preferred_project_types: surveyData.preferredProjectTypes,
-    resume_text: surveyData.resumeText,
+    resume_text: surveyData.resume_json,
     completed_at: new Date().toISOString(),
   });
 
@@ -795,6 +795,9 @@ export async function createSubmission(submissionData: {
   userId: string;
   missionId: string;
   submissionText: string;
+  tabSwitchCount?: number;
+  code?: string;
+  language?: string;
 }): Promise<any> {
   if (USE_DUMMY) {
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -805,6 +808,9 @@ export async function createSubmission(submissionData: {
       mission_id: submissionData.missionId,
       submission_text: submissionData.submissionText,
       status: "submitted",
+      tab_switch_count: submissionData.tabSwitchCount || 0,
+      code_input: submissionData.code || null,
+      code_language: submissionData.language || null,
       created_at: new Date().toISOString(),
     } as any;
 
@@ -820,6 +826,9 @@ export async function createSubmission(submissionData: {
         mission_id: parseInt(submissionData.missionId) || 0,
         status: "submitted",
         submission_text: submissionData.submissionText,
+        tab_switch_count: submissionData.tabSwitchCount || 0,
+        code_input: submissionData.code || null,
+        code_language: submissionData.language || null,
       })
       .select()
       .single();
@@ -836,6 +845,7 @@ export async function createSubmission(submissionData: {
         mission_id: submissionData.missionId,
         submission_text: submissionData.submissionText,
         status: "submitted",
+        tab_switch_count: submissionData.tabSwitchCount || 0,
         created_at: new Date().toISOString(),
       } as any;
       console.log(
@@ -893,10 +903,18 @@ export async function updateSubmission(
   try {
     const userMissionUpdate: any = {};
     
+    // Build update object - only include defined fields
     if (updates.status !== undefined) userMissionUpdate.status = updates.status;
     if (updates.overall_score !== undefined) userMissionUpdate.grade = updates.overall_score;
     if (updates.velricScore !== undefined) userMissionUpdate.velric_score = updates.velricScore;
-    if (updates.feedback !== undefined) userMissionUpdate.feedback_text = updates.feedback;
+    
+    // Handle feedback - try both field names (feedback and feedback_text)
+    if (updates.feedback !== undefined && updates.feedback !== null) {
+      userMissionUpdate.feedback_text = updates.feedback;
+    } else if (updates.feedback === null) {
+      userMissionUpdate.feedback_text = null;
+    }
+    
     if (updates.summary !== undefined) userMissionUpdate.summary = updates.summary;
     if (updates.letter_grade !== undefined) userMissionUpdate.letter_grade = updates.letter_grade;
     if (updates.grades !== undefined) userMissionUpdate.grades = updates.grades;
@@ -907,13 +925,38 @@ export async function updateSubmission(
       userMissionUpdate.completed_at = new Date().toISOString();
     }
 
+    console.log(`[updateSubmission] Updating submission ${submissionId} with:`, {
+      hasStatus: updates.status !== undefined,
+      hasGrade: updates.overall_score !== undefined,
+      hasVelricScore: updates.velricScore !== undefined,
+      hasFeedback: updates.feedback !== undefined && updates.feedback !== null ? "yes (length: " + updates.feedback.length + ")" : "no",
+      hasSummary: updates.summary !== undefined,
+      hasLetterGrade: updates.letter_grade !== undefined,
+      hasGrades: updates.grades !== undefined,
+      hasRubric: updates.rubric !== undefined,
+      hasPositiveTemplates: updates.positiveTemplates !== undefined,
+      hasImprovementTemplates: updates.improvementTemplates !== undefined,
+    });
+
     const { data, error } = await supabase
       .from("user_mission")
       .update(userMissionUpdate)
       .eq("id", submissionId)
       .select()
       .single();
-    if (error) throw error;
+    
+    if (error) {
+      console.error(`[updateSubmission] Supabase error for submission ${submissionId}:`, {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        updatePayload: userMissionUpdate,
+      });
+      throw error;
+    }
+    
+    console.log(`[updateSubmission] Successfully updated submission ${submissionId}`);
     return data;
   } catch (error: any) {
     if (error?.code === "PGRST205" || error?.code === "42P01") {
@@ -988,13 +1031,14 @@ export interface MissionWithDetails extends DatabaseMission {
 // Internal helper to insert a mission and all its detail tables
 async function insertMissionWithDetails(
   missionData: Omit<StaticMission, "id" | "status">,
-  options: { aiGenerated: boolean; generatedBy: string }
+  options: { aiGenerated: boolean; generatedBy: string; userId?: string }
 ): Promise<string> {
   if (USE_DUMMY) {
     await new Promise((resolve) => setTimeout(resolve, 100));
     const newId = `mission-${Date.now()}`;
     console.log("Would store mission in database:", {
       id: newId,
+      userId: options.userId,
       ...missionData,
     });
     return newId;
@@ -1005,9 +1049,10 @@ async function insertMissionWithDetails(
     let mission: any = null;
     let missionError: any = null;
 
-    // Attempt 1: full insert with all fields
+    // Attempt 1: full insert with all fields including user_id
     console.log("[Mission Storage] Attempting to store mission:", {
       title: missionData.title,
+      userId: options.userId,
       hasDifficulty: !!missionData.difficulty,
       difficulty: missionData.difficulty,
       hasTimeEstimate: !!missionData.timeEstimate,
@@ -1022,6 +1067,7 @@ async function insertMissionWithDetails(
       const res = await supabase
         .from("missions")
         .insert({
+          user_id: options.userId || null,
           title: missionData.title,
           description: missionData.description,
           field: missionData.field,
@@ -1030,6 +1076,8 @@ async function insertMissionWithDetails(
           category: missionData.category,
           company: missionData.company,
           context: missionData.context,
+          type: missionData.type || null,
+          language: missionData.language || null,
           is_ai_generated: options.aiGenerated,
           generated_by: options.generatedBy,
           status: "active",
@@ -1041,7 +1089,7 @@ async function insertMissionWithDetails(
 
       if (!missionError) {
         console.log(
-          "[Mission Storage] ✅ Attempt 1 succeeded - stored with all fields"
+          "[Mission Storage] ✅ Attempt 1 succeeded - stored with all fields including user_id"
         );
       } else {
         console.warn(
@@ -1062,6 +1110,7 @@ async function insertMissionWithDetails(
       const res = await supabase
         .from("missions")
         .insert({
+          user_id: options.userId || null,
           title: missionData.title,
           description: missionData.description,
           field: missionData.field,
@@ -1096,6 +1145,7 @@ async function insertMissionWithDetails(
       const res = await supabase
         .from("missions")
         .insert({
+          user_id: options.userId || null,
           title: missionData.title,
           description: missionData.description,
           field: missionData.field,
@@ -1131,6 +1181,7 @@ async function insertMissionWithDetails(
       const res = await supabase
         .from("missions")
         .insert({
+          user_id: options.userId || null,
           title: missionData.title,
           description: missionData.description,
           field: missionData.field || "Technology",
@@ -1156,7 +1207,7 @@ async function insertMissionWithDetails(
 
     const missionId = mission.id;
     console.log(
-      `[Mission Storage] Successfully inserted mission ${missionId} into missions table`
+      `[Mission Storage] Successfully inserted mission ${missionId} into missions table for user ${options.userId}`
     );
 
     // Store skills (with error handling)
@@ -1343,11 +1394,13 @@ async function insertMissionWithDetails(
 
 // Store AI-generated mission in Supabase
 export async function storeAIGeneratedMission(
-  missionData: Omit<StaticMission, "id" | "status">
+  missionData: Omit<StaticMission, "id" | "status">,
+  userId?: string
 ): Promise<string> {
   return insertMissionWithDetails(missionData, {
     aiGenerated: true,
     generatedBy: "openai",
+    userId,
   });
 }
 
@@ -1443,6 +1496,8 @@ export async function getAllMissionsFromDB(): Promise<StaticMission[]> {
           category: mission.category,
           company: mission.company,
           context: mission.context,
+          type: mission.type || undefined,
+          language: mission.language || undefined,
           status: "suggested",
           skills: [],
           industries: [],
@@ -1468,6 +1523,8 @@ export async function getAllMissionsFromDB(): Promise<StaticMission[]> {
         category: mission.category,
         company: mission.company,
         context: mission.context,
+        type: mission.type || undefined,
+        language: mission.language || undefined,
         status: "suggested",
         skills: mission.mission_skills?.map((ms: any) => ms.skills.name) || [],
         industries:
@@ -1628,6 +1685,8 @@ export async function getMissionByIdFromDB(
       category: mission.category,
       company: mission.company,
       context: mission.context,
+      type: mission.type || undefined,
+      language: mission.language || undefined,
       status: "suggested",
       skills: mission.mission_skills?.map((ms: any) => ms.skills.name) || [],
       industries:
@@ -1673,6 +1732,163 @@ export async function getMissionByIdFromDB(
   }
 }
 
+// Get AI-generated missions for a specific user
+export async function getMissionsByUserId(userId: string): Promise<StaticMission[]> {
+  if (USE_DUMMY) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Return empty or static missions as fallback
+    return [];
+  }
+
+  try {
+    let missions: any = null;
+    let error: any = null;
+
+    // Attempt 1: Query missions with all details for specific user
+    {
+      const res = await supabase
+        .from("missions")
+        .select(
+          `
+          *,
+          mission_skills (
+            skills (id, name, category)
+          ),
+          mission_industries (
+            industries (id, name, description)
+          ),
+          mission_tasks (id, task_description, task_order, is_required),
+          mission_objectives (id, objective_description, objective_order),
+          mission_resources (id, resource_description, resource_type, resource_order),
+          mission_evaluation_metrics (id, metric_description, metric_weight, metric_order)
+        `
+        )
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .order("created_at", { ascending: true });
+      missions = res.data;
+      error = res.error;
+    }
+
+    // Retry without status filter if column missing
+    if (error && error.code === "42703") {
+      const res = await supabase
+        .from("missions")
+        .select(
+          `
+          *,
+          mission_skills (
+            skills (id, name, category)
+          ),
+          mission_industries (
+            industries (id, name, description)
+          ),
+          mission_tasks (id, task_description, task_order, is_required),
+          mission_objectives (id, objective_description, objective_order),
+          mission_resources (id, resource_description, resource_type, resource_order),
+          mission_evaluation_metrics (id, metric_description, metric_weight, metric_order)
+        `
+        )
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+      missions = res.data;
+      error = res.error;
+    }
+
+    // If relationship-based select fails, retry with plain select
+    if (error && error.code === "PGRST200") {
+      const res2 = await supabase
+        .from("missions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true });
+      const plain = res2.data;
+      const plainErr = res2.error;
+      if (plainErr) throw plainErr;
+      return (plain || []).map(
+        (mission: any): StaticMission => ({
+          id: mission.id,
+          title: mission.title,
+          description: mission.description,
+          field: mission.field,
+          difficulty: mission.difficulty,
+          timeEstimate: mission.time_estimate,
+          category: mission.category,
+          company: mission.company,
+          context: mission.context,
+          status: "suggested",
+          skills: [],
+          industries: [],
+          tasks: [],
+          objectives: [],
+          resources: [],
+          evaluationMetrics: [],
+        })
+      );
+    }
+
+    if (error) throw error;
+
+    console.log(`[getMissionsByUserId] Retrieved ${missions?.length || 0} missions for user ${userId}`);
+
+    // Transform database format to StaticMission format
+    const transformedMissions = (missions || []).map(
+      (mission: any): StaticMission => ({
+        id: mission.id,
+        title: mission.title,
+        description: mission.description,
+        field: mission.field,
+        difficulty: mission.difficulty,
+        timeEstimate: mission.time_estimate,
+        category: mission.category,
+        company: mission.company,
+        context: mission.context,
+        type: mission.type || undefined,
+        language: mission.language || undefined,
+        status: "suggested",
+        skills: mission.mission_skills?.map((ms: any) => ms.skills.name) || [],
+        industries:
+          mission.mission_industries?.map((mi: any) => mi.industries.name) ||
+          [],
+        tasks:
+          mission.mission_tasks
+            ?.sort((a: any, b: any) => a.task_order - b.task_order)
+            ?.map((t: any) => t.task_description) || [],
+        objectives:
+          mission.mission_objectives
+            ?.sort((a: any, b: any) => a.objective_order - b.objective_order)
+            ?.map((o: any) => o.objective_description) || [],
+        resources:
+          mission.mission_resources
+            ?.sort((a: any, b: any) => a.resource_order - b.resource_order)
+            ?.map((r: any) => r.resource_description) || [],
+        evaluationMetrics:
+          mission.mission_evaluation_metrics
+            ?.sort((a: any, b: any) => a.metric_order - b.metric_order)
+            ?.map((m: any) => m.metric_description) || [],
+      })
+    );
+
+    // Sort by created_at ascending as primary, id ascending as secondary (for tiebreaker)
+    // This ensures consistent ordering even when missions are created in parallel
+    transformedMissions.sort((a: any, b: any) => {
+      const aCreated = missions.find((m: any) => m.id === a.id)?.created_at || '';
+      const bCreated = missions.find((m: any) => m.id === b.id)?.created_at || '';
+      
+      if (aCreated !== bCreated) {
+        return new Date(aCreated).getTime() - new Date(bCreated).getTime();
+      }
+      // If created_at is the same, use id as tiebreaker
+      return a.id.localeCompare(b.id);
+    });
+
+    return transformedMissions;
+  } catch (error) {
+    console.error("Error fetching missions for user from database:", error);
+    return [];
+  }
+}
+
 // Run database migration (for development/admin use)
 export async function runMissionMigration(): Promise<{
   success: boolean;
@@ -1698,6 +1914,32 @@ export async function runMissionMigration(): Promise<{
     return { success: true };
   } catch (error) {
     return { success: false, error: (error as Error).message };
+  }
+}
+
+// Get user's overall Velric score
+export async function getUserVelricScore(userId: string): Promise<number | null> {
+  if (USE_DUMMY) {
+    // Return mock score in dummy mode
+    await new Promise((r) => setTimeout(r, 20));
+    return null;
+  }
+  try {
+    const { data, error } = await supabase
+      .from("user_stats")
+      .select("overall_velric_score")
+      .eq("user_id", userId)
+      .single();
+    
+    if (error && error.code !== "PGRST116") throw error; // PGRST116 is "not found"
+    return data?.overall_velric_score || null;
+  } catch (error: any) {
+    // Gracefully handle missing user_stats table
+    if (error?.code === "PGRST205" || error?.code === "42P01") {
+      console.warn("User stats table not found, returning null for Velric score");
+      return null;
+    }
+    throw error;
   }
 }
 

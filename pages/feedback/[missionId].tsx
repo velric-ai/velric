@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { ArrowLeft } from "lucide-react";
 
+
 const FeedbackPage: React.FC = () => {
   const router = useRouter();
   const { missionId } = router.query; // here missionId is actually the submission id
@@ -50,7 +51,7 @@ const FeedbackPage: React.FC = () => {
           {/* Back Button */}
           {submission?.mission_id && (
             <button
-              onClick={() => router.push(`/missions/${submission.mission_id}`)}
+              onClick={() => router.push(`/missions`)}
               className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8 group"
             >
               <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
@@ -60,12 +61,14 @@ const FeedbackPage: React.FC = () => {
 
           <div className="text-center mb-16">
             {/* Mission Badge */}
-            <div className="inline-flex items-center px-6 py-3 bg-[#1C1C1E] border border-[#6A0DAD]/30 rounded-full mb-8 hover:scale-105 transition-all duration-300">
-              <div className="w-3 h-3 bg-[#00D9FF] rounded-full mr-3 animate-pulse"></div>
-              <span className="text-[#00D9FF] text-[14px] font-inter font-semibold uppercase tracking-wide">
-                Mission #{missionId}
-              </span>
-            </div>
+            {submission?.mission_number && (
+              <div className="inline-flex items-center px-6 py-3 bg-[#1C1C1E] border border-[#6A0DAD]/30 rounded-full mb-8 hover:scale-105 transition-all duration-300">
+                <div className="w-3 h-3 bg-[#00D9FF] rounded-full mr-3 animate-pulse"></div>
+                <span className="text-[#00D9FF] text-[14px] font-inter font-semibold uppercase tracking-wide">
+                  {submission.mission_number}
+                </span>
+              </div>
+            )}
 
             {/* Main Heading */}
             <h1
@@ -106,6 +109,62 @@ const FeedbackPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Tab Switch Deduction Notice */}
+                {submission?.tabSwitchCount !== undefined && submission.tabSwitchCount > 0 && (
+                  <div className="mb-12">
+                    <div className="bg-[#FF6B6B]/10 border-2 border-[#FF6B6B]/40 rounded-2xl p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-[#FF6B6B]/20 rounded-full flex items-center justify-center">
+                            <span className="text-[#FF6B6B] font-bold text-lg">!</span>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-[18px] font-semibold text-[#FF6B6B] font-sora mb-2">
+                            Score Deduction Applied
+                          </h3>
+                          <p className="text-[15px] text-[#F5F5F5] font-inter mb-3">
+                            {submission.tabSwitchCount === 1
+                              ? `You switched to another tab 1 time during the mission. A 10% deduction has been applied to your score.`
+                              : submission.tabSwitchCount === 2
+                              ? `You switched to another tab 2 times during the mission. A 20% deduction has been applied to your score.`
+                              : `You switched to another tab ${submission.tabSwitchCount} times during the mission. A 50% deduction has been applied to your score.`}
+                          </p>
+                          <div className="flex items-center gap-2 pt-2 border-t border-[#FF6B6B]/20">
+                            <span className="text-[13px] text-[#F5F5F5]/70 font-inter">Tab Switches:</span>
+                            <span className="text-[16px] font-bold text-[#FF6B6B] font-sora">{submission.tabSwitchCount}</span>
+                            <span className="text-[13px] text-[#F5F5F5]/70 font-inter ml-4">Deduction:</span>
+                            <span className="text-[16px] font-bold text-[#FF6B6B] font-sora">{submission.tabSwitchDeduction}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* No Tab Switches Notice */}
+                {submission?.tabSwitchCount === 0 && (
+                  <div className="mb-12">
+                    <div className="bg-[#00D9FF]/10 border-2 border-[#00D9FF]/40 rounded-2xl p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          <div className="w-8 h-8 bg-[#00D9FF]/20 rounded-full flex items-center justify-center">
+                            <span className="text-[#00D9FF] font-bold text-lg">✓</span>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-[18px] font-semibold text-[#00D9FF] font-sora">
+                            Perfect Focus Maintained
+                          </h3>
+                          <p className="text-[15px] text-[#F5F5F5] font-inter">
+                            Excellent! You maintained perfect focus throughout the mission without switching tabs. No deduction applied.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Velric Score Section - PROMINENT DISPLAY */}
                 {submission?.velric_score !== undefined &&
@@ -159,6 +218,24 @@ const FeedbackPage: React.FC = () => {
                               />
                             </div>
                           </div>
+
+                          {/* Overall User Velric Score */}
+                          {submission?.userVelricScore !== undefined &&
+                            submission?.userVelricScore !== null && (
+                              <div className="mt-6 pt-6 border-t border-[#6A0DAD]/30">
+                                <p className="text-[14px] text-[#F5F5F5]/70 font-inter mb-3">
+                                  Your Overall Velric Score
+                                </p>
+                                <div className="inline-flex items-baseline gap-2">
+                                  <span className="text-[48px] font-bold font-sora bg-gradient-to-r from-[#00D9FF] to-[#6A0DAD] bg-clip-text text-transparent">
+                                    {submission.userVelricScore.toFixed(1)}
+                                  </span>
+                                  <span className="text-[24px] font-semibold text-[#F5F5F5]/60 font-sora">
+                                    / 10
+                                  </span>
+                                </div>
+                              </div>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -273,15 +350,7 @@ const FeedbackPage: React.FC = () => {
                           </div>
                         ))}
                         {/* Velric overall score out of 10 */}
-                        {typeof submission.velric_score === "number" && (
-                          <div className="bg-[#1C1C1E] border border-[#6A0DAD]/30 rounded-xl p-3 mt-2 text-center">
-                            <span className="text-[16px] font-bold text-[#00D9FF]">
-                              Velric Score:{" "}
-                              {Math.round(submission.velric_score / 10)}
-                              /10
-                            </span>
-                          </div>
-                        )}
+                        
                       </div>
                     )}
                   </div>
@@ -352,21 +421,16 @@ const FeedbackPage: React.FC = () => {
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 pt-6">
                   <button
-                    onClick={() => {
-                      const target = submission?.mission_id
-                        ? `/missions/${submission.mission_id}`
-                        : "/";
-                      router.push(target);
-                    }}
+                    onClick={() => router.push("/user-dashboard")}
                     className="flex-1 bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] text-white font-bold text-[18px] py-4 px-8 rounded-2xl hover:scale-105 hover:shadow-[#6A0DAD]/30 hover:shadow-2xl transition-all duration-300 font-sora antialiased"
                   >
-                    Back to Mission
+                    Go back to user dashboard
                   </button>
                   <button
-                    onClick={() => router.push("/")}
+                    onClick={() => router.push("/analytics")}
                     className="flex-1 bg-[#1C1C1E] border border-[#6A0DAD]/30 text-[#F5F5F5] font-bold text-[18px] py-4 px-8 rounded-2xl hover:scale-105 hover:border-[#6A0DAD]/50 hover:bg-[#6A0DAD]/10 transition-all duration-300 font-sora antialiased"
                   >
-                    Back to Home
+                    Go to analytics
                   </button>
                 </div>
               </div>

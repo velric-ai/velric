@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { uploadPortfolioFile } from "../../services/surveyApi";
 import { validatePortfolioFile, validatePortfolioUrl } from "../../utils/surveyValidation";
+import { extractTextFromPDFWithProgress } from "../../lib/pdfParser";
 
 interface StepPortfolioUploadProps {
   formData: any;
@@ -36,6 +37,7 @@ export function StepPortfolioUpload({
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadMethod, setUploadMethod] = useState<'file' | 'url' | null>(null);
   const [urlInput, setUrlInput] = useState(formData.portfolio.url || '');
+  const [isPdfParsing, setIsPdfParsing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const portfolio = formData.portfolio;
@@ -56,7 +58,7 @@ export function StepPortfolioUpload({
     if (fileError) {
       updateFormData({
         portfolio: {
-          ...portfolio,
+          ...formData.portfolio,
           fileError,
           uploadStatus: 'error'
         }
@@ -70,7 +72,7 @@ export function StepPortfolioUpload({
     // Update form data with file info
     updateFormData({
       portfolio: {
-        ...portfolio,
+        ...formData.portfolio,
         file,
         filePreview,
         fileError: null,
@@ -81,37 +83,90 @@ export function StepPortfolioUpload({
       }
     });
 
-    try {
-      // Upload file
-      const result = await uploadPortfolioFile(file, (progress) => {
-        updateFormData({
+    // If it's a PDF, extract text on the client-side
+    let pdfText: string | null = null;
+    if (file.type === 'application/pdf') {
+      try {
+        setIsPdfParsing(true);
+        console.log('[StepPortfolioUpload] Starting client-side PDF parsing...');
+        
+        pdfText = await extractTextFromPDFWithProgress(file, (progress) => {
+          console.log(`[StepPortfolioUpload] PDF parsing progress: ${progress}%`);
+          // You can update UI here if needed
+        });
+
+        console.log('[StepPortfolioUpload] PDF parsing completed. Text length:', pdfText.length);
+        
+        // Store the parsed PDF text in form data
+        updateFormData((prevFormData: any) => ({
+          ...prevFormData,
           portfolio: {
-            ...formData.portfolio,
+            ...prevFormData.portfolio,
+            parsedPdfText: pdfText
+          }
+        }));
+      } catch (parseError) {
+        console.error('[StepPortfolioUpload] PDF parsing error:', parseError);
+        updateFormData((prevFormData: any) => ({
+          ...prevFormData,
+          portfolio: {
+            ...prevFormData.portfolio,
+            fileError: `PDF parsing failed: ${(parseError as Error).message}`,
+            uploadStatus: 'error'
+          }
+        }));
+        setIsPdfParsing(false);
+        return;
+      } finally {
+        setIsPdfParsing(false);
+      }
+    }
+
+    try {
+      // Upload file to Supabase
+      const result = await uploadPortfolioFile(file, (progress) => {
+        updateFormData((prevFormData: any) => ({
+          ...prevFormData,
+          portfolio: {
+            ...prevFormData.portfolio,
             fileProgress: progress
           }
-        });
+        }));
       });
 
-      // Update with success
-      updateFormData({
+      console.log('[StepPortfolioUpload] Upload successful:', {
+        filename: result.filename,
+        url: result.url,
+        size: result.size
+      });
+
+      // Update with success AND store the Supabase URL and parsed text
+      updateFormData((prevFormData: any) => ({
+        ...prevFormData,
         portfolio: {
-          ...formData.portfolio,
+          ...prevFormData.portfolio,
           uploadStatus: 'success',
           fileProgress: 100,
-          fileError: null
+          fileError: null,
+          uploadedFilename: result.filename,
+          uploadedUrl: result.url,
+          parsedPdfText: pdfText  // Store the parsed PDF text
         }
-      });
+      }));
+
+      console.log('[StepPortfolioUpload] Form data updated with uploaded file info and parsed PDF text');
 
     } catch (error) {
       console.error('File upload error:', error);
-      updateFormData({
+      updateFormData((prevFormData: any) => ({
+        ...prevFormData,
         portfolio: {
-          ...formData.portfolio,
+          ...prevFormData.portfolio,
           uploadStatus: 'error',
           fileError: (error as Error).message || 'Upload failed. Please try again.',
           fileProgress: 0
         }
-      });
+      }));
     }
   };
 
@@ -136,49 +191,52 @@ export function StepPortfolioUpload({
     setUrlInput(value);
     
     // Clear file if URL is being entered
-    if (value && portfolio.file) {
-      updateFormData({
+    if (value && formData.portfolio.file) {
+      updateFormData((prevFormData: any) => ({
+        ...prevFormData,
         portfolio: {
-          ...portfolio,
+          ...prevFormData.portfolio,
           file: null,
           filePreview: null,
           fileError: null,
           uploadStatus: null
         }
-      });
+      }));
     }
   };
 
   const handleUrlBlur = () => {
     const urlError = validatePortfolioUrl(urlInput);
-    updateFormData({
+    updateFormData((prevFormData: any) => ({
+      ...prevFormData,
       portfolio: {
-        ...portfolio,
+        ...prevFormData.portfolio,
         url: urlInput,
         urlError,
-        file: urlInput ? null : portfolio.file, // Clear file if URL is valid
-        filePreview: urlInput ? null : portfolio.filePreview,
-        fileError: urlInput ? null : portfolio.fileError,
-        uploadStatus: urlInput ? null : portfolio.uploadStatus
+        file: urlInput ? null : prevFormData.portfolio.file,
+        filePreview: urlInput ? null : prevFormData.portfolio.filePreview,
+        fileError: urlInput ? null : prevFormData.portfolio.fileError,
+        uploadStatus: urlInput ? null : prevFormData.portfolio.uploadStatus
       }
-    });
+    }));
   };
 
   const handleRemoveFile = () => {
-    if (portfolio.filePreview) {
-      URL.revokeObjectURL(portfolio.filePreview);
+    if (formData.portfolio.filePreview) {
+      URL.revokeObjectURL(formData.portfolio.filePreview);
     }
     
-    updateFormData({
+    updateFormData((prevFormData: any) => ({
+      ...prevFormData,
       portfolio: {
-        ...portfolio,
+        ...prevFormData.portfolio,
         file: null,
         filePreview: null,
         fileError: null,
         fileProgress: 0,
         uploadStatus: null
       }
-    });
+    }));
     
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -187,13 +245,14 @@ export function StepPortfolioUpload({
 
   const handleRemoveUrl = () => {
     setUrlInput('');
-    updateFormData({
+    updateFormData((prevFormData: any) => ({
+      ...prevFormData,
       portfolio: {
-        ...portfolio,
+        ...prevFormData.portfolio,
         url: '',
         urlError: null
       }
-    });
+    }));
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -205,10 +264,14 @@ export function StepPortfolioUpload({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && canProceed && !isSubmitting) {
+    if (e.key === 'Enter' && canProceed && !isSubmitting && portfolio.uploadStatus !== 'uploading') {
       onNext();
     }
   };
+
+  // Determine if the Continue button should be enabled
+  const isUploadInProgress = portfolio.uploadStatus === 'uploading';
+  const canContinue = canProceed && !isSubmitting && !isUploadInProgress;
 
   return (
     <motion.div
@@ -290,6 +353,49 @@ export function StepPortfolioUpload({
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
+            {/* Upload Status Message */}
+            {portfolio.uploadStatus === 'uploading' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 flex items-start space-x-3"
+              >
+                <div className="w-5 h-5 rounded-full border-2 border-blue-500/30 border-t-blue-500 animate-spin flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-blue-300 text-sm font-medium">Uploading your file to cloud storage</p>
+                  <p className="text-blue-300/70 text-xs mt-1">Please don't close this tab or navigate away</p>
+                </div>
+              </motion.div>
+            )}
+            
+            {portfolio.uploadStatus === 'success' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 flex items-start space-x-3"
+              >
+                <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-green-300 text-sm font-medium">Upload successful!</p>
+                  <p className="text-green-300/70 text-xs mt-1">Your file is ready. You can now continue.</p>
+                </div>
+              </motion.div>
+            )}
+            
+            {portfolio.fileError && portfolio.uploadStatus === 'error' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 flex items-start space-x-3"
+              >
+                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-red-300 text-sm font-medium">Upload failed</p>
+                  <p className="text-red-300/70 text-xs mt-1">{portfolio.fileError}</p>
+                </div>
+              </motion.div>
+            )}
+            
             {!portfolio.file ? (
               <div
                 onDrop={handleFileDrop}
@@ -489,10 +595,24 @@ export function StepPortfolioUpload({
             
             <button
               onClick={onNext}
-              disabled={isSubmitting}
-              className="px-8 py-4 rounded-xl font-semibold text-white transition-all duration-300 bg-gradient-to-r from-purple-500 to-cyan-400 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25"
+              disabled={!canContinue}
+              className={`px-8 py-4 rounded-xl font-semibold text-white transition-all duration-300 ${
+                canContinue
+                  ? 'bg-gradient-to-r from-purple-500 to-cyan-400 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 cursor-pointer'
+                  : 'bg-gradient-to-r from-purple-500/50 to-cyan-400/50 cursor-not-allowed opacity-60'
+              }`}
+              title={isUploadInProgress ? 'Please wait for upload to complete' : ''}
             >
-              {isSubmitting ? 'Processing...' : 'Continue'}
+              {isUploadInProgress ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Uploading... {portfolio.fileProgress}%</span>
+                </div>
+              ) : isSubmitting ? (
+                'Processing...'
+              ) : (
+                'Continue'
+              )}
             </button>
           </div>
         </motion.div>

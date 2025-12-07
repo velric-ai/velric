@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import GlassCard from '@/components/ui/GlassCard';
-import { User, Mail, Award, Edit3 } from 'lucide-react';
+import { User, Mail, Award, Edit3, Pencil } from 'lucide-react';
 
 interface ProfileCardProps {
   user?: {
@@ -10,9 +10,10 @@ interface ProfileCardProps {
     status?: string;
     statusDescription?: string;
   };
+  onImageClick?: () => void;
 }
 
-export default function ProfileCard({ user }: ProfileCardProps) {
+export default function ProfileCard({ user, onImageClick }: ProfileCardProps) {
   // Mock user data if not provided
   const userData = user || {
     name: "John Doe",
@@ -31,8 +32,11 @@ export default function ProfileCard({ user }: ProfileCardProps) {
       <GlassCard className="p-8 text-center" glow="cyan">
         {/* Avatar */}
         <div className="relative inline-block mb-6">
-          <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center border-2 border-cyan-500/30 overflow-hidden">
-            {userData.avatar ? (
+          <div 
+            className={`relative w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center border-2 border-cyan-500/30 overflow-hidden group ${onImageClick ? 'cursor-pointer' : ''}`}
+            onClick={onImageClick}
+          >
+            {userData.avatar && userData.avatar !== "/assets/default-avatar.png" ? (
               <img
                 src={userData.avatar}
                 alt={userData.name}
@@ -40,6 +44,14 @@ export default function ProfileCard({ user }: ProfileCardProps) {
               />
             ) : (
               <User className="w-12 h-12 md:w-16 md:h-16 text-cyan-400" />
+            )}
+            {/* Hover overlay with pencil icon */}
+            {onImageClick && (
+              <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 flex items-center justify-center">
+                  <Pencil className="w-5 h-5 text-white" />
+                </div>
+              </div>
             )}
           </div>
           {/* Online indicator - positioned at bottom right of avatar */}

@@ -12,6 +12,7 @@ type GetSurveyResponse =
         strength_areas: string[];
         learning_preference: string;
         portfolio: any;
+        resume_json: any; // Supports JSONB format
         experience_summary: string | null;
         platform_connections: any;
         metadata: any;
@@ -53,6 +54,7 @@ export default async function handler(
         strength_areas: ["Problem Solving", "Technical Implementation"],
         learning_preference: "Hands-on Projects",
         portfolio: null,
+        resume_json: null,
         experience_summary: null,
         platform_connections: {},
         metadata: {},

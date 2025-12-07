@@ -12,6 +12,7 @@ interface GenerateBody {
   interests?: string[];
   industry?: string;
   difficulty?: "Beginner" | "Intermediate" | "Advanced";
+
   count?: number;
 }
 
@@ -44,94 +45,134 @@ export default async function handler(
       industry = "SaaS",
       difficulty = "Intermediate",
       count = 3,
-    } = (req.body || {}) as GenerateBody;
+      userId,
+      level = "Intermediate",
+    } = (req.body || {}) as GenerateBody & { userId?: string; level?: string };
 
     const safeCount = Math.min(Math.max(count, 1), 5);
 
-    const generated: StaticMission[] = [];
-    const storedIds: string[] = [];
+    // Generate all missions in parallel using Promise.all for faster execution
+    console.log(
+      `[Mission Generation] Starting parallel generation of ${safeCount} missions for user: ${userId || "anonymous"}`
+    );
+    const startTime = Date.now();
 
+    const generationPromises: Promise<StaticMission>[] = [];
     for (let i = 0; i < safeCount; i++) {
-      try {
-        const mission = await generateComprehensiveMission(
-          userBackground,
-          interests,
-          industry,
-          difficulty,
-          `${2 + i}-${6 + i} hours`
-        );
-        generated.push(mission);
-      } catch (error) {
-        console.error(`Error generating mission ${i + 1}:`, error);
-        // Fall back to detailed template-based mission instead of failing
-        const fallbackMission = generateFallbackMission(
-          userBackground,
-          interests,
-          industry || "Technology",
-          difficulty || "Intermediate",
-          `${2 + i}-${6 + i} hours`
-        );
-        generated.push(fallbackMission);
-      }
-
-      // Use the last generated mission (either AI or fallback)
-      const current = generated[generated.length - 1];
-
-      // If DB is available, store each mission and replace id with DB id for consistency
-      if (!USE_DUMMY) {
+      const generationPromise = (async () => {
         try {
-          const dbId = await storeAIGeneratedMission({
-            title: current.title,
-            description: current.description,
-            field: current.field,
-            difficulty: current.difficulty,
-            timeEstimate: current.timeEstimate,
-            category: current.category,
-            company: current.company,
-            context: current.context,
-            skills: current.skills || [],
-            industries: current.industries || [],
-            tasks: current.tasks || [],
-            objectives: current.objectives || [],
-            resources: current.resources || [],
-            evaluationMetrics: current.evaluationMetrics || [],
-          });
-          storedIds.push(dbId);
-          // Map returned mission id to the DB id so the client can navigate
-          current.id = dbId;
-        } catch (e) {
-          // If storing fails, still return the generated mission with the temporary id
-          // Also store in memory so it can be retrieved by ID (prevents 404)
-          console.error("Failed to store generated mission:", e);
-          console.log(`[Mission ${current.id}] Generated mission has:`, {
-            hasDescription: !!current.description,
-            hasContext: !!current.context,
-            taskCount: current.tasks?.length || 0,
-            skillCount: current.skills?.length || 0,
-            objectiveCount: current.objectives?.length || 0,
-            evaluationMetricsCount: current.evaluationMetrics?.length || 0,
-          });
+          const mission = await generateComprehensiveMission(
+            userBackground,
+            interests,
+            industry,
+            difficulty,
+            `${2 + i}-${6 + i} hours`,
+            level
+          );
+          return mission;
+        } catch (error) {
+          console.error(`Error generating mission ${i + 1}:`, error);
+          // Fall back to detailed template-based mission instead of failing
+          const fallbackMission = generateFallbackMission(
+            userBackground,
+            interests,
+            industry || "Technology",
+            difficulty || "Intermediate",
+            `${2 + i}-${6 + i} hours`
+          );
+          return fallbackMission;
+        }
+      })();
+
+      generationPromises.push(generationPromise);
+    }
+
+    // Wait for all missions to generate in parallel
+    const generated = await Promise.all(generationPromises);
+    const generationTime = Date.now() - startTime;
+    console.log(
+      `[Mission Generation] All ${safeCount} missions generated in ${generationTime}ms (parallel)`
+    );
+
+    // Now store all missions in parallel as well
+    const storedIds: string[] = [];
+    const storagePromises: Promise<void>[] = [];
+
+    generated.forEach((current, index) => {
+      const storagePromise = (async () => {
+        // If DB is available, store each mission and replace id with DB id for consistency
+        if (!USE_DUMMY) {
+          try {
+            const dbId = await storeAIGeneratedMission(
+              {
+                title: current.title,
+                description: current.description,
+                field: current.field,
+                difficulty: current.difficulty,
+                timeEstimate: current.timeEstimate,
+                category: current.category,
+                company: current.company,
+                context: current.context,
+                skills: current.skills || [],
+                industries: current.industries || [],
+                tasks: current.tasks || [],
+                objectives: current.objectives || [],
+                resources: current.resources || [],
+                evaluationMetrics: current.evaluationMetrics || [],
+              },
+              userId
+            );
+            storedIds[index] = dbId;
+            // Map returned mission id to the DB id so the client can navigate
+            current.id = dbId;
+            console.log(
+              `[Mission Storage] Stored mission ${index + 1}/${safeCount} to DB with ID: ${dbId} for user: ${userId || "anonymous"}`
+            );
+          } catch (e) {
+            // If storing fails, still return the generated mission with the temporary id
+            // Also store in memory so it can be retrieved by ID (prevents 404)
+            console.error(`[Mission Storage] Failed to store mission ${index + 1}:`, e);
+            console.log(`[Mission ${current.id}] Generated mission has:`, {
+              hasDescription: !!current.description,
+              hasContext: !!current.context,
+              taskCount: current.tasks?.length || 0,
+              skillCount: current.skills?.length || 0,
+              objectiveCount: current.objectives?.length || 0,
+              evaluationMetricsCount: current.evaluationMetrics?.length || 0,
+            });
+            dummyMissionStore.set(current.id, current);
+            storedIds[index] = current.id;
+            console.log(
+              `[Mission Generation] Stored in dummyStore after DB fail: ${current.id}, storeSize: ${dummyMissionStore.size}`
+            );
+          }
+        } else {
+          // In dummy mode, store in memory so missions can be retrieved by ID
           dummyMissionStore.set(current.id, current);
-          storedIds.push(current.id);
+          storedIds[index] = current.id;
           console.log(
-            `[Mission Generation] Stored in dummyStore after DB fail: ${current.id}, storeSize: ${dummyMissionStore.size}`
+            `[Mission Generation] Stored in dummyStore (dummy mode): ${current.id}, storeSize: ${dummyMissionStore.size}`
           );
         }
-      } else {
-        // In dummy mode, store in memory so missions can be retrieved by ID
-        dummyMissionStore.set(current.id, current);
-        storedIds.push(current.id);
-        console.log(
-          `[Mission Generation] Stored in dummyStore (dummy mode): ${current.id}, storeSize: ${dummyMissionStore.size}`
-        );
-      }
-    }
+      })();
+
+      storagePromises.push(storagePromise);
+    });
+
+    // Wait for all storage operations to complete in parallel
+    await Promise.all(storagePromises);
+    const totalTime = Date.now() - startTime;
+    console.log(
+      `[Mission Generation] All missions generated and stored in ${totalTime}ms (parallel processing) for user: ${userId || "anonymous"}`
+    );
 
     return res.status(200).json({
       success: true,
       missions: generated,
-      storedIds,
+      storedIds: storedIds.filter(Boolean),
       usedDatabase: !USE_DUMMY,
+      processingTimeMs: totalTime,
+      userId,
     });
   } catch (error) {
     console.error("Error generating missions:", error);

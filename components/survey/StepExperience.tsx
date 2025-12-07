@@ -69,7 +69,7 @@ export function StepExperience({
           Share Your Experience
         </h2>
         <p className="text-white/60 text-sm">
-          Step 7 of 8
+          Step 8 of 9
         </p>
       </div>
 

@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { generateMissionNumber } from "@/utils/missionNumber";
 
 function createServerSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -37,10 +38,13 @@ export default async function handler(
   try {
     const supabaseClient = createServerSupabaseClient();
 
-    // Query all user_mission data for the user
+    // Query all user_mission data for the user with mission details
     const { data: userMissions, error } = await supabaseClient
       .from("user_mission")
-      .select("*")
+      .select(`
+        *,
+        missions(title)
+      `)
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
@@ -55,10 +59,14 @@ export default async function handler(
       const completedDate = mission.completed_at ? new Date(mission.completed_at) : null;
       const startedDate = mission.started_at ? new Date(mission.started_at) : null;
 
+      // Generate unique mission number from mission_id
+      const missionNumber = generateMissionNumber(mission.mission_id);
+
       return {
         id: mission.id,
         user_id: mission.user_id,
         mission_id: mission.mission_id,
+        title: mission.missions?.title || `Mission ${mission.mission_id}`,
         status: mission.status,
         submission_text: mission.submission_text || null,
         grade: mission.grade || null,
@@ -71,6 +79,7 @@ export default async function handler(
         rubric: mission.rubric || null,
         positive_templates: mission.positive_templates || null,
         improvement_templates: mission.improvement_templates || null,
+        tab_switch_count: mission.tab_switch_count || 0,
         started_at: mission.started_at || null,
         completed_at: mission.completed_at || null,
         created_at: mission.created_at,

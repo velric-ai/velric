@@ -13,6 +13,7 @@ import {
   X,
   ChevronDown
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -20,23 +21,19 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
 
   useEffect(() => {
-    // Get user data from localStorage
-    const userData = localStorage.getItem("velric_user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    } else {
-      // Redirect to login if no user data found
+    // Redirect to login if no user data found
+    if (!user) {
       router.push("/login");
     }
-  }, [router]);
+  }, [user, router]);
 
   const handleLogout = () => {
-    localStorage.removeItem("velric_user");
+    logout();
     router.push("/login");
   };
 

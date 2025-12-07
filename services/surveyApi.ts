@@ -30,6 +30,12 @@ export interface SurveyFormData {
   fullName: { value: string; error: string | null; touched: boolean };
   educationLevel: { value: string; error: string | null; touched: boolean };
   industry: { value: string; error: string | null; touched: boolean };
+  interviewAvailability: {
+    value: Array<{ day: string; startTime: string; endTime: string }>;
+    timezone: string;
+    error: string | null;
+    touched: boolean;
+  };
   missionFocus: {
     value: string[];
     error: string | null;
@@ -38,6 +44,7 @@ export interface SurveyFormData {
     options: string[];
   };
   strengthAreas: { value: string[]; error: string | null; touched: boolean };
+  level: { value: string; error: string | null; touched: boolean };
   learningPreference: { value: string; error: string | null; touched: boolean };
   portfolio: {
     file: File | null;
@@ -47,6 +54,8 @@ export interface SurveyFormData {
     url: string;
     urlError: string | null;
     uploadStatus: "uploading" | "success" | "error" | null;
+    uploadedUrl: string | null;
+    uploadedFilename: string | null;
   };
   platformConnections: {
     github: PlatformConnection;
@@ -54,6 +63,18 @@ export interface SurveyFormData {
     hackerrank: PlatformConnection;
   };
   experienceSummary: { value: string; error: string | null; touched: boolean };
+  logisticsPreferences: {
+    currentRegion: { value: string; error: string | null; touched: boolean };
+    legalWorkRegions: { value: string[]; error: string | null; touched: boolean };
+    sponsorshipConsideration: { value: string; error: string | null; touched: boolean };
+    sponsorshipRegions: { value: string[]; error: string | null; touched: boolean };
+    sponsorshipDependsText: { value: string; error: string | null; touched: boolean };
+    relocationOpenness: { value: string; error: string | null; touched: boolean };
+    relocationRegions: { value: string; error: string | null; touched: boolean };
+    remoteWorkInternational: { value: string; error: string | null; touched: boolean };
+    error: string | null;
+    touched: boolean;
+  };
   currentStep: number;
   totalSteps: number;
   isSubmitting: boolean;
@@ -98,6 +119,8 @@ export async function submitSurveyData(
     const userData = getLocalStorageItem("velric_user");
     const userId = userData ? JSON.parse(userData).id : "guest";
 
+    console.log('[submitSurveyData] 🚀 Starting survey submission for userId:', userId);
+
     // Validate minimal required data
     if (!formData.fullName.value || !formData.industry.value) {
       throw new ValidationError("Missing required fields before submission");
@@ -109,21 +132,30 @@ export async function submitSurveyData(
       full_name: formData.fullName.value,
       education_level: formData.educationLevel.value,
       industry: formData.industry.value,
+      level: formData.level?.value || null,
       mission_focus: formData.missionFocus.value,
       strength_areas: formData.strengthAreas.value,
       learning_preference: formData.learningPreference.value,
       portfolio: {
-        file: formData.portfolio.file
-          ? {
-              name: formData.portfolio.file.name,
-              size: formData.portfolio.file.size,
-              type: formData.portfolio.file.type,
-            }
-          : null,
-        url: formData.portfolio.url || null,
+        file: formData.portfolio.uploadedFilename || null,
+        url: formData.portfolio.uploadedUrl || formData.portfolio.url || null,
       },
       experience_summary: formData.experienceSummary.value,
+      interview_availability: formData.interviewAvailability ? {
+        timeSlots: formData.interviewAvailability.value,
+        timezone: formData.interviewAvailability.timezone,
+      } : null,
       platform_connections: formData.platformConnections,
+      logistics_preferences: formData.logisticsPreferences ? {
+        current_region: formData.logisticsPreferences.currentRegion?.value || null,
+        legal_work_regions: formData.logisticsPreferences.legalWorkRegions?.value || [],
+        sponsorship_consideration: formData.logisticsPreferences.sponsorshipConsideration?.value || null,
+        sponsorship_regions: formData.logisticsPreferences.sponsorshipRegions?.value || [],
+        sponsorship_depends_text: formData.logisticsPreferences.sponsorshipDependsText?.value || null,
+        relocation_openness: formData.logisticsPreferences.relocationOpenness?.value || null,
+        relocation_regions: formData.logisticsPreferences.relocationRegions?.value || null,
+        remote_work_international: formData.logisticsPreferences.remoteWorkInternational?.value || null,
+      } : null,
       metadata: {
         total_time_spent: Object.values(formData.timeSpentPerStep).reduce(
           (a, b) => a + b,
@@ -155,6 +187,7 @@ export async function submitSurveyData(
     }
 
     // Try to insert into Supabase
+    console.log('[submitSurveyData] 🔄 Attempting to insert survey into Supabase for userId:', userId);
     const { data, error } = await supabase
       .from("survey_responses")
       .insert([payload])
@@ -163,17 +196,14 @@ export async function submitSurveyData(
 
     if (error) {
       console.error("❌ Supabase insert error:", error);
+      console.log('[submitSurveyData] 🔄 Error inserting to Supabase, attempting API endpoint fallback for userId:', userId);
       
-      // If API key is invalid, fallback to API endpoint
-      if (error.message?.includes("Invalid API key") || error.message?.includes("JWT")) {
-        console.warn("⚠️ Invalid API key detected, falling back to API endpoint");
-        return await submitViaAPIEndpoint(payload, userId);
-      }
-      
-      throw new ServerError(error.message || "Failed to save survey data");
+      // Always fallback to API endpoint which handles the user update
+      return await submitViaAPIEndpoint(payload, userId);
     }
 
     console.log("✅ Survey saved to Supabase:", data);
+    console.log('[submitSurveyData] ✅ Survey data successfully persisted, userId:', userId);
 
     return {
       success: true,
@@ -232,11 +262,15 @@ async function submitViaAPIEndpoint(
       body: JSON.stringify(apiPayload),
     });
 
+    console.log('[submitViaAPIEndpoint] 📡 API Response status:', response.status, 'for userId:', userId);
     const result = await response.json();
 
     if (!result.success) {
+      console.error('[submitViaAPIEndpoint] ❌ API returned failure:', result);
       throw new ServerError(result.message || "Failed to save survey data");
     }
+
+    console.log('[submitViaAPIEndpoint] ✅ Survey successfully submitted via API for userId:', userId);
 
     return {
       success: true,
@@ -286,30 +320,123 @@ export async function uploadPortfolioFile(
       throw new ValidationError("Unsupported file type");
 
     const fileName = `${Date.now()}_${file.name}`;
-    const { data, error } = await supabase.storage
+    
+    console.log("[uploadPortfolioFile] Starting upload:", {
+      fileName,
+      fileSize: file.size,
+      fileType: file.type
+    });
+
+    // Add timeout wrapper
+    const uploadPromise = supabase.storage
       .from("portfolio_uploads")
       .upload(fileName, file, {
         upsert: false,
         contentType: file.type,
       });
 
-    if (error) throw new AppError("Upload failed: " + error.message);
+    // Create a timeout promise
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Upload timeout after 30 seconds")), 30000)
+    );
+
+    const { data, error } = await Promise.race([uploadPromise, timeoutPromise]) as any;
+
+    if (error) {
+      console.error("[uploadPortfolioFile] Supabase error:", error);
+      throw new AppError("Upload failed: " + error.message);
+    }
+
+    console.log("[uploadPortfolioFile] Upload successful, fetching public URL");
 
     const { data: urlData } = supabase.storage
       .from("portfolio_uploads")
       .getPublicUrl(fileName);
 
+    console.log("[uploadPortfolioFile] Public URL:", urlData.publicUrl);
+
     return {
       success: true,
       filename: file.name,
-      url: urlData.publicUrl, // fixed destructuring
+      url: urlData.publicUrl,
       size: file.size,
       type: file.type,
       uploadedAt: new Date().toISOString(),
     };
   } catch (error: any) {
-    console.error("Upload error:", error);
+    console.error("[uploadPortfolioFile] Upload error:", error);
     throw new AppError(error.message || "Failed to upload file");
+  }
+}
+
+/**
+ * Parse resume text using OpenAI
+ * This function expects the PDF to already be parsed into text on the client-side
+ * 
+ * @param surveyResponseId - The ID of the survey response record
+ * @param pdfText - The extracted text from the PDF (parsed on client-side)
+ * @returns Promise with resume_json structured data
+ */
+export async function parseResumeWithAI(
+  surveyResponseId: string,
+  pdfText: string
+): Promise<{
+  success: boolean;
+  message: string;
+  resume_json: any;
+}> {
+  try {
+    if (!surveyResponseId) {
+      throw new ValidationError("Survey response ID is required");
+    }
+
+    if (!pdfText || typeof pdfText !== "string") {
+      throw new ValidationError("PDF text is required and must be a string");
+    }
+
+    console.log("[parseResumeWithAI] Sending parsed PDF text to server", {
+      surveyResponseId,
+      textLength: pdfText.length,
+    });
+
+    const response = await fetch("/api/survey/parseResume", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        surveyResponseId,
+        pdfText,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error("[parseResumeWithAI] Error response:", result);
+      throw new ServerError(
+        result.error || result.message || "Failed to parse resume"
+      );
+    }
+
+    console.log("[parseResumeWithAI] Resume parsed successfully", {
+      resumeJson: result.resume_json,
+    });
+
+    return {
+      success: true,
+      message: result.message || "Resume parsed successfully",
+      resume_json: result.resume_json,
+    };
+  } catch (error: any) {
+    console.error("[parseResumeWithAI] Error:", error);
+
+    if (error instanceof ValidationError) throw error;
+    if (error instanceof ServerError) throw error;
+
+    throw new AppError(
+      error.message || "Failed to parse resume. Please try again."
+    );
   }
 }
 
@@ -491,18 +618,16 @@ export async function submitSurveyData(formData: SurveyFormData): Promise<Survey
     }
 
     // Prepare submission payload
-    const submissionPayload = {
+    const submissionPayload: SurveySubmissionPayload = {
       fullName: formData.fullName.value,
       educationLevel: formData.educationLevel.value,
       industry: formData.industry.value,
       missionFocus: formData.missionFocus.value,
       strengthAreas: formData.strengthAreas.value,
       learningPreference: formData.learningPreference.value,
-      portfolioFile: formData.portfolio.file ? {
-        filename: formData.portfolio.file.name,
-        size: formData.portfolio.file.size,
-        type: formData.portfolio.file.type,
-        url: formData.portfolio.filePreview || ''
+      portfolioFile: formData.portfolio.uploadedUrl ? {
+        filename: formData.portfolio.uploadedFilename || 'resume',
+        url: formData.portfolio.uploadedUrl
       } : null,
       portfolioUrl: formData.portfolio.url || null,
       experienceSummary: formData.experienceSummary.value || null,
@@ -532,6 +657,23 @@ export async function submitSurveyData(formData: SurveyFormData): Promise<Survey
     };
 
     // Log submission attempt
+    console.log('[submitSurvey] Portfolio data from form:', {
+      uploadedUrl: formData.portfolio.uploadedUrl,
+      uploadedFilename: formData.portfolio.uploadedFilename,
+      url: formData.portfolio.url,
+      file: formData.portfolio.file?.name,
+    });
+    
+    console.log('[submitSurvey] Creating portfolioFile:', {
+      hasUploadedUrl: !!formData.portfolio.uploadedUrl,
+      portfolioFile: submissionPayload.portfolioFile,
+    });
+    
+    console.log('[submitSurvey] Full submission payload (portfolio only):', {
+      portfolioFile: submissionPayload.portfolioFile,
+      portfolioUrl: submissionPayload.portfolioUrl,
+    });
+    
     console.log('Submitting survey data:', {
       timestamp: new Date().toISOString(),
       userId: getAuthToken(),

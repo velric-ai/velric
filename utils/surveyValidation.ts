@@ -1,4 +1,6 @@
 // Custom Error Classes
+import { EDUCATION_LEVELS, INDUSTRIES, VALID_STRENGTHS } from '@/data/surveyConstants';
+
 export class AppError extends Error {
   constructor(message: string, public code?: string) {
     super(message);
@@ -42,6 +44,7 @@ export class ServerError extends AppError {
 }
 
 // Field Validation Functions
+// Note: EDUCATION_LEVELS, INDUSTRIES, and VALID_STRENGTHS are imported at the top
 export const validateFullName = (value: string): string | null => {
   if (!value) return 'Name is required';
   if (typeof value !== 'string') return 'Invalid input';
@@ -55,57 +58,15 @@ export const validateFullName = (value: string): string | null => {
 };
 
 export const validateEducationLevel = (value: string): string | null => {
-  const validLevels = [
-    'High School',
-    'Some College',
-    'Bachelors Degree',
-    'Masters Degree',
-    'PhD',
-    'Self-Taught',
-    'Other'
-  ];
-  
   if (!value) return 'Education level is required';
-  if (!validLevels.includes(value)) return 'Invalid education level';
+  if (!EDUCATION_LEVELS.includes(value)) return 'Invalid education level';
   
   return null;
 };
 
 export const validateIndustry = (value: string): string | null => {
-  const validIndustries = [
-    'Technology & Software',
-    'Artificial Intelligence & ML',
-    'Finance & Banking',
-    'Healthcare & Medical',
-    'E-commerce & Retail',
-    'Education & Learning',
-    'Product Management',
-    'Consulting & Services',
-    'Marketing & Advertising',
-    'Operations & Supply Chain',
-    'Data Science & Analytics',
-    'Design & Creative',
-    'Startup Founder',
-    'Government & Public Sector',
-    'Non-profit',
-    'Transportation & Logistics',
-    'Real Estate & Property',
-    'Manufacturing',
-    'Agriculture & Food',
-    'Media & Entertainment',
-    'Legal Services',
-    'Hospitality & Tourism',
-    'Human Resources',
-    'Sales & Business Development',
-    'Research & Development',
-    'Quality Assurance',
-    'Customer Support',
-    'IT Infrastructure',
-    'Other'
-  ];
-  
   if (!value) return 'Industry is required';
-  if (!validIndustries.includes(value)) return 'Invalid industry';
+  if (!INDUSTRIES.includes(value)) return 'Invalid industry';
   
   return null;
 };
@@ -126,23 +87,11 @@ export const validateMissionFocus = (value: string[], industry: string): string 
 };
 
 export const validateStrengthAreas = (value: string[]): string | null => {
-  const validStrengths = [
-    'Leadership & Management',
-    'Problem Solving',
-    'Coding & Development',
-    'Design Thinking',
-    'Storytelling & Communication',
-    'Data Analysis',
-    'Marketing Strategy',
-    'Technical Communication',
-    'Teamwork & Collaboration'
-  ];
-  
   if (!Array.isArray(value)) return 'Invalid selection';
   if (value.length < 3) return 'Please select at least 3 strengths';
   if (value.length > 9) return 'Please select no more than 9 strengths';
   
-  const invalidStrengths = value.filter(strength => !validStrengths.includes(strength));
+  const invalidStrengths = value.filter(strength => !VALID_STRENGTHS.includes(strength));
   if (invalidStrengths.length > 0) {
     return 'Invalid strengths selected';
   }
@@ -216,7 +165,6 @@ export const sanitizeName = (value: string): string => {
   if (typeof value !== 'string') return '';
   
   return value
-    .trim()
     .slice(0, 50)
     .replace(/[^a-zA-Z\s'-]/g, '');
 };
@@ -249,18 +197,24 @@ export const validateStep = (step: number, formData: any): ValidationResult => {
       );
       if (missionError) errors.missionFocus = missionError;
       break;
+
+    case 3: // Candidate Level
+      if (!formData.level?.value) {
+        errors.level = 'Please select your level';
+      }
+      break;
       
-    case 3: // Strength Areas
+    case 4: // Strength Areas
       const strengthError = validateStrengthAreas(formData.strengthAreas?.value || []);
       if (strengthError) errors.strengthAreas = strengthError;
       break;
       
-    case 4: // Learning Preference
+    case 5: // Learning Preference
       const learningError = validateLearningPreference(formData.learningPreference?.value || '');
       if (learningError) errors.learningPreference = learningError;
       break;
       
-    case 5: // Portfolio (Optional)
+    case 6: // Portfolio (Optional)
       if (formData.portfolio?.url) {
         const urlError = validatePortfolioUrl(formData.portfolio.url);
         if (urlError) errors.portfolioUrl = urlError;
@@ -272,14 +226,24 @@ export const validateStep = (step: number, formData: any): ValidationResult => {
       }
       break;
       
-    case 6: // Platform Connections (Optional)
+    case 7: // Platform Connections (Optional)
       // No validation required - all optional
       break;
       
-    case 7: // Experience Summary
+    case 8: // Experience Summary
       if (!formData.experienceSummary?.value?.trim()) {
-        errors.experienceSummary = 'Please share your experience and accomplishments';
+        errors.experienceSummary = 'Experience summary is required';
       }
+      break;
+      
+    case 8: // Logistics & Interview Preferences
+      // Current region is required
+      if (!formData.logisticsPreferences?.currentRegion?.value) {
+        errors.logisticsPreferences = 'Please select your current region';
+      }
+      // Note: Other fields are optional, but we validate structure
+      break;
+        errors.experienceSummary = 'Please share your experience and accomplishments';
       break;
       
     default:

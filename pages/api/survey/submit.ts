@@ -1,5 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { supabase, USE_DUMMY } from '@/lib/supabaseClient';
+import {
+  EDUCATION_LEVELS,
+  INDUSTRIES,
+  VALID_STRENGTHS,
+  VALID_LEARNING_PREFERENCES,
+} from '@/data/surveyConstants';
 
 // Rate limiting store (in production, use Redis or database)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -22,62 +28,10 @@ function checkRateLimit(identifier: string, maxRequests: number = 10, windowMs: 
   return true;
 }
 
-// Validation schemas
-const VALID_EDUCATION_LEVELS = [
-  'High School',
-  'Some College',
-  'Bachelors Degree',
-  'Masters Degree',
-  'PhD',
-  'Self-Taught',
-  'Other'
-];
-
-const VALID_INDUSTRIES = [
-  'Technology & Software',
-  'Artificial Intelligence & ML',
-  'Finance & Banking',
-  'Healthcare & Medical',
-  'E-commerce & Retail',
-  'Education & Learning',
-  'Product Management',
-  'Consulting & Services',
-  'Marketing & Advertising',
-  'Operations & Supply Chain',
-  'Data Science & Analytics',
-  'Design & Creative',
-  'Startup Founder',
-  'Government & Public Sector',
-  'Non-profit',
-  'Transportation & Logistics',
-  'Real Estate & Property',
-  'Manufacturing',
-  'Agriculture & Food',
-  'Media & Entertainment',
-  'Legal Services',
-  'Hospitality & Tourism',
-  'Human Resources',
-  'Sales & Business Development',
-  'Research & Development',
-  'Quality Assurance',
-  'Customer Support',
-  'IT Infrastructure',
-  'Other'
-];
-
-const VALID_STRENGTHS = [
-  'Leadership & Management',
-  'Problem Solving',
-  'Coding & Development',
-  'Design Thinking',
-  'Storytelling & Communication',
-  'Data Analysis',
-  'Marketing Strategy',
-  'Technical Communication',
-  'Teamwork & Collaboration'
-];
-
-const VALID_LEARNING_PREFERENCES = ['trial-error', 'reading', 'both'];
+// Use constants from centralized file
+const VALID_EDUCATION_LEVELS = EDUCATION_LEVELS;
+const VALID_INDUSTRIES = INDUSTRIES;
+// VALID_LEARNING_PREFERENCES is already imported and can be used directly
 
 // Validation functions
 function validateFullName(name: string): string | null {
@@ -90,14 +44,14 @@ function validateFullName(name: string): string | null {
 }
 
 function validateEducationLevel(level: string): string | null {
-  if (!level || !VALID_EDUCATION_LEVELS.includes(level)) {
+  if (!level || !EDUCATION_LEVELS.includes(level)) {
     return 'Invalid education level';
   }
   return null;
 }
 
 function validateIndustry(industry: string): string | null {
-  if (!industry || !VALID_INDUSTRIES.includes(industry)) {
+  if (!industry || !INDUSTRIES.includes(industry)) {
     return 'Invalid industry';
   }
   return null;
@@ -233,19 +187,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    console.log('[Survey Submit] ✅ Received auth token, userId:', token);
+
     // Parse and validate request body
     const {
       fullName,
       educationLevel,
       industry,
+      level,
       missionFocus,
       strengthAreas,
       learningPreference,
       portfolioFile,
       portfolioUrl,
       platformConnections,
+      logisticsPreferences,
       metadata
     } = req.body;
+
+    console.log('[Survey Submit] Full request body portfolioFile:', JSON.stringify(portfolioFile, null, 2));
+    console.log('[Survey Submit] Full request body portfolioUrl:', portfolioUrl);
+
+      // Debug: Log level value from request
+      console.log('[Survey Submit] Incoming level value:', req.body.level);
 
     // Validation errors collection
     const errors: { [key: string]: string } = {};
@@ -291,17 +255,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fullName: sanitizeInput(fullName),
       educationLevel: sanitizeInput(educationLevel),
       industry: sanitizeInput(industry),
+      level: sanitizeInput(level),
       missionFocus: Array.isArray(missionFocus) ? missionFocus.map(sanitizeInput) : [],
       strengthAreas: Array.isArray(strengthAreas) ? strengthAreas.map(sanitizeInput) : [],
       learningPreference: sanitizeInput(learningPreference),
       portfolioFile,
       portfolioUrl: portfolioUrl ? sanitizeInput(portfolioUrl) : null,
       platformConnections: platformConnections || {},
+      logisticsPreferences: logisticsPreferences || null,
       metadata: metadata || {}
     };
 
     // Get user ID from token (token is the user ID from localStorage)
     const userId = token;
+
+    // Extract filename from portfolio URL if provided
+    let portfolioFilename = null;
+    console.log('[Survey Submit] sanitizedData.portfolioFile:', JSON.stringify(sanitizedData.portfolioFile, null, 2));
+    
+    if (sanitizedData.portfolioFile?.url) {
+      // URL format: https://yzszgcnuxpkvxueivbyx.supabase.co/storage/v1/object/public/portfolio_uploads/1763534928307_HarshGupta_Resume.pdf
+      // Extract the filename part
+      try {
+        const urlParts = sanitizedData.portfolioFile.url.split('/');
+        portfolioFilename = urlParts[urlParts.length - 1]; // e.g., "1763534928307_HarshGupta_Resume.pdf"
+        console.log('[Survey Submit] ✅ Extracted portfolio filename from URL:', portfolioFilename);
+      } catch (e) {
+        console.warn('[Survey Submit] Failed to extract filename from portfolio URL', e);
+      }
+    } else {
+      console.log('[Survey Submit] ⚠️ No portfolio URL found in sanitizedData.portfolioFile');
+    }
 
     // Handle dummy mode
     if (USE_DUMMY) {
@@ -326,18 +310,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       full_name: sanitizedData.fullName,
       education_level: sanitizedData.educationLevel,
       industry: sanitizedData.industry,
+      level: sanitizedData.level,
       mission_focus: sanitizedData.missionFocus,
       strength_areas: sanitizedData.strengthAreas,
       learning_preference: sanitizedData.learningPreference,
       portfolio: {
-        file: sanitizedData.portfolioFile,
+        file: portfolioFilename, // Store just the filename, not the full object
         url: sanitizedData.portfolioUrl,
       },
       experience_summary: sanitizedData.metadata?.experienceSummary || null,
       platform_connections: sanitizedData.platformConnections,
+      logistics_preferences: sanitizedData.logisticsPreferences ? {
+        current_region: sanitizedData.logisticsPreferences.currentRegion?.value || null,
+        legal_work_regions: sanitizedData.logisticsPreferences.legalWorkRegions?.value || [],
+        sponsorship_consideration: sanitizedData.logisticsPreferences.sponsorshipConsideration?.value || null,
+        sponsorship_regions: sanitizedData.logisticsPreferences.sponsorshipRegions?.value || [],
+        sponsorship_depends_text: sanitizedData.logisticsPreferences.sponsorshipDependsText?.value || null,
+        relocation_openness: sanitizedData.logisticsPreferences.relocationOpenness?.value || null,
+        relocation_regions: sanitizedData.logisticsPreferences.relocationRegions?.value || null,
+        remote_work_international: sanitizedData.logisticsPreferences.remoteWorkInternational?.value || null,
+      } : null,
       metadata: sanitizedData.metadata,
       created_at: new Date().toISOString(),
     };
+      console.log('[Survey Submit] Final payload:', JSON.stringify(payload, null, 2));
+
+    console.log('[Survey Submit] Storing portfolio data:', {
+      portfolioFilename: portfolioFilename,
+      portfolioUrl: sanitizedData.portfolioUrl,
+      fullPayloadPortfolio: payload.portfolio,
+    });
 
     // Insert into Supabase survey_responses table
     const { data: surveyData, error: dbError } = await supabase
@@ -356,6 +358,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Update user's onboarded status in users table
+    console.log('[Survey Submit] 🔄 Updating user record:', { userId, onboarded: true, survey_completed_at: new Date().toISOString() });
     const { error: updateError } = await supabase
       .from("users")
       .update({
@@ -366,8 +369,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq("id", userId);
 
     if (updateError) {
-      console.warn('Failed to update user onboarded status:', updateError);
+      console.error('❌ Failed to update user onboarded status:', updateError);
       // Don't fail the request if user update fails, survey is already saved
+    } else {
+      console.log('✅ Successfully updated user onboarded status');
     }
 
     const completedAt = new Date().toISOString();
