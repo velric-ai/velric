@@ -2,8 +2,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { StaticMission } from "@/data/staticMissions";
 import {
-  generateComprehensiveMission,
-  generateFallbackMission,
+  generateMissionFromSurvey,
+  fetchSurveyDataFromTable,
+  SurveyResponseData,
 } from "@/lib/ai";
 import { storeAIGeneratedMission, USE_DUMMY } from "@/lib/supabaseClient";
 
@@ -12,8 +13,8 @@ interface GenerateBody {
   interests?: string[];
   industry?: string;
   difficulty?: "Beginner" | "Intermediate" | "Advanced";
-
   count?: number;
+  usesSurveyData?: boolean;
 }
 
 // In-memory store for dummy-generated missions (persists across hot reloads)
@@ -45,10 +46,11 @@ export default async function handler(
       industry = "SaaS",
       difficulty = "Intermediate",
       count = 3,
-      userId,
-      level = "Intermediate",
+      usesSurveyData = false,
     } = (req.body || {}) as GenerateBody & { userId?: string; level?: string };
 
+    const userId = (req.body as any)?.userId;
+    const level = (req.body as any)?.level || "Intermediate";
     const safeCount = Math.min(Math.max(count, 1), 5);
 
     // Generate all missions in parallel using Promise.all for faster execution
@@ -57,34 +59,43 @@ export default async function handler(
     );
     const startTime = Date.now();
 
+    let surveyData: SurveyResponseData;
+
+    // If usesSurveyData flag is true and userId is provided, fetch from survey_responses table
+    if (usesSurveyData && userId) {
+      console.log('[Mission Generation] Fetching survey data from survey_responses table for userId:', userId);
+      
+      const fetchedSurveyData = await fetchSurveyDataFromTable(userId);
+      if (!fetchedSurveyData) {
+        return res.status(400).json({
+          success: false,
+          error: 'User survey data not found in survey_responses table. Please complete the survey first.',
+        });
+      }
+      
+      surveyData = fetchedSurveyData;
+      console.log('[Mission Generation] ✅ Survey data fetched from survey_responses table:', {
+        userId,
+        industry: surveyData.industry,
+        educationLevel: surveyData.education_level,
+      });
+    } else {
+      // Fallback: construct survey data from request parameters
+      console.log('[Mission Generation] Using request parameters for mission generation (not from survey_responses table)');
+      surveyData = {
+        education_level: difficulty,
+        industry: industry || "Technology",
+        level: level,
+        mission_focus: interests,
+        strength_areas: interests,
+        resume_json: userBackground,
+        experience_summary: userBackground,
+      };
+    }
+
     const generationPromises: Promise<StaticMission>[] = [];
     for (let i = 0; i < safeCount; i++) {
-      const generationPromise = (async () => {
-        try {
-          const mission = await generateComprehensiveMission(
-            userBackground,
-            interests,
-            industry,
-            difficulty,
-            `${2 + i}-${6 + i} hours`,
-            level
-          );
-          return mission;
-        } catch (error) {
-          console.error(`Error generating mission ${i + 1}:`, error);
-          // Fall back to detailed template-based mission instead of failing
-          const fallbackMission = generateFallbackMission(
-            userBackground,
-            interests,
-            industry || "Technology",
-            difficulty || "Intermediate",
-            `${2 + i}-${6 + i} hours`
-          );
-          return fallbackMission;
-        }
-      })();
-
-      generationPromises.push(generationPromise);
+      generationPromises.push(generateMissionFromSurvey(surveyData));
     }
 
     // Wait for all missions to generate in parallel
