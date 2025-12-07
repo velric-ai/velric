@@ -67,7 +67,7 @@ export default function DashboardNavigation({
     if (currentPath === '/profile') return 'profile';
     if (currentPath === '/missions') return 'missions';
     if (currentPath === '/settings') return 'settings';
-    if (currentPath === '/dashboard' || currentPath === '/user-dashboard') return 'dashboard';
+    if (currentPath === '/user-dashboard') return 'dashboard';
     return 'dashboard';
   };
 
