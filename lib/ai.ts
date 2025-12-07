@@ -393,6 +393,9 @@ export async function generateMissionsFromSurvey(
   return generatedMissions;
 }
 
+// Export alias for backward compatibility with existing API endpoints
+export { generateMissionsFromSurvey as generateAndStoreMissions };
+
 /**
  * Fallback mission generation when OpenAI is not available or fails
  * Uses only data from survey_responses table
