@@ -44,18 +44,8 @@ export function ProtectedRoute({
           // Parse user data
           const userData = JSON.parse(userDataStr!);
 
-          // ✅ SURVEY ACCESS - If user is trying to access survey
+          // ✅ SURVEY ACCESS - Allow access to survey page for both new and existing surveys (for editing)
           if (currentPath === '/onboard/survey') {
-            const { data: surveyResponse } = await supabase
-              .from("survey_responses")
-              .select("id")
-              .eq("user_id", userData.id)
-              .maybeSingle();
-
-            if (surveyResponse) {
-              router.replace('/user-dashboard');
-              return;
-            }
             setIsAuthorized(true);
             setIsChecking(false);
             return;
@@ -125,7 +115,7 @@ export function ProtectedRoute({
   return isAuthorized ? <>{children}</> : null;
 }
 
-// ✅ Survey Route Guard - Simplified
+// ✅ Survey Route Guard - Allow access for both new and existing surveys (for editing)
 export function ProtectedSurveyRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
@@ -146,17 +136,8 @@ export function ProtectedSurveyRoute({ children }: { children: React.ReactNode }
           return;
         }
 
-        const { data: surveyResponse } = await supabase
-          .from("survey_responses")
-          .select("id")
-          .eq("user_id", userData.id)
-          .maybeSingle();
-        
-        if (surveyResponse) {
-          router.replace('/user-dashboard');
-          return;
-        }
-        
+        // Allow access to survey page for both new and existing surveys
+        // The survey page will handle loading existing data if available
         setShouldRender(true);
         setIsChecking(false);
         

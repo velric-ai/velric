@@ -26,7 +26,7 @@ export function StepBasicInfo({
   const [industrySearch, setIndustrySearch] = useState('');
   const [showIndustryDropdown, setShowIndustryDropdown] = useState(false);
   const [filteredIndustries, setFilteredIndustries] = useState(INDUSTRIES);
-  
+  console.log("formData", formData,industrySearch);
   // Interview availability state
   const [timeSlots, setTimeSlots] = useState<Array<{ day: string; startTime: string; endTime: string }>>(
     formData.interviewAvailability?.value || []
@@ -51,6 +51,11 @@ export function StepBasicInfo({
     }
   }, [industrySearch]);
 
+  useEffect(() => {
+    if(formData.industry?.value) {
+      setIndustrySearch(formData.industry?.value);
+    }
+  }, [formData]);
   // Update interview availability in form data
   useEffect(() => {
     updateFormData({

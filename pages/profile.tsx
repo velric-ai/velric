@@ -8,6 +8,7 @@ import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
 import { Upload, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { useSnackbar } from "@/hooks/useSnackbar";
+import router from "next/router";
 
 function ProfileContent() {
   const { showSnackbar } = useSnackbar();
@@ -508,10 +509,30 @@ function ProfileContent() {
                   </div>
                 </div>
               ) : surveyData ? (
-                <SurveyData surveyData={surveyData} />
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-semibold text-white">Survey Information</h2>
+                    <button
+                      onClick={() => router.push('/onboard/survey')}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit Survey
+                    </button>
+                  </div>
+                  <SurveyData surveyData={surveyData} />
+                </div>
               ) : (
                 <div className="bg-gradient-to-br from-gray-500/10 to-gray-600/10 border border-gray-500/20 rounded-xl p-8 text-center">
-                  <p className="text-white/60">No survey data available. Please complete your onboarding survey.</p>
+                  <p className="text-white/60 mb-4">No survey data available. Please complete your onboarding survey.</p>
+                  <button
+                    onClick={() => router.push('/onboard/survey')}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+                  >
+                    Complete Survey
+                  </button>
                 </div>
               )}
             </div>

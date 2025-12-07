@@ -140,14 +140,14 @@ function sanitizeInput(input: string): string {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, PUT, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  if (req.method !== 'POST') {
+  if (req.method !== 'POST' && req.method !== 'PUT') {
     return res.status(405).json({
       success: false,
       code: 'METHOD_NOT_ALLOWED',
@@ -202,7 +202,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       portfolioUrl,
       platformConnections,
       logisticsPreferences,
-      metadata
+      metadata,
+      experienceSummary,
+      interviewAvailability
     } = req.body;
 
     console.log('[Survey Submit] Full request body portfolioFile:', JSON.stringify(portfolioFile, null, 2));
@@ -318,7 +320,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         file: portfolioFilename, // Store just the filename, not the full object
         url: sanitizedData.portfolioUrl,
       },
-      experience_summary: sanitizedData.metadata?.experienceSummary || null,
+      experience_summary: experienceSummary || sanitizedData.metadata?.experienceSummary || null,
+      interview_availability: interviewAvailability ? {
+        timeSlots: interviewAvailability.timeSlots || [],
+        timezone: interviewAvailability.timezone || null,
+      } : null,
       platform_connections: sanitizedData.platformConnections,
       logistics_preferences: sanitizedData.logisticsPreferences ? {
         current_region: sanitizedData.logisticsPreferences.currentRegion?.value || null,
@@ -341,15 +347,63 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       fullPayloadPortfolio: payload.portfolio,
     });
 
-    // Insert into Supabase survey_responses table
-    const { data: surveyData, error: dbError } = await supabase
+    // Check if survey exists for this user
+    const { data: existingSurvey, error: fetchError } = await supabase
       .from("survey_responses")
-      .insert([payload])
-      .select()
-      .single();
+      .select("id")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let surveyData;
+    let dbError;
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      // PGRST116 is "not found" which is fine, other errors are not
+      console.error('Error checking for existing survey:', fetchError);
+      return res.status(500).json({
+        success: false,
+        code: 'DATABASE_ERROR',
+        message: fetchError.message || 'Failed to check existing survey'
+      });
+    }
+
+    // If survey exists, update it using survey ID; otherwise insert new one
+    if (existingSurvey && existingSurvey.id) {
+      console.log('[Survey Submit] Updating existing survey with ID:', existingSurvey.id, 'for userId:', userId);
+      // Remove created_at from update payload (don't update creation time)
+      const { created_at, ...updatePayload } = payload;
+      // Add updated_at timestamp
+      const updatePayloadWithTimestamp = {
+        ...updatePayload,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Update by survey ID, not user_id (more precise)
+      const updateResult = await supabase
+        .from("survey_responses")
+        .update(updatePayloadWithTimestamp)
+        .eq("id", existingSurvey.id)
+        .select()
+        .single();
+
+      surveyData = updateResult.data;
+      dbError = updateResult.error;
+    } else {
+      console.log('[Survey Submit] Creating new survey for userId:', userId);
+      const insertResult = await supabase
+        .from("survey_responses")
+        .insert([payload])
+        .select()
+        .single();
+
+      surveyData = insertResult.data;
+      dbError = insertResult.error;
+    }
 
     if (dbError) {
-      console.error('Supabase insert error:', dbError);
+      console.error('Supabase database error:', dbError);
       return res.status(500).json({
         success: false,
         code: 'DATABASE_ERROR',
@@ -377,15 +431,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const completedAt = new Date().toISOString();
 
+    // Prepare response - limit surveyData size to prevent large JSON responses
+    const responseSurveyData = surveyData ? {
+      id: surveyData.id,
+      user_id: surveyData.user_id,
+      full_name: surveyData.full_name,
+      industry: surveyData.industry,
+      created_at: surveyData.created_at,
+      updated_at: surveyData.updated_at
+    } : null;
+
     // Success response
     return res.status(200).json({
       success: true,
       userId,
-      message: 'Survey submitted successfully',
+      message: existingSurvey ? 'Survey updated successfully' : 'Survey submitted successfully',
       profile: {
         onboarded: true,
         completedAt,
-        surveyData: surveyData || sanitizedData
+        surveyData: responseSurveyData
       },
       redirectUrl: '/dashboard',
       completedAt: Date.now()

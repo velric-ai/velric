@@ -113,7 +113,8 @@ export interface SurveySubmissionResponse {
  */
 
 export async function submitSurveyData(
-  formData: SurveyFormData
+  formData: SurveyFormData,
+  surveyExists: boolean
 ): Promise<SurveySubmissionResponse> {
   try {
     const userData = getLocalStorageItem("velric_user");
@@ -199,7 +200,7 @@ export async function submitSurveyData(
       console.log('[submitSurveyData] 🔄 Error inserting to Supabase, attempting API endpoint fallback for userId:', userId);
       
       // Always fallback to API endpoint which handles the user update
-      return await submitViaAPIEndpoint(payload, userId);
+      return await submitViaAPIEndpoint(payload, userId, surveyExists);
     }
 
     console.log("✅ Survey saved to Supabase:", data);
@@ -235,7 +236,8 @@ export async function submitSurveyData(
 // Fallback function to submit via API endpoint when direct Supabase fails
 async function submitViaAPIEndpoint(
   payload: any,
-  userId: string
+  userId: string,
+  surveyExists: boolean
 ): Promise<SurveySubmissionResponse> {
   try {
     // Transform payload to API format
@@ -253,8 +255,12 @@ async function submitViaAPIEndpoint(
       metadata: payload.metadata,
     };
 
+    // Use PUT if survey exists, POST if it doesn't
+    const method = surveyExists ? "PUT" : "POST";
+    console.log(`[submitViaAPIEndpoint] Using ${method} method (survey exists: ${surveyExists})`);
+
     const response = await fetch("/api/survey/submit", {
-      method: "POST",
+      method: method,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${userId}`,
