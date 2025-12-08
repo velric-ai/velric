@@ -52,7 +52,7 @@ export default function Login() {
           transition={{ duration: 0.6 }}
           className="w-full max-w-md relative z-10"
         >
-          {/* Header */}
+          {/* Headerr */}
           <div className="text-center mb-8">
             <Link href="/" className="inline-block mb-6">
               <img
