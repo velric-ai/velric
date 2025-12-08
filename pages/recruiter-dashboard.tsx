@@ -3,24 +3,19 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import {
-  Users,
-  Briefcase,
   Search,
   Sparkles,
   Inbox,
-  FileText,
 } from "lucide-react";
 import { ProtectedDashboardRoute } from "../components/auth/ProtectedRoute";
 import { WelcomeMessage } from "../components/dashboard/WelcomeMessage";
 import RecruiterNavbar from "../components/recruiter/RecruiterNavbar";
 import AIJobMatchModal from "../components/recruiter/AIJobMatchModal";
-import ScheduleInterviewModal from "../components/recruiter/ScheduleInterviewModal";
 
 function RecruiterDashboardContent() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isJobMatchOpen, setIsJobMatchOpen] = useState(false);
-  const [isScheduleInterviewOpen, setIsScheduleInterviewOpen] = useState(false);
 
   // Check authentication
   useEffect(() => {
@@ -126,7 +121,7 @@ function RecruiterDashboardContent() {
               Recruiter Dashboard
             </h1>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {/* AI Job Match Card */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -176,65 +171,11 @@ function RecruiterDashboardContent() {
                 </p>
               </motion.div>
 
-              {/* Schedule Interview Card */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: 0.4 }}
-                className="p-8 rounded-2xl cursor-pointer relative overflow-hidden"
-                style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  backdropFilter: "blur(15px)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
-                }}
-                onClick={() => setIsScheduleInterviewOpen(true)}
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-cyan-500/20 to-green-500/20 rounded-full blur-2xl -mr-16 -mt-16" />
-                <div className="relative z-10">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500 to-green-500 flex items-center justify-center mb-4">
-                    <Users className="w-6 h-6 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold mb-2">Schedule Interview</h2>
-                  <p className="text-white/70">
-                    Use AI to search and find candidates, then schedule interviews directly.
-                  </p>
-                </div>
-              </motion.div>
-
-              {/* Applications Card */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: 0.5 }}
-                className="p-8 rounded-2xl cursor-pointer relative overflow-hidden"
-                style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  backdropFilter: "blur(15px)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
-                }}
-                onClick={() => router.push("/recruiter/applications")}
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-full blur-2xl -mr-16 -mt-16" />
-                <div className="relative z-10">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500 flex items-center justify-center mb-4">
-                    <FileText className="w-6 h-6 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold mb-2">Applications</h2>
-                  <p className="text-white/70">
-                    Create and manage multiple job applications with location, sponsorship, and other job details.
-                  </p>
-                </div>
-              </motion.div>
-
               {/* Inbox Card */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: 0.6 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
                 className="p-8 rounded-2xl cursor-pointer relative overflow-hidden"
                 style={{
                   background: "rgba(255, 255, 255, 0.05)",
@@ -264,12 +205,6 @@ function RecruiterDashboardContent() {
         <AIJobMatchModal
           isOpen={isJobMatchOpen}
           onClose={() => setIsJobMatchOpen(false)}
-        />
-
-        {/* Schedule Interview Modal */}
-        <ScheduleInterviewModal
-          isOpen={isScheduleInterviewOpen}
-          onClose={() => setIsScheduleInterviewOpen(false)}
         />
       </div>
     </>

@@ -1,8 +1,7 @@
 import Head from "next/head";
 import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Filter, Search, Bookmark, BookmarkCheck, MapPin, Mail, Linkedin, Github, X, SlidersHorizontal, Calendar, Loader2, User, CheckCircle, XCircle } from "lucide-react";
-import ScheduleInterviewFormModal from "@/components/recruiter/ScheduleInterviewFormModal";
+import { Filter, Search, Bookmark, BookmarkCheck, MapPin, Mail, Linkedin, Github, X, SlidersHorizontal, Loader2, User, CheckCircle, XCircle } from "lucide-react";
 import CandidateProfileModal from "@/components/recruiter/CandidateProfileModal";
 import HiringConstraintsModal from "@/components/recruiter/HiringConstraintsModal";
 import { ProtectedDashboardRoute } from "@/components/auth/ProtectedRoute";
@@ -172,12 +171,6 @@ function CandidatesPageContent() {
   const [scoreRange, setScoreRange] = useState<[number, number]>([0, 10]);
   const [clusterFilters, setClusterFilters] = useState<string[]>([]); // Now stores industry option strings
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedCandidate, setSelectedCandidate] = useState<{
-    id: string;
-    name: string;
-    email?: string;
-  } | null>(null);
-  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedProfileCandidate, setSelectedProfileCandidate] = useState<{
     id: string;
@@ -833,25 +826,6 @@ function CandidatesPageContent() {
                             </p>
                           </div>
                         </div>
-                        {/* Schedule Interview Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedCandidate({
-                              id: candidate.id,
-                              name: candidate.name,
-                              email: candidate.email,
-                            });
-                            setIsScheduleModalOpen(true);
-                          }}
-                          className="mt-3 w-full px-4 py-2 rounded-lg font-medium text-white transition-all flex items-center justify-center space-x-2"
-                          style={{
-                            background: "linear-gradient(135deg, #06b6d4, #8b5cf6)",
-                          }}
-                        >
-                          <Calendar className="w-4 h-4" />
-                          <span>Schedule Interview</span>
-                        </button>
                       </div>
 
                       {/* Core Clusters */}
@@ -926,20 +900,6 @@ function CandidatesPageContent() {
             </div>
           )}
         </main>
-
-        {/* Schedule Interview Form Modal */}
-        {selectedCandidate && (
-          <ScheduleInterviewFormModal
-            isOpen={isScheduleModalOpen}
-            onClose={() => {
-              setIsScheduleModalOpen(false);
-              setSelectedCandidate(null);
-            }}
-            candidateId={selectedCandidate.id}
-            candidateName={selectedCandidate.name}
-            candidateEmail={selectedCandidate.email}
-          />
-        )}
 
         {/* Candidate Profile Modal */}
         {selectedProfileCandidate && (

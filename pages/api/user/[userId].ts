@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { supabase, USE_DUMMY } from "@/lib/supabaseClient";
+import { demoCandidates } from "@/data/demoCandidates";
 
 type GetUserResponse =
   | {
@@ -40,8 +41,29 @@ export default async function handler(
       });
     }
 
-    // Handle dummy mode
+    // Handle dummy mode - check for demo candidates
     if (USE_DUMMY) {
+      // Check if this is a demo candidate
+      if (userId.startsWith("demo_")) {
+        const demoCandidate = demoCandidates.find(c => c.id === userId);
+        if (demoCandidate) {
+          return res.status(200).json({
+            success: true,
+            user: {
+              id: demoCandidate.id,
+              email: demoCandidate.email,
+              name: demoCandidate.name,
+              onboarded: demoCandidate.onboarded,
+              created_at: new Date().toISOString(),
+              survey_completed_at: new Date().toISOString(),
+              profile_complete: demoCandidate.profile_complete,
+              profile_image: demoCandidate.profile_image || null,
+            },
+          });
+        }
+      }
+      
+      // Fallback for other dummy requests
       const mockUser = {
         id: userId,
         email: "demo@example.com",
