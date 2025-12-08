@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { supabase, USE_DUMMY } from "@/lib/supabaseClient";
+import { demoCandidates } from "@/data/demoCandidates";
 
 interface Candidate {
   id: string;
@@ -53,46 +54,29 @@ export default async function handler(
       offset = "0",
     } = req.query;
 
-    // Handle dummy mode
+    // Handle dummy mode - use demo candidates
     if (USE_DUMMY) {
-      const mockCandidates: Candidate[] = [
-        {
-          id: "user_1",
-          name: "John Doe",
-          email: "john@example.com",
-          onboarded: true,
-          profile_complete: true,
-          velricScore: 8.5,
-          missionsCompleted: 3,
-          domain: "Frontend Development",
-          industry: "Technology",
-          mission_focus: ["Frontend Development"],
-          strength_areas: ["Problem Solving", "Technical Implementation"],
-          experience_summary: "5+ years of experience in React and TypeScript",
-          education_level: "Bachelor's Degree",
-          learning_preference: "Hands-on",
-          skills: ["React", "TypeScript", "Next.js"],
-          clusters: ["Technology"],
-        },
-        {
-          id: "user_2",
-          name: "Jane Smith",
-          email: "jane@example.com",
-          onboarded: true,
-          profile_complete: true,
-          velricScore: 9.2,
-          missionsCompleted: 5,
-          domain: "Full Stack Development",
-          industry: "Technology",
-          mission_focus: ["Full Stack Development"],
-          strength_areas: ["Technical Implementation"],
-          experience_summary: "Proficient in React, Node.js, and UI/UX",
-          education_level: "Master's Degree",
-          learning_preference: "Project-based",
-          skills: ["React", "Node.js", "UI/UX"],
-          clusters: ["Technology"],
-        },
-      ];
+      // Convert demo candidates to API format
+      const mockCandidates: Candidate[] = demoCandidates.map(candidate => ({
+        id: candidate.id,
+        name: candidate.name,
+        email: candidate.email,
+        onboarded: candidate.onboarded,
+        profile_complete: candidate.profile_complete,
+        velricScore: candidate.velricScore,
+        missionsCompleted: candidate.missionsCompleted,
+        domain: candidate.domain,
+        location: candidate.location,
+        industry: candidate.industry,
+        mission_focus: candidate.mission_focus,
+        strength_areas: candidate.strength_areas,
+        experience_summary: candidate.experience_summary,
+        education_level: candidate.education_level,
+        learning_preference: candidate.learning_preference,
+        skills: candidate.skills,
+        clusters: candidate.clusters,
+        profile_image: candidate.profile_image || null,
+      }));
 
       let filtered = mockCandidates;
 
