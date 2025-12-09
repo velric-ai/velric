@@ -21,6 +21,19 @@ interface Candidate {
   skills?: string[];
   clusters?: string[];
   profile_image?: string | null;
+  logistics_preferences?: {
+    current_region?: string;
+    legal_work_regions?: string[];
+    sponsorship_consideration?: string;
+    sponsorship_regions?: string[];
+    relocation_openness?: string;
+    relocation_regions?: string;
+    remote_work_international?: string;
+  };
+  interview_availability?: {
+    timeSlots?: Array<{ day: string; startTime: string; endTime: string }>;
+    timezone?: string;
+  };
 }
 
 type CandidatesResponse =
@@ -50,6 +63,18 @@ export default async function handler(
       minScore,
       maxScore,
       specializations,
+      skillClusters,
+      location,
+      remoteWork,
+      sponsorship,
+      citizenship,
+      minExperience,
+      maxExperience,
+      educationLevel,
+      minGraduationYear,
+      maxGraduationYear,
+      seniority,
+      availability,
       limit = "50",
       offset = "0",
     } = req.query;
@@ -255,19 +280,23 @@ export default async function handler(
     });
 
     // Step 4: Apply filters
-    // Domain filter (industry-based)
-    if (domain && typeof domain === "string" && domain !== "All") {
-      const domainLower = domain.toLowerCase();
-      candidates = candidates.filter((c) => {
-        const candidateIndustry = c.industry?.toLowerCase();
-        if (candidateIndustry && candidateIndustry === domainLower) return true;
-        const alias =
-          c.domain && typeof c.domain === "string"
-            ? candidateDomainAlias(c.domain)
-            : undefined;
-        if (alias && alias.toLowerCase() === domainLower) return true;
-        return false;
-      });
+    // Domain filter (industry-based) - support multiple domains
+    if (domain && typeof domain === "string") {
+      const domainList = domain.split(",").map((d) => d.trim());
+      if (!domainList.includes("All")) {
+        candidates = candidates.filter((c) => {
+          const candidateIndustry = c.industry?.toLowerCase();
+          const candidateDomain = c.domain?.toLowerCase();
+          return domainList.some((d) => {
+            const domainLower = d.toLowerCase();
+            if (candidateIndustry && candidateIndustry === domainLower) return true;
+            if (candidateDomain && candidateDomain === domainLower) return true;
+            const alias = candidateDomainAlias(c.domain);
+            if (alias && alias.toLowerCase() === domainLower) return true;
+            return false;
+          });
+        });
+      }
     }
 
     // Score filter
@@ -280,7 +309,23 @@ export default async function handler(
       candidates = candidates.filter((c) => (c.velricScore ?? 0) <= max);
     }
 
-    // Specialization filter (mission_focus) - already filtered at DB level, but double-check
+    // Skill Clusters filter
+    if (skillClusters && typeof skillClusters === "string") {
+      const clusterList = skillClusters.split(",").map((s) => s.trim());
+      candidates = candidates.filter((c) => {
+        if (!c.skills || c.skills.length === 0) return false;
+        // Check if any skill matches the cluster keywords
+        // This is a simplified check - in production, use the skillClusters mapping
+        const skillsLower = c.skills.map((s) => s.toLowerCase());
+        return clusterList.some((clusterId) => {
+          // For now, check if any skill contains the cluster name
+          // In production, use the skillClusters library to map skills to clusters
+          return skillsLower.some((skill) => skill.includes(clusterId.toLowerCase()));
+        });
+      });
+    }
+
+    // Specialization filter (mission_focus) - kept for backward compatibility
     if (specializations && typeof specializations === "string") {
       const specializationList = specializations.split(",").map((s) => s.trim().toLowerCase());
       candidates = candidates.filter((c) => {
@@ -288,6 +333,132 @@ export default async function handler(
         return specializationList.some((spec) =>
           c.mission_focus!.some((mf) => mf.toLowerCase().includes(spec))
         );
+      });
+    }
+
+    // Location filter
+    if (location && typeof location === "string") {
+      const locationList = location.split(",").map((l) => l.trim());
+      candidates = candidates.filter((c) => {
+        const candidateLocation = c.location || c.logistics_preferences?.current_region;
+        if (!candidateLocation) return false;
+        const locationLower = candidateLocation.toLowerCase();
+        return locationList.some((loc) => locationLower.includes(loc.toLowerCase()) || loc.toLowerCase().includes(locationLower));
+      });
+    }
+
+    // Remote Work filter
+    if (remoteWork && typeof remoteWork === "string") {
+      const remoteWorkList = remoteWork.split(",").map((r) => r.trim());
+      candidates = candidates.filter((c) => {
+        const remotePref = c.logistics_preferences?.remote_work_international;
+        if (!remotePref) return false;
+        return remoteWorkList.includes(remotePref);
+      });
+    }
+
+    // Sponsorship filter
+    if (sponsorship && typeof sponsorship === "string") {
+      const sponsorshipList = sponsorship.split(",").map((s) => s.trim());
+      candidates = candidates.filter((c) => {
+        const sponsorPref = c.logistics_preferences?.sponsorship_consideration;
+        if (!sponsorPref) return false;
+        return sponsorshipList.includes(sponsorPref);
+      });
+    }
+
+    // Citizenship filter
+    if (citizenship && typeof citizenship === "string") {
+      const citizenshipList = citizenship.split(",").map((c) => c.trim());
+      candidates = candidates.filter((c) => {
+        const legalRegions = c.logistics_preferences?.legal_work_regions || [];
+        if (legalRegions.length === 0) return false;
+        return citizenshipList.some((cit) =>
+          legalRegions.some((region: string) => region.toLowerCase().includes(cit.toLowerCase()) || cit.toLowerCase().includes(region.toLowerCase()))
+        );
+      });
+    }
+
+    // Years of Experience filter (extract from experience_summary - simplified)
+    if (minExperience || maxExperience) {
+      const minExp = minExperience ? parseInt(minExperience as string, 10) : 0;
+      const maxExp = maxExperience ? parseInt(maxExperience as string, 10) : 50;
+      candidates = candidates.filter((c) => {
+        // This is a simplified check - in production, extract years from experience_summary
+        // For now, we'll use a basic heuristic
+        const expSummary = c.experience_summary?.toLowerCase() || "";
+        // Look for patterns like "X years", "X+ years", etc.
+        const yearsMatch = expSummary.match(/(\d+)\+?\s*(?:year|yr)/);
+        if (yearsMatch) {
+          const years = parseInt(yearsMatch[1], 10);
+          return years >= minExp && years <= maxExp;
+        }
+        // If no explicit years found, return true (don't filter out)
+        return true;
+      });
+    }
+
+    // Education Level filter
+    if (educationLevel && typeof educationLevel === "string") {
+      const educationList = educationLevel.split(",").map((e) => e.trim());
+      candidates = candidates.filter((c) => {
+        if (!c.education_level) return false;
+        return educationList.includes(c.education_level);
+      });
+    }
+
+    // Graduation Year filter (extract from experience_summary - simplified)
+    if (minGraduationYear || maxGraduationYear) {
+      const minYear = minGraduationYear ? parseInt(minGraduationYear as string, 10) : 2000;
+      const maxYear = maxGraduationYear ? parseInt(maxGraduationYear as string, 10) : new Date().getFullYear();
+      candidates = candidates.filter((c) => {
+        // This is a simplified check - in production, extract graduation year from profile
+        // For now, we'll check experience_summary for year patterns
+        const expSummary = c.experience_summary || "";
+        const yearMatches = expSummary.match(/\b(19|20)\d{2}\b/g);
+        if (yearMatches) {
+          const years = yearMatches.map((y) => parseInt(y, 10)).filter((y) => y >= 2000 && y <= new Date().getFullYear());
+          if (years.length > 0) {
+            const latestYear = Math.max(...years);
+            return latestYear >= minYear && latestYear <= maxYear;
+          }
+        }
+        // If no year found, return true (don't filter out)
+        return true;
+      });
+    }
+
+    // Seniority filter (level)
+    if (seniority && typeof seniority === "string") {
+      const seniorityList = seniority.split(",").map((s) => s.trim());
+      // Map seniority levels - this would need to be stored in the database
+      // For now, we'll use a simplified approach based on experience_summary
+      candidates = candidates.filter((c) => {
+        // This is a placeholder - in production, store level in the database
+        // For now, return true for all (don't filter)
+        return true;
+      });
+    }
+
+    // Availability filter (based on interview_availability)
+    if (availability && typeof availability === "string") {
+      const availabilityList = availability.split(",").map((a) => a.trim());
+      candidates = candidates.filter((c) => {
+        const interviewAvail = c.interview_availability;
+        if (!interviewAvail || !interviewAvail.timeSlots || interviewAvail.timeSlots.length === 0) {
+          return availabilityList.includes("2+ months"); // No availability = not immediate
+        }
+        // Simplified check - in production, calculate actual availability
+        const hasAvailability = interviewAvail.timeSlots.length > 0;
+        if (hasAvailability) {
+          return availabilityList.some((avail) => {
+            if (avail === "Immediate") return true;
+            if (avail === "2 weeks") return true;
+            if (avail === "1 month") return true;
+            return avail === "2+ months";
+          });
+        }
+        return false;
       });
     }
 
