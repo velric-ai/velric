@@ -5,9 +5,10 @@ import { motion } from "framer-motion";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { StaticMission } from "@/data/staticMissions";
-import { ArrowLeft, Clock, TrendingUp, Users, Star } from "lucide-react";
+import { ArrowLeft, Clock, TrendingUp, Users, Star, Lock } from "lucide-react";
 import SubmissionForm from "@/components/SubmissionForm";
 import { useSnackbar } from "@/hooks/useSnackbar";
+import { getCompletedSubmissionsByUser } from "@/lib/supabaseClient";
 
 export default function MissionsPage() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function MissionsPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userSurveyData, setUserSurveyData] = useState<any>(null);
   const [surveyLoaded, setSurveyLoaded] = useState(false);
-  const hasGenerated = useRef(false);
+  const [gradedMissionIds, setGradedMissionIds] = useState<Set<string>>(new Set());
   const surveyFetchAttempts = useRef(0);
 
   const buildPayload = (count: number) => {
@@ -37,7 +38,7 @@ export default function MissionsPage() {
     const difficulty = userSurveyData.metadata?.difficulty || 'Intermediate';
     const userBackground = userSurveyData.experience_summary || `${userSurveyData.education_level || ''} ${industry || ''}`.trim();
     if (!interests.length && industry) interests = [industry];
-    return { userBackground, interests, industry, difficulty, count };
+    return { userBackground, interests, industry, difficulty, count, userId };
   };
 
   // Get logged-in user data
@@ -85,12 +86,46 @@ export default function MissionsPage() {
     fetchUserSurveyData();
   }, [userId]);
 
+  // Fetch graded missions for the user
+  const fetchGradedMissions = async (currentUserId: string) => {
+    try {
+      const completedSubmissions = await getCompletedSubmissionsByUser(currentUserId);
+      const gradedIds = new Set(
+        completedSubmissions
+          .filter((submission: any) => submission.status === 'graded')
+          .map((submission: any) => submission.mission_id)
+      );
+      setGradedMissionIds(gradedIds);
+      console.log('[Missions] Fetched graded missions:', gradedIds);
+    } catch (error) {
+      console.error('[Missions] Error fetching graded missions:', error);
+    }
+  };
+
   useEffect(() => {
-    if (hasGenerated.current) return;
-    if (!surveyLoaded) return;
-    if (!userId) return;
+    if (userId) {
+      fetchGradedMissions(userId);
+    }
+  }, [userId]);
+
+  // Fetch missions whenever page is visited (router focus or visibility change)
+  useEffect(() => {
+    if (!surveyLoaded || !userId) return;
+    
+    // Fetch missions immediately on mount
     fetchUserMissionsOrGenerate();
-    hasGenerated.current = true;
+
+    // Also refresh when page becomes visible (user returns from another page)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('[Missions] Page became visible, refreshing missions');
+        fetchUserMissionsOrGenerate();
+        fetchGradedMissions(userId);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [surveyLoaded, userId]);
 
   // Show gentle message only if survey stays unavailable after waiting
@@ -143,7 +178,7 @@ export default function MissionsPage() {
       setLoading(true);
       setError('');
       
-      const payload = buildPayload(5);
+      const payload = buildPayload(3);
 
       // Generate missions with user data using existing generate API
       const controller = new AbortController();
@@ -156,6 +191,7 @@ export default function MissionsPage() {
         body: JSON.stringify({
           ...payload,
           userId, // Pass user ID to store with missions
+          usesSurveyData: true, // Fetch data from survey_responses table
         }),
         signal: controller.signal
       });
@@ -254,7 +290,11 @@ export default function MissionsPage() {
       const resp = await fetch('/api/missions/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          ...payload,
+          userId,
+          usesSurveyData: true, // Fetch data from survey_responses table
+        })
       });
       const data = await resp.json();
       if (!resp.ok || !data.success) {
@@ -282,7 +322,7 @@ export default function MissionsPage() {
     try {
       setSeeding(true);
       setError('');
-      const resp = await fetch('/api/admin/seed-static-missions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ limit: 5 }) });
+      const resp = await fetch('/api/admin/seed-static-missions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ limit: 3 }) });
       const data = await resp.json();
       if (!resp.ok || !data.success) {
         const errorMessage = data.error || 'Failed to seed missions';
@@ -302,6 +342,52 @@ export default function MissionsPage() {
 
   const handleStartMission = (missionId: string) => {
     router.push(`/missions/${missionId}`);
+  };
+
+  // Check if all missions are graded
+  const allMissionsGraded = missions.length === 3 && missions.every(m => gradedMissionIds.has(m.id));
+
+  // Regenerate missions when all are graded
+  const handleRegenerateMissions = async () => {
+    try {
+      setGenerating(true);
+      setError('');
+      
+      const payload = buildPayload(3);
+      if (!payload || !userId) {
+        showSnackbar('User data not available. Please refresh the page.', 'error');
+        setGenerating(false);
+        return;
+      }
+
+      console.log('[Regenerate Missions] Sending payload with userId:', userId);
+      const resp = await fetch('/api/missions/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...payload,
+          userId,
+          usesSurveyData: true, // Fetch data from survey_responses table
+        })
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.success) {
+        const errorMessage = data.error || 'Failed to generate missions';
+        showSnackbar(errorMessage, 'error');
+        setError(errorMessage);
+        return;
+      }
+      // Replace old missions with new ones
+      setMissions(data.missions);
+      setGradedMissionIds(new Set()); // Clear graded missions for new set
+      showSnackbar('New missions generated successfully!', 'success');
+    } catch (e: any) {
+      const errorMessage = e.message || 'Failed to generate missions';
+      showSnackbar(errorMessage, 'error');
+      setError(errorMessage);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const handleBackToDashboard = () => {
@@ -441,6 +527,27 @@ export default function MissionsPage() {
               </motion.div>
             )}
 
+            {/* Generate Again Button - Show only when all missions are graded */}
+            {!error && missions.length > 0 && allMissionsGraded && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-green-500/10 border border-green-500/30 rounded-xl p-6 text-center mb-8"
+              >
+                <p className="text-green-400 text-lg font-semibold mb-4">🎉 All missions completed!</p>
+                <p className="text-[#F5F5F5]/70 mb-4">Ready for new challenges? Generate fresh missions.</p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleRegenerateMissions}
+                  disabled={generating}
+                  className="px-8 py-3 rounded-lg bg-gradient-to-r from-[#6A0DAD] to-[#00D9FF] text-white font-semibold hover:shadow-lg hover:shadow-[#6A0DAD]/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {generating ? 'Generating New Missions...' : '✨ Generate New Missions'}
+                </motion.button>
+              </motion.div>
+            )}
+
             {/* Missions Grid */}
             {!error && missions.length > 0 && (
               <motion.div
@@ -449,19 +556,47 @@ export default function MissionsPage() {
                 transition={{ delay: 0.3 }}
                 className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
               >
-                {missions.map((mission, index) => (
+                {missions.sort((a, b) => {
+                  // Extract numeric part from ID for proper DESC sorting
+                  const aId = String(a.id).replace(/\D/g, '');
+                  const bId = String(b.id).replace(/\D/g, '');
+                  const aNum = parseInt(aId, 10) || 0;
+                  const bNum = parseInt(bId, 10) || 0;
+                  return bNum - aNum; // DESC order (highest first)
+                }).map((mission, index) => {
+                  const isGraded = gradedMissionIds.has(mission.id);
+                  return (
                   <motion.div
                     key={mission.id}
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 * index }}
-                    whileHover={{ y: -10, scale: 1.02 }}
-                    className="group bg-[#1C1C1E]/90 backdrop-blur-xl rounded-2xl p-8 border border-[#6A0DAD]/20 hover:border-[#6A0DAD]/40 transition-all duration-500 cursor-pointer relative overflow-hidden"
-                    onClick={() => handleStartMission(mission.id)}
+                    whileHover={!isGraded ? { y: -10, scale: 1.02 } : {}}
+                    className={`group rounded-2xl p-8 border transition-all duration-500 relative overflow-hidden ${
+                      isGraded
+                        ? 'bg-[#1C1C1E]/50 border-[#6A0DAD]/10 cursor-not-allowed opacity-60'
+                        : 'bg-[#1C1C1E]/90 backdrop-blur-xl border-[#6A0DAD]/20 hover:border-[#6A0DAD]/40 cursor-pointer'
+                    }`}
+                    onClick={() => !isGraded && handleStartMission(mission.id)}
                   >
+                    {/* Graded Overlay */}
+                    {isGraded && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center rounded-2xl z-20">
+                        <div className="text-center">
+                          <Lock className="w-10 h-10 text-[#6A0DAD] mb-2 mx-auto" />
+                          <p className="text-[#F5F5F5] font-semibold">Graded</p>
+                          <p className="text-[#F5F5F5]/70 text-xs">No re-submission</p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Card Background Effects */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#6A0DAD]/5 via-transparent to-[#00D9FF]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <div className="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-l from-[#6A0DAD]/10 to-[#00D9FF]/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                    <div className={`absolute inset-0 bg-gradient-to-br from-[#6A0DAD]/5 via-transparent to-[#00D9FF]/5 transition-opacity duration-500 ${
+                      isGraded ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
+                    }`} />
+                    <div className={`absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-l from-[#6A0DAD]/10 to-[#00D9FF]/10 rounded-full blur-3xl transition-opacity duration-700 ${
+                      isGraded ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'
+                    }`} />
 
                     <div className="relative z-10">
                       {/* Company Badge */}
@@ -529,7 +664,8 @@ export default function MissionsPage() {
                       */}
                     </div>
                   </motion.div>
-                ))}
+                  );
+                })}
               </motion.div>
             )}
 
@@ -547,7 +683,7 @@ export default function MissionsPage() {
                     <div className="text-[#F5F5F5]/70">Available Missions</div>
                   </div>
                   <div className="bg-[#1C1C1E]/60 p-6 rounded-2xl border border-[#00D9FF]/20">
-                    <div className="text-3xl font-bold text-[#00D9FF] mb-2">5</div>
+                    <div className="text-3xl font-bold text-[#00D9FF] mb-2">3</div>
                     <div className="text-[#F5F5F5]/70">Industry Leaders</div>
                   </div>
                   <div className="bg-[#1C1C1E]/60 p-6 rounded-2xl border border-[#6A0DAD]/20">
