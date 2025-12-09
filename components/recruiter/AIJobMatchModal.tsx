@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, Search, TrendingUp, MapPin, User, GraduationCap, BookOpen, Code } from "lucide-react";
+import { X, Sparkles, Search, TrendingUp, MapPin, User, GraduationCap, BookOpen, Code, Calendar } from "lucide-react";
 import { useSnackbar } from "@/hooks/useSnackbar";
+import ScheduleInterviewFormModal from "./ScheduleInterviewFormModal";
 
 interface AIJobMatchModalProps {
   isOpen: boolean;
@@ -33,6 +34,12 @@ export default function AIJobMatchModal({ isOpen, onClose }: AIJobMatchModalProp
   const [isProcessing, setIsProcessing] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState<{
+    id: string;
+    name: string;
+    email?: string;
+  } | null>(null);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   const handleSearch = async () => {
     if (!jobDescription.trim()) {
@@ -401,6 +408,22 @@ export default function AIJobMatchModal({ isOpen, onClose }: AIJobMatchModalProp
                             </p>
                           </div>
                         )}
+
+                        {/* Schedule Interview Button */}
+                        <button
+                          onClick={() => {
+                            setSelectedCandidate({
+                              id: candidate.id,
+                              name: candidate.name,
+                              email: candidate.email,
+                            });
+                            setIsScheduleModalOpen(true);
+                          }}
+                          className="w-full mt-4 px-4 py-2.5 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium hover:from-orange-600 hover:to-red-600 transition-all flex items-center justify-center gap-2"
+                        >
+                          <Calendar className="w-4 h-4" />
+                          <span>Schedule Interview</span>
+                        </button>
                       </motion.div>
                     ))}
                   </div>
@@ -410,6 +433,20 @@ export default function AIJobMatchModal({ isOpen, onClose }: AIJobMatchModalProp
           </div>
         </motion.div>
       </div>
+
+      {/* Schedule Interview Modal */}
+      {selectedCandidate && (
+        <ScheduleInterviewFormModal
+          isOpen={isScheduleModalOpen}
+          onClose={() => {
+            setIsScheduleModalOpen(false);
+            setSelectedCandidate(null);
+          }}
+          candidateId={selectedCandidate.id}
+          candidateName={selectedCandidate.name}
+          candidateEmail={selectedCandidate.email}
+        />
+      )}
     </AnimatePresence>
   );
 }

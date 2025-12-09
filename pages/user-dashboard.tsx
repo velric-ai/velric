@@ -74,7 +74,7 @@ function UserDashboardContent() {
 
   // Check authentication and load user data
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       const userData = localStorage.getItem("velric_user");
       if (!userData) {
         router.push("/login");
@@ -84,6 +84,26 @@ function UserDashboardContent() {
       try {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
+        
+        // Fetch fresh user data from API to get updated_at
+        if (parsedUser?.id) {
+          try {
+            const response = await fetch(`/api/user/${parsedUser.id}`);
+            const result = await response.json();
+            
+            if (result.success && result.user) {
+              // Update user state with fresh data including updated_at
+              setUser({
+                ...parsedUser,
+                updated_at: result.user.updated_at,
+                updatedAt: result.user.updated_at,
+              });
+            }
+          } catch (apiError) {
+            console.error("Error fetching user data from API:", apiError);
+            // Continue with localStorage data if API fails
+          }
+        }
       } catch (error) {
         console.error("Error parsing user data:", error);
         router.push("/login");
