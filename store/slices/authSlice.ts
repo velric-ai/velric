@@ -153,12 +153,7 @@ const authSlice = createSlice({
       state.isLoading = false;
       // Clear localStorage
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('velric_user');
-        // Clear all other persisted data
-        localStorage.removeItem('velric_survey_state');
-        localStorage.removeItem('velric_survey_draft');
-        // Clear redux-persist storage
-        localStorage.removeItem('persist:root');
+        localStorage.clear();
       }
     },
     // Update user data
