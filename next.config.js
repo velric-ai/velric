@@ -14,7 +14,6 @@ const nextConfig = {
     USE_DUMMY_DATA: process.env.USE_DUMMY_DATA,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   },
-  allowedDevOrigins: ['149.160.249.233'],
 };
 
 module.exports = nextConfig;
