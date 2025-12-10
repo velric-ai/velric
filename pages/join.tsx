@@ -1,4 +1,3 @@
-// pages/join.tsx
 import React, { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -50,32 +49,34 @@ const Join = () => {
         <div className="absolute top-1/2 right-10 w-20 h-20 bg-gradient-to-r from-purple-500/10 to-purple-300/10 rounded-full blur-xl floating-element"></div>
         <div className="absolute bottom-20 right-1/3 w-16 h-16 bg-gradient-to-l from-purple-400/15 to-purple-600/15 rounded-lg rotate-45 floating-element"></div>
       </div>
-      <Navbar />
-      {/* Page Header */}
-      <section className="text-center pt-48 pb-12 px-4 md:px-8 lg:px-16 max-w-3xl mx-auto relative z-10">
-      <h1 className="text-4xl md:text-5xl font-bold mb-4">
-      Get Early Access to Velric
-      </h1>
 
-  <motion.p
-    className="text-lg text-white/80"
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.6 }}
-  >
-    {"Train with real challenges from real work.".split("").map((char, i) => (
-      <motion.span
-        key={i}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 + i * 0.03 }}
-      >
-        {char}
-      </motion.span>
-    ))}
-  </motion.p>
-      {/* End Page Header */}
+      <Navbar />
+
+      {/* Page Header */}
+      <section className="text-center pt-24 sm:pt-32 md:pt-48 pb-12 px-4 md:px-8 lg:px-16 max-w-3xl mx-auto relative z-10">
+        <h1 className="text-[clamp(2rem,8vw,3rem)] md:text-5xl font-bold mb-4">
+          Get Early Access to Velric
+        </h1>
+
+        <motion.p
+          className="text-lg text-white/80"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          {"Train with real challenges from real work.".split("").map((char, i) => (
+            <motion.span
+              key={i}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 + i * 0.03 }}
+            >
+              {char}
+            </motion.span>
+          ))}
+        </motion.p>
       </section>
+      {/* End Page Header */}
 
       {/* Waitlist Form */}
       <section className="bg-[#0D0D0D] py-20 px-4 md:px-8 lg:px-16 relative z-10">
