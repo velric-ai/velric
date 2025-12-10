@@ -32,7 +32,7 @@ export default function Signup() {
   };
 
 
-
+ console.log("testing.......");
   return (
     <>
       <Head>
