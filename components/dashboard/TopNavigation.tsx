@@ -20,7 +20,7 @@ export default function TopNavigation({ activeTab, setActiveTab, userData }: Top
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem("velric_authenticated");
+    localStorage.clear()
     window.location.href = "/";
   };
 
