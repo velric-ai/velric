@@ -195,46 +195,61 @@ export default function Home() {
         })()}
 
 
+{/* 🧠 Problem Statement - Enhanced with Animations */}
+<section 
+  className="next-section px-4 sm:px-6 md:px-8 lg:px-16 py-16 sm:py-20 max-w-7xl mx-auto 
+             grid md:grid-cols-2 gap-12 sm:gap-10 items-center section-spacing relative z-10
+             /* Mobile responsiveness improvements */ 
+             grid-cols-1"
+>
+  <motion.div
+    initial={{ opacity: 0, x: -60 }}
+    whileInView={{ opacity: 1, x: 0 }}
+    viewport={{ once: true, amount: 0.3 }}
+    transition={{ duration: 0.8, ease: "easeOut" }}
+    className="w-full text-center md:text-left"
+  >
+    <motion.h2
+      className="text-[clamp(1.5rem,5vw,2.25rem)] md:text-4xl font-bold mb-6 
+                 leading-[1.2]"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6, delay: 0.2 }}
+    >
+      Companies recruit through <strong className="text-purple-400">AI missions</strong>, 
+      and every candidate earns a <strong className="text-purple-300">Velric Score</strong> 
+      that proves real ability.
+    </motion.h2>
 
-        {/* 🧠 Problem Statement - Enhanced with Animations */}
-        <section className="next-section px-4 md:px-8 lg:px-16 py-20 max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center section-spacing relative z-10">
-          <motion.div
-            initial={{ opacity: 0, x: -60 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <motion.h2
-              className="text-3xl md:text-4xl font-bold mb-6"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              Companies recruit through <strong className="text-purple-400">AI missions</strong>, and every candidate earns a <strong className="text-purple-300">Velric Score</strong> that proves real ability.
-            </motion.h2>
-            <motion.p
-              className="text-white/80 text-lg"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-            >
-              The resume is a <strong className="text-purple-400">1930s invention</strong>. We&apos;re building its <strong className="text-purple-300">replacement</strong>. <strong className="text-purple-400">Velric</strong> turns real work into measurable proof. <strong className="text-purple-300">AI built missions</strong> test ability, and your <strong className="text-purple-500">Velric Score</strong> becomes the new standard companies hire through.
-            </motion.p>
-          </motion.div>
-          <motion.div
-            className="flex justify-center"
-            initial={{ opacity: 0, x: 60 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-          >
-            <div className="w-full max-w-md">
-              <VelricGlobe />
-            </div>
-          </motion.div>
-        </section>
+    <motion.p
+      className="text-white/80 text-[clamp(0.875rem,3vw,1.125rem)] leading-relaxed"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6, delay: 0.4 }}
+    >
+      The resume is a <strong className="text-purple-400">1930s invention</strong>. 
+      We&apos;re building its <strong className="text-purple-300">replacement</strong>. 
+      <strong className="text-purple-400"> Velric</strong> turns real work into measurable proof. 
+      <strong className="text-purple-300"> AI built missions</strong> test ability, and your 
+      <strong className="text-purple-500"> Velric Score</strong> becomes the new standard 
+      companies hire through.
+    </motion.p>
+  </motion.div>
+
+  <motion.div
+    className="flex justify-center mt-6 md:mt-0"
+    initial={{ opacity: 0, x: 60 }}
+    whileInView={{ opacity: 1, x: 0 }}
+    viewport={{ once: true, amount: 0.3 }}
+    transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+  >
+    <div className="w-full max-w-md sm:max-w-[90%] xs:max-w-[260px] mx-auto">
+      <VelricGlobe />
+    </div>
+  </motion.div>
+</section>
 
 {/* ⚙️ How Velric Works - CUSTOM ANIMATIONS */}
 <section className="px-4 md:px-8 lg:px-16 py-12 section-spacing relative z-10">
@@ -283,6 +298,7 @@ export default function Home() {
         3
       </motion.div>
     </div>
+
 
     {/* Cards Row */}
     <div className="grid grid-cols-3 gap-6 mt-16">
