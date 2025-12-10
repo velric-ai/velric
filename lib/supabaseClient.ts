@@ -53,7 +53,6 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 const supabaseKey =
   process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-console.log("Supabase environment",supabaseUrl, supabaseAnonKey, process.env.SUPABASE_SERVICE_ROLE_KEY);
 // Handling the error
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error("Missing Supabase environment variables!");
@@ -64,6 +63,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   if (isBrowser) {
     console.error(
       "⚠️ Supabase environment variables are missing. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+      ,supabaseUrl, supabaseAnonKey, process.env.SUPABASE_SERVICE_ROLE_KEY
     );
   } else {
     console.warn(
