@@ -86,7 +86,7 @@ export default function DashboardNavigation({
   }, [showUserDropdown, showInterviewDropdown]);
 
   const handleLogout = () => {
-    localStorage.removeItem("velric_user");
+    localStorage.clear();
     router.push("/");
   };
 

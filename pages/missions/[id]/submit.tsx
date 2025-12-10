@@ -11,6 +11,7 @@ import { AlertCircle, ArrowLeft } from "lucide-react";
 import SubmissionForm from "@/components/SubmissionForm";
 import TechnicalInterviewIDE from "@/components/TechnicalInterviewIDE";
 import { useSnackbar } from "@/hooks/useSnackbar";
+import { missionNeedsIDE } from "@/lib/missionHelpers";
 
 export default function MissionSubmitPage() {
   const router = useRouter();
@@ -331,47 +332,13 @@ export default function MissionSubmitPage() {
           <div className="max-w-7xl mx-auto space-y-8">
             {/* IDE Section for Technical Missions */}
             {(() => {
-              // Check if mission is technical-related
-              const isTechnical =
-                mission.type === "technical" ||
-                (mission.field &&
-                  (mission.field.toLowerCase().includes("technical") ||
-                    mission.field.toLowerCase().includes("engineering") ||
-                    mission.field.toLowerCase().includes("development") ||
-                    mission.field.toLowerCase().includes("programming") ||
-                    mission.field.toLowerCase().includes("software") ||
-                    mission.field.toLowerCase().includes("coding") ||
-                    mission.field.toLowerCase().includes("backend") ||
-                    mission.field.toLowerCase().includes("frontend") ||
-                    mission.field.toLowerCase().includes("full stack") ||
-                    mission.field
-                      .toLowerCase()
-                      .includes("data engineering") ||
-                    mission.field.toLowerCase().includes("devops") ||
-                    mission.field
-                      .toLowerCase()
-                      .includes("machine learning") ||
-                    mission.field.toLowerCase().includes("ai") ||
-                    mission.field.toLowerCase().includes("blockchain"))) ||
-                (mission.skills &&
-                  mission.skills.some(
-                    (skill) =>
-                      skill.toLowerCase().includes("programming") ||
-                      skill.toLowerCase().includes("coding") ||
-                      skill.toLowerCase().includes("python") ||
-                      skill.toLowerCase().includes("javascript") ||
-                      skill.toLowerCase().includes("java") ||
-                      skill.toLowerCase().includes("react") ||
-                      skill.toLowerCase().includes("node") ||
-                      skill.toLowerCase().includes("typescript") ||
-                      skill.toLowerCase().includes("c++") ||
-                      skill.toLowerCase().includes("software") ||
-                      skill.toLowerCase().includes("development")
-                  ));
+              // Check if mission tasks require an IDE by analyzing the actual tasks
+              // This function specifically looks for coding-related keywords in tasks
+              const needsIDE = missionNeedsIDE(mission.type, mission.tasks);
 
               // Detect language from skills or field if not explicitly set
               let detectedLanguage = mission.language;
-              if (!detectedLanguage && isTechnical) {
+              if (!detectedLanguage && needsIDE) {
                 const allText = [
                   ...(mission.skills || []),
                   mission.field || "",
@@ -414,7 +381,7 @@ export default function MissionSubmitPage() {
                 }
               }
 
-              return isTechnical ? (
+              return needsIDE ? (
                 <div className="bg-[#1C1C1E] rounded-lg border border-gray-800 p-8">
                   <h2 className="text-2xl font-semibold text-white mb-6 pb-4 border-b border-gray-800">
                     Code Editor
@@ -438,11 +405,6 @@ export default function MissionSubmitPage() {
               <h2 className="text-2xl font-semibold text-white mb-6 pb-4 border-b border-gray-800">
                 Submit Your Response
               </h2>
-              
-              {/* Debug Info */}
-              <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded text-blue-400 text-xs">
-                <p>Language detected: <span className="font-semibold">{languageFromIDE}</span></p>
-              </div>
 
               <SubmissionForm
                 onSubmit={handleSubmission}

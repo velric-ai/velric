@@ -29,9 +29,13 @@ export async function extractTextFromPDF(file: File): Promise<string> {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
 
-      // Join all text items on the page
+      // Join all text items on the page and sanitize
       const text = content.items
-        .map((item: any) => ("str" in item ? item.str : ""))
+        .map((item: any) => {
+          const str = "str" in item ? item.str : "";
+          // Remove null characters and control characters that can cause database errors
+          return str.replace(/\u0000/g, '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '');
+        })
         .join(" ");
 
       fullText += text + "\n";
@@ -77,9 +81,13 @@ export async function extractTextFromPDFWithProgress(
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
 
-      // Join all text items on the page
+      // Join all text items on the page and sanitize
       const text = content.items
-        .map((item: any) => ("str" in item ? item.str : ""))
+        .map((item: any) => {
+          const str = "str" in item ? item.str : "";
+          // Remove null characters and control characters that can cause database errors
+          return str.replace(/\u0000/g, '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '');
+        })
         .join(" ");
 
       fullText += text + "\n";

@@ -1,16 +1,18 @@
 import Head from "next/head";
 import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Filter, Search, Bookmark, BookmarkCheck, MapPin, Mail, Linkedin, Github, X, SlidersHorizontal, Calendar, Loader2, User, CheckCircle, XCircle } from "lucide-react";
-import ScheduleInterviewFormModal from "@/components/recruiter/ScheduleInterviewFormModal";
+import { Filter, Search, Bookmark, BookmarkCheck, MapPin, Mail, Linkedin, Github, X, SlidersHorizontal, Loader2, User, CheckCircle, XCircle, Calendar, Briefcase } from "lucide-react";
 import CandidateProfileModal from "@/components/recruiter/CandidateProfileModal";
 import HiringConstraintsModal from "@/components/recruiter/HiringConstraintsModal";
+import ScheduleInterviewFormModal from "@/components/recruiter/ScheduleInterviewFormModal";
+import CandidateFilterSidebar from "@/components/recruiter/CandidateFilterSidebar";
 import { ProtectedDashboardRoute } from "@/components/auth/ProtectedRoute";
 import { useRouter } from "next/router";
 import RecruiterNavbar from "@/components/recruiter/RecruiterNavbar";
 import { getIndustryOptions } from "@/utils/surveyValidation";
 import { useSnackbar } from "@/hooks/useSnackbar";
 import { useDebounce } from "@/hooks/useDebounce";
+import ThreeDotsLoader from "@/components/ThreeDotsLoader";
 
 // All industries from survey form (Step 1)
 const allIndustries = [
@@ -163,21 +165,41 @@ interface CompatibilityResult {
   timezone: boolean | null;
 }
 
+interface FilterState {
+  location: string[];
+  remoteWork: string[];
+  sponsorship: string[];
+  citizenship: string[];
+  yearsOfExperience: { min: number; max: number };
+  educationLevel: string[];
+  graduationYear: { min: number; max: number };
+  domain: string[];
+  skillClusters: string[];
+  seniority: string[];
+  availability: string[];
+  velricScore: { min: number; max: number };
+}
+
 function CandidatesPageContent() {
   const router = useRouter();
   const { showSnackbar } = useSnackbar();
   const [savedCandidates, setSavedCandidates] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
-  const [domainFilter, setDomainFilter] = useState("All");
-  const [scoreRange, setScoreRange] = useState<[number, number]>([0, 10]);
-  const [clusterFilters, setClusterFilters] = useState<string[]>([]); // Now stores industry option strings
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedCandidate, setSelectedCandidate] = useState<{
-    id: string;
-    name: string;
-    email?: string;
-  } | null>(null);
-  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    location: [],
+    remoteWork: [],
+    sponsorship: [],
+    citizenship: [],
+    yearsOfExperience: { min: 0, max: 50 },
+    educationLevel: [],
+    graduationYear: { min: 2000, max: new Date().getFullYear() },
+    domain: [],
+    skillClusters: [],
+    seniority: [],
+    availability: [],
+    velricScore: { min: 0, max: 10 },
+  });
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedProfileCandidate, setSelectedProfileCandidate] = useState<{
     id: string;
@@ -190,12 +212,16 @@ function CandidatesPageContent() {
   const [totalCandidates, setTotalCandidates] = useState(0);
   const [showConstraintsModal, setShowConstraintsModal] = useState(false);
   const [hiringConstraints, setHiringConstraints] = useState<HiringConstraints | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<{
+    id: string;
+    name: string;
+    email?: string;
+  } | null>(null);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
 
   // Debounce search query and filters to prevent excessive API calls
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
-  const debouncedDomainFilter = useDebounce(domainFilter, 300);
-  const debouncedScoreRange = useDebounce(scoreRange, 300);
-  const debouncedClusterFilters = useDebounce(clusterFilters, 300);
+  const debouncedFilters = useDebounce(filters, 300);
 
   // Check if constraints modal should be shown on first load
   useEffect(() => {
@@ -313,11 +339,66 @@ function CandidatesPageContent() {
       try {
         const params = new URLSearchParams();
         if (debouncedSearchQuery) params.append("search", debouncedSearchQuery);
-        if (debouncedDomainFilter && debouncedDomainFilter !== "All") params.append("domain", debouncedDomainFilter);
-        params.append("minScore", debouncedScoreRange[0].toString());
-        params.append("maxScore", debouncedScoreRange[1].toString());
-        if (debouncedClusterFilters.length > 0) {
-          params.append("specializations", debouncedClusterFilters.join(","));
+        
+        // Domain filters
+        if (debouncedFilters.domain.length > 0) {
+          params.append("domain", debouncedFilters.domain.join(","));
+        }
+        
+        // Velric Score
+        params.append("minScore", debouncedFilters.velricScore.min.toString());
+        params.append("maxScore", debouncedFilters.velricScore.max.toString());
+        
+        // Skill Clusters
+        if (debouncedFilters.skillClusters.length > 0) {
+          params.append("skillClusters", debouncedFilters.skillClusters.join(","));
+        }
+        
+        // Location
+        if (debouncedFilters.location.length > 0) {
+          params.append("location", debouncedFilters.location.join(","));
+        }
+        
+        // Remote Work
+        if (debouncedFilters.remoteWork.length > 0) {
+          params.append("remoteWork", debouncedFilters.remoteWork.join(","));
+        }
+        
+        // Sponsorship
+        if (debouncedFilters.sponsorship.length > 0) {
+          params.append("sponsorship", debouncedFilters.sponsorship.join(","));
+        }
+        
+        // Citizenship
+        if (debouncedFilters.citizenship.length > 0) {
+          params.append("citizenship", debouncedFilters.citizenship.join(","));
+        }
+        
+        // Years of Experience
+        if (debouncedFilters.yearsOfExperience.min > 0 || debouncedFilters.yearsOfExperience.max < 50) {
+          params.append("minExperience", debouncedFilters.yearsOfExperience.min.toString());
+          params.append("maxExperience", debouncedFilters.yearsOfExperience.max.toString());
+        }
+        
+        // Education Level
+        if (debouncedFilters.educationLevel.length > 0) {
+          params.append("educationLevel", debouncedFilters.educationLevel.join(","));
+        }
+        
+        // Graduation Year
+        if (debouncedFilters.graduationYear.min > 2000 || debouncedFilters.graduationYear.max < new Date().getFullYear()) {
+          params.append("minGraduationYear", debouncedFilters.graduationYear.min.toString());
+          params.append("maxGraduationYear", debouncedFilters.graduationYear.max.toString());
+        }
+        
+        // Seniority
+        if (debouncedFilters.seniority.length > 0) {
+          params.append("seniority", debouncedFilters.seniority.join(","));
+        }
+        
+        // Availability
+        if (debouncedFilters.availability.length > 0) {
+          params.append("availability", debouncedFilters.availability.join(","));
         }
 
         const response = await fetch(`/api/recruiter/candidates?${params.toString()}`);
@@ -341,20 +422,24 @@ function CandidatesPageContent() {
 
     fetchCandidates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchQuery, debouncedDomainFilter, debouncedScoreRange, debouncedClusterFilters]);
+  }, [debouncedSearchQuery, debouncedFilters]);
 
-  // Get industry options (clusters) based on selected domain/industry
-  const availableIndustryOptions = useMemo(() => {
-    if (domainFilter === "All") {
-      // If "All" is selected, show options from all industries
-      const allOptions: string[] = [];
-      allIndustries.forEach(industry => {
-        allOptions.push(...getIndustryOptions(industry));
-      });
-      return [...new Set(allOptions)];
-    }
-    return getIndustryOptions(domainFilter);
-  }, [domainFilter]);
+  const resetFilters = () => {
+    setFilters({
+      location: [],
+      remoteWork: [],
+      sponsorship: [],
+      citizenship: [],
+      yearsOfExperience: { min: 0, max: 50 },
+      educationLevel: [],
+      graduationYear: { min: 2000, max: new Date().getFullYear() },
+      domain: [],
+      skillClusters: [],
+      seniority: [],
+      availability: [],
+      velricScore: { min: 0, max: 10 },
+    });
+  };
 
   // Convert API candidate to display format
   const convertToDisplayCandidate = (apiCandidate: ApiCandidate): DisplayCandidate => {
@@ -396,14 +481,6 @@ function CandidatesPageContent() {
     return candidates.map(convertToDisplayCandidate);
   }, [candidates]);
 
-  const toggleClusterFilter = (option: string) => {
-    setClusterFilters((prev) =>
-      prev.includes(option)
-        ? prev.filter((item) => item !== option)
-        : [...prev, option]
-    );
-  };
-
   const toggleSaveCandidate = (candidateId: string) => {
     setSavedCandidates((prev) => {
       const next = new Set(prev);
@@ -416,23 +493,22 @@ function CandidatesPageContent() {
     });
   };
 
-  const resetFilters = () => {
-    setDomainFilter("All");
-    setScoreRange([0, 10]);
-    setClusterFilters([]);
-    setSearchQuery("");
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (filters.location.length > 0) count++;
+    if (filters.remoteWork.length > 0) count++;
+    if (filters.sponsorship.length > 0) count++;
+    if (filters.citizenship.length > 0) count++;
+    if (filters.yearsOfExperience.min > 0 || filters.yearsOfExperience.max < 50) count++;
+    if (filters.educationLevel.length > 0) count++;
+    if (filters.graduationYear.min > 2000 || filters.graduationYear.max < new Date().getFullYear()) count++;
+    if (filters.domain.length > 0) count++;
+    if (filters.skillClusters.length > 0) count++;
+    if (filters.seniority.length > 0) count++;
+    if (filters.availability.length > 0) count++;
+    if (filters.velricScore.min > 0 || filters.velricScore.max < 10) count++;
+    return count;
   };
-
-  // Clear cluster filters when domain changes
-  const handleDomainChange = (domain: string) => {
-    setDomainFilter(domain);
-    setClusterFilters([]); // Clear cluster filters when domain changes
-  };
-
-  const activeFiltersCount = 
-    (domainFilter !== "All" ? 1 : 0) +
-    (scoreRange[0] !== 0 || scoreRange[1] !== 10 ? 1 : 0) +
-    clusterFilters.length;
 
   return (
     <>
@@ -476,21 +552,26 @@ function CandidatesPageContent() {
                 />
               </div>
               
-              {hiringConstraints && (
-                <motion.button
-                  onClick={() => setShowConstraintsModal(true)}
-                  className="px-4 py-3 rounded-xl border border-white/10 text-white/70 hover:border-white/30 hover:text-white bg-white/5 transition-all flex items-center gap-2"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  title="Update hiring constraints"
-                >
-                  <Filter className="w-4 h-4" />
-                  <span className="text-xs font-medium">Constraints</span>
-                </motion.button>
-              )}
+              <motion.button
+                onClick={() => setShowConstraintsModal(true)}
+                className={`relative px-4 py-3 rounded-xl border transition-all flex items-center gap-2 ${
+                  hiringConstraints
+                    ? "bg-cyan-500/20 border-cyan-400 text-white"
+                    : "bg-white/5 border-white/10 text-white/70 hover:border-white/30 hover:text-white"
+                }`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                title={hiringConstraints ? "Update hiring constraints" : "Set hiring constraints"}
+              >
+                <Briefcase className="w-5 h-5" />
+                <span className="font-medium">Constraints</span>
+                {hiringConstraints && (
+                  <span className="absolute -top-2 -right-2 w-2 h-2 bg-cyan-400 rounded-full"></span>
+                )}
+              </motion.button>
               
               <motion.button
-                onClick={() => setShowFilters(!showFilters)}
+                onClick={() => setShowFilters(true)}
                 className={`relative px-4 py-3 rounded-xl border transition-all flex items-center gap-2 ${
                   showFilters
                     ? "bg-purple-500/20 border-purple-400 text-white"
@@ -501,9 +582,9 @@ function CandidatesPageContent() {
               >
                 <SlidersHorizontal className="w-5 h-5" />
                 <span className="font-medium">Filters</span>
-                {activeFiltersCount > 0 && (
+                {getActiveFiltersCount() > 0 && (
                   <span className="absolute -top-2 -right-2 w-5 h-5 bg-cyan-400 text-black text-xs font-bold rounded-full flex items-center justify-center">
-                    {activeFiltersCount}
+                    {getActiveFiltersCount()}
                   </span>
                 )}
               </motion.button>
@@ -511,175 +592,38 @@ function CandidatesPageContent() {
           </div>
         </header>
 
-        {/* Filter Panel */}
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="relative z-10 border-b border-white/10 bg-black/40 backdrop-blur-lg overflow-hidden"
-            >
-              <div className="max-w-7xl mx-auto px-6 py-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold flex items-center space-x-2">
-                    <Filter className="w-5 h-5 text-purple-400" />
-                    <span>Filter Options</span>
-                  </h2>
-                  <div className="flex items-center gap-3">
-                    {activeFiltersCount > 0 && (
-                      <button
-                        onClick={resetFilters}
-                        className="text-xs text-white/50 hover:text-white/80 transition-colors"
-                      >
-                        Reset All
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setShowFilters(false)}
-                      className="p-1 rounded-lg hover:bg-white/10 transition-colors"
-                    >
-                      <X className="w-4 h-4 text-white/60" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  {/* Domain Filter */}
-                  <div>
-                    <label className="text-xs text-white/60 mb-3 block font-medium">
-                      Domain
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {domainFilters.map((domain) => (
-                        <button
-                          key={domain}
-                          onClick={() => handleDomainChange(domain)}
-                          className={`px-3 py-1.5 rounded-full text-xs border transition-all ${
-                            domainFilter === domain
-                              ? "bg-purple-500/20 border-purple-400 text-white"
-                              : "border-white/10 text-white/60 hover:border-white/30"
-                          }`}
-                        >
-                          {domain}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Velric Score Range */}
-                  <div>
-                    <label className="text-xs text-white/60 mb-3 block font-medium">
-                      Velric Score Range: {scoreRange[0].toFixed(1)} - {scoreRange[1].toFixed(1)}
-                    </label>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="number"
-                          min={0}
-                          max={scoreRange[1]}
-                          step={0.1}
-                          value={scoreRange[0]}
-                          onChange={(e) => {
-                            const value = Math.max(0, Math.min(parseFloat(e.target.value) || 0, scoreRange[1]));
-                            setScoreRange([parseFloat(value.toFixed(1)), scoreRange[1]]);
-                          }}
-                          className="w-24 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                        />
-                        <span className="text-white/40">to</span>
-                        <input
-                          type="number"
-                          min={scoreRange[0]}
-                          max={10}
-                          step={0.1}
-                          value={scoreRange[1]}
-                          onChange={(e) => {
-                            const value = Math.min(10, Math.max(parseFloat(e.target.value) || 0, scoreRange[0]));
-                            setScoreRange([scoreRange[0], parseFloat(value.toFixed(1))]);
-                          }}
-                          className="w-24 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                        />
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <input
-                          type="range"
-                          min={0}
-                          max={10}
-                          step={0.1}
-                          value={scoreRange[0]}
-                          onChange={(e) => {
-                            const value = Math.min(parseFloat(e.target.value), scoreRange[1]);
-                            setScoreRange([parseFloat(value.toFixed(1)), scoreRange[1]]);
-                          }}
-                          className="flex-1 accent-cyan-400"
-                        />
-                        <input
-                          type="range"
-                          min={0}
-                          max={10}
-                          step={0.1}
-                          value={scoreRange[1]}
-                          onChange={(e) => {
-                            const value = Math.max(parseFloat(e.target.value), scoreRange[0]);
-                            setScoreRange([scoreRange[0], parseFloat(value.toFixed(1))]);
-                          }}
-                          className="flex-1 accent-cyan-400"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Industry Options (Clusters) - Filtered by Domain */}
-                  <div>
-                    <label className="text-xs text-white/60 mb-3 block font-medium">
-                      Specializations {domainFilter !== "All" && `(${domainFilter})`}
-                    </label>
-                    {availableIndustryOptions.length === 0 ? (
-                      <p className="text-xs text-white/40">Select an industry to see specializations</p>
-                    ) : (
-                      <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto custom-scroll p-1">
-                        {availableIndustryOptions.map((option) => {
-                          const isSelected = clusterFilters.includes(option);
-                          return (
-                            <button
-                              key={option}
-                              onClick={() => toggleClusterFilter(option)}
-                              className={`px-3 py-1.5 rounded-full text-xs border transition-all whitespace-nowrap ${
-                                isSelected
-                                  ? "bg-cyan-500/20 border-cyan-400 text-white"
-                                  : "border-white/10 text-white/60 hover:border-white/30"
-                              }`}
-                            >
-                              {option}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Filter Sidebar */}
+        <CandidateFilterSidebar
+          isOpen={showFilters}
+          onClose={() => setShowFilters(false)}
+          filters={filters}
+          onFiltersChange={setFilters}
+          onReset={resetFilters}
+        />
 
         {/* Main Content - Candidate Grid */}
-        <main className="relative z-10 max-w-7xl mx-auto px-6 py-10">
-          <div className="flex items-center justify-between mb-6">
-            <p className="text-sm text-white/60">
-              Showing <span className="text-white font-semibold">{filteredCandidates.length}</span> candidate{filteredCandidates.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-
-          {filteredCandidates.length === 0 ? (
-            <div className="p-12 text-center rounded-2xl bg-white/5 border border-white/10">
-              <p className="text-white/60 mb-2">No candidates found</p>
-              <p className="text-sm text-white/40">Try adjusting your search or filters</p>
+        <main className="relative z-10">
+          {isLoading ? (
+            <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 200px)' }}>
+              <ThreeDotsLoader size="lg" text="Loading candidates..." />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <AnimatePresence>
-                {filteredCandidates.map((candidate, index) => {
+            <div className="max-w-7xl mx-auto px-6 py-10">
+              <div className="flex items-center justify-between mb-6">
+                <p className="text-sm text-white/60">
+                  Showing <span className="text-white font-semibold">{filteredCandidates.length}</span> candidate{filteredCandidates.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+
+              {filteredCandidates.length === 0 ? (
+                <div className="p-12 text-center rounded-2xl bg-white/5 border border-white/10">
+                  <p className="text-white/60 mb-2">No candidates found</p>
+                  <p className="text-sm text-white/40">Try adjusting your search or filters</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <AnimatePresence>
+                    {filteredCandidates.map((candidate, index) => {
                   const isSaved = savedCandidates.has(candidate.id);
                   // Find the original API candidate for compatibility check
                   const apiCandidate = candidates.find(c => c.id === candidate.id);
@@ -833,26 +777,33 @@ function CandidatesPageContent() {
                             </p>
                           </div>
                         </div>
-                        {/* Schedule Interview Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedCandidate({
-                              id: candidate.id,
-                              name: candidate.name,
-                              email: candidate.email,
-                            });
-                            setIsScheduleModalOpen(true);
-                          }}
-                          className="mt-3 w-full px-4 py-2 rounded-lg font-medium text-white transition-all flex items-center justify-center space-x-2"
-                          style={{
-                            background: "linear-gradient(135deg, #06b6d4, #8b5cf6)",
-                          }}
-                        >
-                          <Calendar className="w-4 h-4" />
-                          <span>Schedule Interview</span>
-                        </button>
                       </div>
+
+                      {/* Schedule Interview Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCandidate({
+                            id: candidate.id,
+                            name: candidate.name,
+                            email: candidate.email,
+                          });
+                          setIsScheduleModalOpen(true);
+                        }}
+                        className="w-full mb-4 px-4 py-2.5 rounded-lg text-white font-medium transition-all flex items-center justify-center gap-2"
+                        style={{
+                          background: "linear-gradient(135deg, #06b6d4, #8b5cf6)",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "linear-gradient(135deg, #0891b2, #7c3aed)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "linear-gradient(135deg, #06b6d4, #8b5cf6)";
+                        }}
+                      >
+                        <Calendar className="w-4 h-4" />
+                        <span>Schedule Interview</span>
+                      </button>
 
                       {/* Core Clusters */}
                       <div className="mb-4">
@@ -922,24 +873,12 @@ function CandidatesPageContent() {
                     </motion.div>
                   );
                 })}
-              </AnimatePresence>
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
           )}
         </main>
-
-        {/* Schedule Interview Form Modal */}
-        {selectedCandidate && (
-          <ScheduleInterviewFormModal
-            isOpen={isScheduleModalOpen}
-            onClose={() => {
-              setIsScheduleModalOpen(false);
-              setSelectedCandidate(null);
-            }}
-            candidateId={selectedCandidate.id}
-            candidateName={selectedCandidate.name}
-            candidateEmail={selectedCandidate.email}
-          />
-        )}
 
         {/* Candidate Profile Modal */}
         {selectedProfileCandidate && (
@@ -962,6 +901,20 @@ function CandidatesPageContent() {
           onSave={handleConstraintsSave}
           onSkip={handleConstraintsSkip}
         />
+
+        {/* Schedule Interview Modal */}
+        {selectedCandidate && (
+          <ScheduleInterviewFormModal
+            isOpen={isScheduleModalOpen}
+            onClose={() => {
+              setIsScheduleModalOpen(false);
+              setSelectedCandidate(null);
+            }}
+            candidateId={selectedCandidate.id}
+            candidateName={selectedCandidate.name}
+            candidateEmail={selectedCandidate.email}
+          />
+        )}
       </div>
     </>
   );

@@ -168,7 +168,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = (): void => {
-    localStorage.removeItem('velric_user');
+    localStorage.clear();
     setUser(null);
     setIsSnackbarVisible(false);
     setSnackbarMessage(null);

@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { supabase, USE_DUMMY } from "@/lib/supabaseClient";
+import { demoCandidates } from "@/data/demoCandidates";
 
 type GetSurveyResponse =
   | {
@@ -44,8 +45,35 @@ export default async function handler(
       });
     }
 
-    // Handle dummy mode
+    // Handle dummy mode - check for demo candidates
     if (USE_DUMMY) {
+      // Check if this is a demo candidate
+      if (userId.startsWith("demo_")) {
+        const demoCandidate = demoCandidates.find(c => c.id === userId);
+        if (demoCandidate) {
+          return res.status(200).json({
+            success: true,
+            surveyData: {
+              full_name: demoCandidate.name,
+              education_level: demoCandidate.education_level || "Bachelor's Degree",
+              industry: demoCandidate.industry || "Technology & Software",
+              mission_focus: demoCandidate.mission_focus || [],
+              strength_areas: demoCandidate.strength_areas || [],
+              learning_preference: demoCandidate.learning_preference || "Hands-on Projects",
+              portfolio: null,
+              resume_json: null,
+              experience_summary: demoCandidate.experience_summary || null,
+              platform_connections: {},
+              metadata: {},
+              logistics_preferences: demoCandidate.logistics_preferences || null,
+              interview_availability: demoCandidate.interview_availability || null,
+              created_at: new Date().toISOString(),
+            },
+          });
+        }
+      }
+      
+      // Fallback for other dummy requests
       const mockSurveyData = {
         full_name: "Demo User",
         education_level: "Bachelor's Degree",

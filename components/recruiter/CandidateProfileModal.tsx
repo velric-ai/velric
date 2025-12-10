@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Mail, MapPin, GraduationCap, Briefcase, Code, Trophy, Linkedin, Github, Calendar, User, Globe, BarChart3 } from "lucide-react";
-import ScheduleInterviewFormModal from "./ScheduleInterviewFormModal";
 import CandidateAnalyticsModal from "./CandidateAnalyticsModal";
 
 interface CandidateProfileModalProps {
@@ -55,7 +54,6 @@ export default function CandidateProfileModal({
 }: CandidateProfileModalProps) {
   const [profile, setProfile] = useState<CandidateProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
 
   // Prevent body scroll when modal is open
@@ -231,16 +229,6 @@ export default function CandidateProfileModal({
                           )}
                           </div>
                         </div>
-                        <button
-                          onClick={() => setIsScheduleModalOpen(true)}
-                          className="px-6 py-3 rounded-lg font-medium text-white transition-all flex items-center space-x-2"
-                          style={{
-                            background: "linear-gradient(135deg, #06b6d4, #8b5cf6)",
-                          }}
-                        >
-                          <Calendar className="w-4 h-4" />
-                          <span>Schedule Interview</span>
-                        </button>
                       </div>
 
                       {/* Velric Score */}
@@ -466,17 +454,6 @@ export default function CandidateProfileModal({
           </>
         )}
       </AnimatePresence>
-
-      {/* Schedule Interview Modal */}
-      {isScheduleModalOpen && (
-        <ScheduleInterviewFormModal
-          isOpen={isScheduleModalOpen}
-          onClose={() => setIsScheduleModalOpen(false)}
-          candidateId={candidateId}
-          candidateName={profile?.name || candidateName}
-          candidateEmail={profile?.email || candidateEmail}
-        />
-      )}
 
       {/* Analytics Modal */}
       {isAnalyticsModalOpen && (

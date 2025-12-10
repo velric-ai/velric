@@ -159,38 +159,49 @@ export default async function handler(
       });
     }
 
-    // Calculate end time
+    // Calculate end time - use the end_time from interview request
     let endDateTime: Date;
-    if (normalizedEndTime) {
-      if (!timeRegex.test(normalizedEndTime)) {
-        return res.status(400).json({
-          success: false,
-          error: "Invalid end time format. Expected HH:MM",
-        });
-      }
-      const endDateTimeString = `${preferredDate}T${normalizedEndTime}:00`;
-      endDateTime = new Date(endDateTimeString);
-      
-      // Validate that the end date is valid
-      if (isNaN(endDateTime.getTime())) {
-        return res.status(400).json({
-          success: false,
-          error: "Invalid end time value. Unable to parse date and time combination.",
-        });
-      }
-
-      // Ensure end time is after start time
-      if (endDateTime <= startDateTime) {
-        return res.status(400).json({
-          success: false,
-          error: "End time must be after start time",
-        });
-      }
-    } else {
-      // Default to 1 hour after start time
-      endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+    if (!normalizedEndTime) {
+      // If end time is not provided, return error - end time is required
+      return res.status(400).json({
+        success: false,
+        error: "End time is required for interview scheduling",
+      });
+    }
+    
+    // Validate end time format
+    if (!timeRegex.test(normalizedEndTime)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid end time format. Expected HH:MM",
+      });
+    }
+    
+    // Use the end time from the interview request
+    const endDateTimeString = `${preferredDate}T${normalizedEndTime}:00`;
+    endDateTime = new Date(endDateTimeString);
+    
+    // Validate that the end date is valid
+    if (isNaN(endDateTime.getTime())) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid end time value. Unable to parse date and time combination.",
+      });
     }
 
+    // Ensure end time is after start time
+    if (endDateTime <= startDateTime) {
+      return res.status(400).json({
+        success: false,
+        error: "End time must be after start time",
+      });
+    }
+
+    // Store datetime strings for calendar API (these are local times in the event timezone)
+    // startDateTimeString is already defined above, so we just need endDateTimeStringForCalendar
+    const endDateTimeStringForCalendar = `${preferredDate}T${normalizedEndTime}:00`;
+    
+    // For database storage, convert to UTC ISO strings
     const startTimeISO = startDateTime.toISOString();
     const endTimeISO = endDateTime.toISOString();
 
@@ -225,7 +236,26 @@ export default async function handler(
     if (!candidateUserData || !recruiterUserData) {
       debugLog.push(`[DEBUG] ⚠️ Missing candidate or recruiter data, skipping calendar creation`);
     } else {
-      const scheduledDate = startDateTime;
+      // Get candidate's timezone from survey data
+      let candidateTimezone: string | null = null;
+      if (candidateUserData) {
+        const { data: candidateSurvey } = await supabase
+          .from("survey_responses")
+          .select("interview_availability")
+          .eq("user_id", interviewRequest.candidate_id)
+          .maybeSingle();
+        
+        if (candidateSurvey?.interview_availability?.timezone) {
+          candidateTimezone = candidateSurvey.interview_availability.timezone;
+        }
+      }
+      
+      // Determine the timezone to use for the event
+      // Prefer candidate's timezone, fallback to UTC
+      const eventTimezone = candidateTimezone || "UTC";
+      debugLog.push(`[DEBUG] Using timezone for calendar event: ${eventTimezone}`);
+      debugLog.push(`[DEBUG] Start datetime string: ${startDateTimeString}`);
+      debugLog.push(`[DEBUG] End datetime string: ${endDateTimeStringForCalendar}`);
 
       // Create calendar event in RECRUITER's calendar only
       // The candidate will automatically receive an invitation to this same event
@@ -238,10 +268,12 @@ export default async function handler(
           interviewRequest.recruiter_id,
           recruiterUserData,
           candidateUserData,
-          scheduledDate,
+          startDateTimeString,
+          endDateTimeStringForCalendar,
           interviewRequest.interview_type,
           interviewRequest.context,
-          debugLog
+          debugLog,
+          eventTimezone
         );
         
         if (recruiterResult.success) {
@@ -260,10 +292,12 @@ export default async function handler(
               interviewRequest.candidate_id,
               candidateUserData,
               recruiterUserData,
-              scheduledDate,
+              startDateTimeString,
+              endDateTimeStringForCalendar,
               interviewRequest.interview_type,
               interviewRequest.context,
-              debugLog
+              debugLog,
+              eventTimezone
             );
             
             if (candidateResult.success) {
@@ -308,10 +342,12 @@ export default async function handler(
       userId: string,
       userData: { email: string; name: string | null; google_access_token?: string; google_refresh_token?: string; google_token_expires_at?: string },
       otherUserData: { email: string; name: string | null },
-      scheduledDate: Date,
+      startDateTimeString: string,
+      endDateTimeString: string,
       interviewType: string,
       context: string,
-      debugLog: string[]
+      debugLog: string[],
+      eventTimezone: string
     ): Promise<{ success: boolean; eventId?: string; meetLink?: string; error?: string }> {
       try {
         debugLog.push(`[DEBUG] Checking Google OAuth token for user: ${userId}`);
@@ -383,19 +419,29 @@ export default async function handler(
         oauth2Client.setCredentials({ access_token: accessToken });
 
         const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-        const startDateTimeISO = scheduledDate.toISOString();
-        const endDateTimeISO = new Date(scheduledDate.getTime() + 60 * 60 * 1000).toISOString();
+        
+        // Use the provided datetime strings and timezone
+        // For Google Calendar API, we pass the local time string and specify the timezone
+        // Google Calendar will automatically convert it for each attendee based on their calendar timezone
+        const startDateTimeISO = startDateTimeString;
+        const endDateTimeISO = endDateTimeString;
+
+        debugLog.push(`[DEBUG] Creating calendar event with:`);
+        debugLog.push(`[DEBUG]   Start: ${startDateTimeISO} in timezone: ${eventTimezone}`);
+        debugLog.push(`[DEBUG]   End: ${endDateTimeISO} in timezone: ${eventTimezone}`);
+        debugLog.push(`[DEBUG]   For user: ${userData.email}`);
+        debugLog.push(`[DEBUG]   Other user: ${otherUserData.email}`);
 
         const event = {
           summary: `${interviewType} Interview - ${otherUserData.name || "Interview"}`,
           description: context || `Interview scheduled via Velric`,
           start: {
             dateTime: startDateTimeISO,
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+            timeZone: eventTimezone,
           },
           end: {
             dateTime: endDateTimeISO,
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+            timeZone: eventTimezone,
           },
           attendees: [
             { email: userData.email, displayName: userData.name || "User" },

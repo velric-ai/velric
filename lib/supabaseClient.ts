@@ -53,7 +53,6 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 const supabaseKey =
   process.env.SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-
 // Handling the error
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error("Missing Supabase environment variables!");
@@ -1744,7 +1743,7 @@ export async function getMissionsByUserId(userId: string): Promise<StaticMission
     let missions: any = null;
     let error: any = null;
 
-    // Attempt 1: Query missions with all details for specific user
+    // Attempt 1: Query missions with all details for specific user, ordered by ID DESC
     {
       const res = await supabase
         .from("missions")
@@ -1765,7 +1764,8 @@ export async function getMissionsByUserId(userId: string): Promise<StaticMission
         )
         .eq("user_id", userId)
         .eq("status", "active")
-        .order("created_at", { ascending: true });
+        .order("id", { ascending: false })
+        .limit(3);
       missions = res.data;
       error = res.error;
     }
@@ -1790,7 +1790,8 @@ export async function getMissionsByUserId(userId: string): Promise<StaticMission
         `
         )
         .eq("user_id", userId)
-        .order("created_at", { ascending: true });
+        .order("id", { ascending: false })
+        .limit(3);
       missions = res.data;
       error = res.error;
     }
@@ -1801,7 +1802,8 @@ export async function getMissionsByUserId(userId: string): Promise<StaticMission
         .from("missions")
         .select("*")
         .eq("user_id", userId)
-        .order("created_at", { ascending: true });
+        .order("id", { ascending: false })
+        .limit(3);
       const plain = res2.data;
       const plainErr = res2.error;
       if (plainErr) throw plainErr;
@@ -1868,19 +1870,6 @@ export async function getMissionsByUserId(userId: string): Promise<StaticMission
             ?.map((m: any) => m.metric_description) || [],
       })
     );
-
-    // Sort by created_at ascending as primary, id ascending as secondary (for tiebreaker)
-    // This ensures consistent ordering even when missions are created in parallel
-    transformedMissions.sort((a: any, b: any) => {
-      const aCreated = missions.find((m: any) => m.id === a.id)?.created_at || '';
-      const bCreated = missions.find((m: any) => m.id === b.id)?.created_at || '';
-      
-      if (aCreated !== bCreated) {
-        return new Date(aCreated).getTime() - new Date(bCreated).getTime();
-      }
-      // If created_at is the same, use id as tiebreaker
-      return a.id.localeCompare(b.id);
-    });
 
     return transformedMissions;
   } catch (error) {

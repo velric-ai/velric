@@ -532,7 +532,7 @@ useEffect(() => {
     }
   };
 
-  const submitSurvey = useCallback(async () => {
+  const submitSurvey = useCallback(async (surveyExists: boolean) => {
     if (formData.isSubmitting) {
       console.warn("Survey submission already in progress");
       return;
@@ -576,7 +576,7 @@ useEffect(() => {
       };
 
       // Call API
-      const result: SurveySubmissionResponse = await submitSurveyData(submissionData);
+      const result: SurveySubmissionResponse = await submitSurveyData(submissionData, surveyExists);
 
       // If survey response has an id, trigger resume parsing with client-parsed PDF text
       let surveyResponseId = result?.profile?.surveyData?.id;

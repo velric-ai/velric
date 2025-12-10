@@ -93,16 +93,6 @@ function SettingsContent() {
             transition={{ duration: 0.6 }}
             className="max-w-7xl mx-auto px-4 py-8"
           >
-            {/* Page Title */}
-            <div className="mb-8 pt-10">
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-                Settings
-              </h1>
-              <p className="text-white/60 text-lg">
-                Manage your profile and account settings
-              </p>
-            </div>
-
             {/* Settings Content */}
             {user && (
               <ProfileSettings user={user} setUser={setUser} />

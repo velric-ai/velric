@@ -490,50 +490,52 @@ Extract all relevant criteria. Use null for unmentioned fields.`;
       };
     });
 
-    // Handle dummy mode
+    // Handle dummy mode - use demo candidates
     if (USE_DUMMY) {
-      const mockCandidates = [
-        {
-          id: "user_1",
-          name: "Arvind Khandal",
-          email: "arvind@example.com",
-          velricScore: 8.5,
-          missionsCompleted: 12,
-          domain: "Frontend Development",
-          location: "San Francisco, CA",
-          profile_image: null,
-          matchReason: "Exact name match",
-          industry: "Technology & Software",
-          mission_focus: ["Frontend Development", "React", "TypeScript"],
-          strength_areas: ["Problem Solving", "Technical Implementation"],
-          experience_summary: "Experienced frontend developer with 5+ years working with React, TypeScript, and modern web technologies. Passionate about building user-friendly interfaces and optimizing performance.",
-          education_level: "Bachelor's Degree",
-          learning_preference: "Hands-on projects",
-          skills: ["React", "TypeScript", "JavaScript", "HTML", "CSS", "Next.js"],
-        },
-        {
-          id: "user_2",
-          name: "Jane Smith",
-          email: "jane@example.com",
-          velricScore: 9.2,
-          missionsCompleted: 18,
-          domain: "Full Stack Development",
-          location: "New York, NY",
-          profile_image: null,
-          matchReason: "Skills: React, TypeScript",
-          industry: "Technology & Software",
-          mission_focus: ["Full Stack Development", "Backend Development"],
-          strength_areas: ["Technical Implementation", "System Design"],
-          experience_summary: "Full stack developer specializing in Node.js, React, and cloud infrastructure. Strong background in building scalable applications and API design.",
-          education_level: "Master's Degree",
-          learning_preference: "Mentorship and collaboration",
-          skills: ["React", "TypeScript", "Node.js", "Python", "AWS", "Docker"],
-        },
-      ];
+      const { demoCandidates } = await import("@/data/demoCandidates");
+      
+      // Convert demo candidates to search format with match reasons
+      const mockCandidates = demoCandidates.map((candidate, index) => ({
+        id: candidate.id,
+        name: candidate.name,
+        email: candidate.email,
+        velricScore: candidate.velricScore,
+        missionsCompleted: candidate.missionsCompleted,
+        domain: candidate.domain,
+        location: candidate.location,
+        profile_image: candidate.profile_image || null,
+        matchReason: index === 0 
+          ? "Strong skills match" 
+          : index === 1 
+          ? "Experience alignment"
+          : "Profile match",
+        industry: candidate.industry,
+        mission_focus: candidate.mission_focus,
+        strength_areas: candidate.strength_areas,
+        experience_summary: candidate.experience_summary,
+        education_level: candidate.education_level,
+        learning_preference: candidate.learning_preference,
+        skills: candidate.skills,
+      }));
+
+      // Filter based on search criteria if provided
+      let filtered = mockCandidates;
+      if (searchCriteria.name) {
+        const nameLower = searchCriteria.name.toLowerCase();
+        filtered = filtered.filter(c => 
+          c.name.toLowerCase().includes(nameLower)
+        );
+      }
+      if (searchCriteria.email) {
+        const emailLower = searchCriteria.email.toLowerCase();
+        filtered = filtered.filter(c => 
+          c.email.toLowerCase().includes(emailLower)
+        );
+      }
 
       return res.status(200).json({
         success: true,
-        candidates: mockCandidates,
+        candidates: filtered,
         searchCriteria,
       });
     }

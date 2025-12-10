@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { supabase, USE_DUMMY } from "@/lib/supabaseClient";
+import { demoCandidates } from "@/data/demoCandidates";
 
 type GetUserResponse =
   | {
@@ -10,6 +11,7 @@ type GetUserResponse =
         name: string;
         onboarded: boolean;
         created_at: string;
+        updated_at: string | null;
         survey_completed_at: string | null;
         profile_complete: boolean;
         profile_image: string | null;
@@ -40,14 +42,37 @@ export default async function handler(
       });
     }
 
-    // Handle dummy mode
+    // Handle dummy mode - check for demo candidates
     if (USE_DUMMY) {
+      // Check if this is a demo candidate
+      if (userId.startsWith("demo_")) {
+        const demoCandidate = demoCandidates.find(c => c.id === userId);
+        if (demoCandidate) {
+          return res.status(200).json({
+            success: true,
+            user: {
+              id: demoCandidate.id,
+              email: demoCandidate.email,
+              name: demoCandidate.name,
+              onboarded: demoCandidate.onboarded,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              survey_completed_at: new Date().toISOString(),
+              profile_complete: demoCandidate.profile_complete,
+              profile_image: demoCandidate.profile_image || null,
+            },
+          });
+        }
+      }
+      
+      // Fallback for other dummy requests
       const mockUser = {
         id: userId,
         email: "demo@example.com",
         name: "Demo User",
         onboarded: false,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         survey_completed_at: null,
         profile_complete: false,
         profile_image: null,
@@ -99,6 +124,7 @@ export default async function handler(
         name: userData.name || "",
         onboarded: userData.onboarded || false,
         created_at: userData.created_at,
+        updated_at: userData.updated_at || null,
         survey_completed_at: userData.survey_completed_at || null,
         profile_complete: userData.profile_complete || false,
         profile_image: userData.profile_image || null,
