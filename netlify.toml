@@ -9,7 +9,7 @@
   NPM_VERSION = "10"
   USE_DUMMY_DATA = "false"
   NEXT_PUBLIC_SUPABASE_URL = "https://yzszgcnuxpkvxueivbyx.supabase.co"
-
+  NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6c3pnY251eHBrdnh1ZWl2Ynl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NjI4NzIsImV4cCI6MjA3NTAzODg3Mn0.M7VmbFOpA0SHclUSj-iLKniw_XgfJve_cANTzL9bmVI"
 
 # Redirect all requests to Next.js
 [[redirects]]
