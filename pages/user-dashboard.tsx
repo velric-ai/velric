@@ -88,7 +88,12 @@ function UserDashboardContent() {
         // Fetch fresh user data from API to get updated_at
         if (parsedUser?.id) {
           try {
-            const response = await fetch(`/api/user/${parsedUser.id}`);
+            const token = localStorage.getItem('velric_token');
+            const response = await fetch(`/api/user`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            });
             const result = await response.json();
             
             if (result.success && result.user) {
@@ -122,7 +127,12 @@ function UserDashboardContent() {
 
     const fetchRecentActivity = async () => {
       try {
-        const response = await fetch(`/api/recent-activity?userId=${user.id}`);
+        const token = localStorage.getItem('velric_token');
+        const response = await fetch(`/api/recent-activity`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
         const data = await response.json();
         if (data.success) {
           if (data.activities) {
@@ -149,7 +159,12 @@ function UserDashboardContent() {
     const fetchOverallVelricScore = async () => {
       setIsVelricScoreLoading(true);
       try {
-        const response = await fetch(`/api/user/velric-score?userId=${user.id}`);
+        const token = localStorage.getItem('velric_token');
+        const response = await fetch(`/api/user/velric-score`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
         const data = await response.json().catch(() => ({
           success: false,
           error: "Invalid response",
@@ -191,7 +206,12 @@ function UserDashboardContent() {
     const fetchScoreGrowth = async () => {
       setIsScoreGrowthLoading(true);
       try {
-        const response = await fetch(`/api/user/score-growth?userId=${user.id}`);
+        const token = localStorage.getItem('velric_token');
+        const response = await fetch(`/api/user/score-growth`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
         const data = await response.json().catch(() => ({
           success: false,
           error: "Invalid response",
@@ -239,7 +259,12 @@ function UserDashboardContent() {
     const fetchQuickStats = async () => {
       setIsQuickStatsLoading(true);
       try {
-        const response = await fetch(`/api/user/quick-stats?userId=${user.id}`);
+        const token = localStorage.getItem('velric_token');
+        const response = await fetch(`/api/user/quick-stats`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
         const data = await response.json().catch(() => ({
           success: false,
           error: "Invalid response",

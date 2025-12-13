@@ -52,7 +52,12 @@ function ProfileContent() {
         }
 
         // Fetch user data from API
-        const response = await fetch(`/api/user/${userId}`);
+        const token = localStorage.getItem('velric_token');
+        const response = await fetch(`/api/user`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
         const result = await response.json();
 
         if (!response.ok || !result.success) {
@@ -119,8 +124,13 @@ function ProfileContent() {
           return;
         }
 
-        // Fetch survey data from API
-        const response = await fetch(`/api/survey/${userId}`);
+        // Fetch survey data from API using token
+        const token = localStorage.getItem('velric_token');
+        const response = await fetch(`/api/survey`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
         const result = await response.json();
 
         if (!result.success) {
@@ -182,9 +192,20 @@ function ProfileContent() {
         }
 
         // Fetch missions from analytics API and quick stats
+        const token = localStorage.getItem('velric_token');
         const [analyticsResponse, quickStatsResponse] = await Promise.all([
-          fetch(`/api/analytics?userId=${userId}`),
-          fetch(`/api/user/quick-stats?userId=${userId}`),
+          fetch(`/api/analytics`, {
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+            },
+            credentials: 'omit', // Don't send cookies
+          }),
+          fetch(`/api/user/quick-stats`, {
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+            },
+            credentials: 'omit', // Don't send cookies
+          }),
         ]);
 
         const analyticsResult = await analyticsResponse.json();

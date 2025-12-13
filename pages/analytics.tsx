@@ -36,7 +36,12 @@ function AnalyticsContent() {
 
     const fetchMissions = async () => {
       try {
-        const response = await fetch(`/api/analytics?userId=${user.id}`);
+        const token = localStorage.getItem('velric_token');
+        const response = await fetch(`/api/analytics`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
         const data = await response.json();
         if (data.success && data.missions) {
           setMissions(data.missions);

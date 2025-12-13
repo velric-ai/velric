@@ -91,7 +91,13 @@ export default function InterviewRequestsModal({
   const fetchInterviewRequests = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/user/interview-requests?userId=${userId}`);
+      const token = localStorage.getItem('velric_token');
+      const response = await fetch(`/api/user/interview-requests`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'omit', // Don't send cookies
+      });
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Failed to fetch interview requests" }));
@@ -303,8 +309,13 @@ export default function InterviewRequestsModal({
                                 <button
                                   onClick={async () => {
                                     try {
+                                      const token = localStorage.getItem('velric_token');
                                       const response = await fetch(`/api/user/interview-requests/${request.id}/accept`, {
                                         method: "POST",
+                                        headers: {
+                                          'Authorization': `Bearer ${token}`,
+                                        },
+                                        credentials: 'omit', // Don't send cookies
                                       });
                                       const result = await response.json();
                                       if (result.success) {
@@ -325,8 +336,13 @@ export default function InterviewRequestsModal({
                                 <button
                                   onClick={async () => {
                                     try {
+                                      const token = localStorage.getItem('velric_token');
                                       const response = await fetch(`/api/user/interview-requests/${request.id}/reject`, {
                                         method: "POST",
+                                        headers: {
+                                          'Authorization': `Bearer ${token}`,
+                                        },
+                                        credentials: 'omit', // Don't send cookies
                                       });
                                       const result = await response.json();
                                       if (result.success) {

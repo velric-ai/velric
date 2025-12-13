@@ -23,6 +23,14 @@ type GetSurveyResponse =
     }
   | { success: false; error: string };
 
+/**
+ * GET /api/survey
+ * Returns the authenticated user's survey data based on the token
+ * No userId parameter needed - user is identified from the token
+ * 
+ * Headers:
+ *   Authorization: Bearer <token>
+ */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<GetSurveyResponse>
@@ -65,8 +73,6 @@ export default async function handler(
               experience_summary: demoCandidate.experience_summary || null,
               platform_connections: {},
               metadata: {},
-              logistics_preferences: demoCandidate.logistics_preferences || null,
-              interview_availability: demoCandidate.interview_availability || null,
               created_at: new Date().toISOString(),
             },
           });
@@ -127,7 +133,7 @@ export default async function handler(
       surveyData: surveyData || null,
     });
   } catch (err: any) {
-    console.error("/api/survey/[userId] error:", err);
+    console.error("/api/survey error:", err);
     return res.status(500).json({
       success: false,
       error: err.message || "Unknown error occurred",

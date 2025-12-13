@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { calculateScoreGrowth } from "@/lib/stats/scoreGrowth";
+import { withAuth } from "@/lib/apiAuth";
 
 type QuickStatsResponse =
   | {
@@ -58,22 +59,20 @@ export default async function handler(
       .json({ success: false, error: "Method not allowed" });
   }
 
-  const { userId } = req.query;
-
-  if (!userId || typeof userId !== "string") {
-    return res.status(400).json({
-      success: false,
-      error: "userId is required",
-    });
-  }
-
   try {
+    // Authenticate using token
+    const user = await withAuth(req, res);
+    if (!user) {
+      // Error response already sent by withAuth
+      return;
+    }
+
     const supabase = createServerSupabaseClient();
 
     const [scoreGrowth, profileCompleteness, profileViews] = await Promise.all([
-      calculateScoreGrowth(supabase, userId),
-      calculateProfileCompleteness(supabase, userId),
-      calculateProfileViews(supabase, userId),
+      calculateScoreGrowth(supabase, user.id),
+      calculateProfileCompleteness(supabase, user.id),
+      calculateProfileViews(supabase, user.id),
     ]);
 
     return res.status(200).json({

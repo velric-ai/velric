@@ -401,7 +401,12 @@ function CandidatesPageContent() {
           params.append("availability", debouncedFilters.availability.join(","));
         }
 
-        const response = await fetch(`/api/recruiter/candidates?${params.toString()}`);
+        const token = localStorage.getItem('velric_token');
+        const response = await fetch(`/api/recruiter/candidates?${params.toString()}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
         const result = await response.json();
 
         if (!result.success) {

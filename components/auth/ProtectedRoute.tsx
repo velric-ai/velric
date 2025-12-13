@@ -55,7 +55,12 @@ export function ProtectedRoute({
           if (requireOnboarded) {
             // Use API endpoint for consistency
             try {
-              const response = await fetch(`/api/survey/${userData.id}`);
+              const token = localStorage.getItem('velric_token');
+              const response = await fetch(`/api/survey`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                },
+              });
               const result = await response.json();
               
               if (!result.success || !result.surveyData) {
@@ -224,7 +229,12 @@ export function ProtectedDashboardRoute({ children }: { children: React.ReactNod
         if (!isRecruiter) {
           // Use API endpoint for consistency with other parts of the app
           try {
-            const response = await fetch(`/api/survey/${userData.id}`);
+            const token = localStorage.getItem('velric_token');
+            const response = await fetch(`/api/survey`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            });
             if (!response.ok) {
               console.warn('[ProtectedDashboardRoute] API response not OK:', response.status, response.statusText);
               router.replace('/onboard/survey');

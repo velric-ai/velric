@@ -88,10 +88,23 @@ export default function CandidateProfileModal({
         });
 
         // Fetch candidate profile data
+        const token = localStorage.getItem('velric_token');
         const [userResponse, surveyResponse, missionsResponse] = await Promise.all([
-          fetch(`/api/user/${candidateId}`),
-          fetch(`/api/survey/${candidateId}`),
-          fetch(`/api/recruiter/candidate-missions?userId=${candidateId}`).catch(() => null),
+          fetch(`/api/user/${candidateId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          }),
+          fetch(`/api/survey/${candidateId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          }),
+          fetch(`/api/recruiter/candidate-missions?userId=${candidateId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          }).catch(() => null),
         ]);
 
         const userData = await userResponse.json();
