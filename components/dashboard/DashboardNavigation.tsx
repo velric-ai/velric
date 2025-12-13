@@ -45,7 +45,13 @@ export default function DashboardNavigation({
 
     const fetchInterviewCount = async () => {
       try {
-        const response = await fetch(`/api/user/interview-requests?userId=${user.id}`);
+        const token = localStorage.getItem('velric_token');
+        const response = await fetch(`/api/user/interview-requests`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'omit', // Don't send cookies
+        });
         if (response.ok) {
           const result = await response.json();
           if (result.success) {
@@ -188,7 +194,13 @@ export default function DashboardNavigation({
                 userId={user.id}
                 onUpdateCount={() => {
                   // Refetch count after action
-                  fetch(`/api/user/interview-requests?userId=${user.id}`)
+                  const token = localStorage.getItem('velric_token');
+                  fetch(`/api/user/interview-requests`, {
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                    },
+                    credentials: 'omit', // Don't send cookies
+                  })
                     .then((res) => res.json())
                     .then((result) => {
                       if (result.success) {

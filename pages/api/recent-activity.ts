@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { generateMissionNumber } from "@/utils/missionNumber";
+import { withAuth } from "@/lib/apiAuth";
 
 function createServerSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -28,15 +29,14 @@ export default async function handler(
     return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
-  const { userId } = req.query;
-
-  if (!userId || typeof userId !== "string") {
-    return res
-      .status(400)
-      .json({ success: false, error: "userId is required" });
-  }
-
   try {
+    // Authenticate using token
+    const user = await withAuth(req, res);
+    if (!user) {
+      // Error response already sent by withAuth
+      return;
+    }
+
     const supabaseClient = createServerSupabaseClient();
 
     // Get today's start and end timestamps
@@ -51,14 +51,14 @@ export default async function handler(
     const { data: allUserMissions, error: allError } = await supabaseClient
       .from("user_mission")
       .select("velric_score")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .not("velric_score", "is", null);
 
     // Query user_mission table for today's activities
     const { data: userMissions, error } = await supabaseClient
       .from("user_mission")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .gte("created_at", todayStart)
       .lte("created_at", todayEndISO)
       .order("created_at", { ascending: false });

@@ -62,7 +62,12 @@ export default function MissionsPage() {
     const fetchUserSurveyData = async () => {
       if (!userId) return;
       try {
-        const response = await fetch(`/api/survey/${userId}`);
+        const token = localStorage.getItem('velric_token');
+        const response = await fetch(`/api/survey`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
         const result = await response.json();
         if (result.success && result.surveyData) {
           setUserSurveyData(result.surveyData);
@@ -145,7 +150,13 @@ export default function MissionsPage() {
       
       // First, try to fetch existing missions for this user
       console.log(`[Missions] Fetching existing missions for user: ${userId}`);
-      const fetchResponse = await fetch(`/api/missions/user?userId=${userId}`);
+      const token = localStorage.getItem('velric_token');
+      const fetchResponse = await fetch(`/api/missions/user`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'omit', // Don't send cookies
+      });
       
       if (fetchResponse.ok) {
         const fetchData = await fetchResponse.json();
@@ -185,9 +196,13 @@ export default function MissionsPage() {
       const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second client timeout
 
       console.log(`[Missions] Generating new missions for user ${userId}`);
+      const token = localStorage.getItem('velric_token');
       const generateResponse = await fetch('/api/missions/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({
           ...payload,
           userId, // Pass user ID to store with missions
@@ -226,7 +241,12 @@ export default function MissionsPage() {
     try {
       setLoading(true);
       setError('');
-      const response = await fetch(`/api/missions${forceDb ? '?source=database' : ''}`);
+      const token = localStorage.getItem('velric_token');
+      const response = await fetch(`/api/missions${forceDb ? '?source=database' : ''}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       const data = await response.json();
       
       if (data.success) {
@@ -255,9 +275,13 @@ export default function MissionsPage() {
         return;
       }
 
+      const token = localStorage.getItem('velric_token');
       const resp = await fetch('/api/admin/generate-missions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify(payload)
       });
       const data = await resp.json();
@@ -287,9 +311,13 @@ export default function MissionsPage() {
         return;
       }
 
+      const token = localStorage.getItem('velric_token');
       const resp = await fetch('/api/missions/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({
           ...payload,
           userId,
@@ -322,7 +350,15 @@ export default function MissionsPage() {
     try {
       setSeeding(true);
       setError('');
-      const resp = await fetch('/api/admin/seed-static-missions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ limit: 3 }) });
+      const token = localStorage.getItem('velric_token');
+      const resp = await fetch('/api/admin/seed-static-missions', { 
+        method: 'POST', 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        }, 
+        body: JSON.stringify({ limit: 3 }) 
+      });
       const data = await resp.json();
       if (!resp.ok || !data.success) {
         const errorMessage = data.error || 'Failed to seed missions';
@@ -361,9 +397,13 @@ export default function MissionsPage() {
       }
 
       console.log('[Regenerate Missions] Sending payload with userId:', userId);
+      const token = localStorage.getItem('velric_token');
       const resp = await fetch('/api/missions/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({
           ...payload,
           userId,

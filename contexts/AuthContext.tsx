@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, AuthContextType, LoginData, SignupData, SignupResponse } from '../types/auth';
 import { supabase } from '@/lib/supabaseClient';
+import { setVelricToken, deleteVelricToken } from '@/lib/cookieUtils';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -96,7 +97,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         profileComplete: result.user.profile_complete,
       };
 
+      // Store user and tokens
       localStorage.setItem('velric_user', JSON.stringify(authenticatedUser));
+      
+      // Store access_token in localStorage and set as cookie
+      if (result.access_token) {
+        localStorage.setItem('velric_token', result.access_token);
+        setVelricToken(result.access_token); // Set cookie
+        console.log('[AuthContext] Set velric_token cookie');
+      }
+      
+      if (result.refresh_token) {
+        localStorage.setItem('velric_refresh_token', result.refresh_token);
+      }
+      
       setUser(authenticatedUser);
       return authenticatedUser;
     } catch (error: any) {
@@ -150,8 +164,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         profileComplete: result.user.profile_complete,
       };
 
-      // Store user in localStorage
+      // Store user and tokens
       localStorage.setItem('velric_user', JSON.stringify(user));
+      
+      // Store access_token in localStorage and set as cookie
+      if (result.access_token) {
+        localStorage.setItem('velric_token', result.access_token);
+        setVelricToken(result.access_token); // Set cookie
+        console.log('[AuthContext] Set velric_token cookie');
+      }
+      
+      if (result.refresh_token) {
+        localStorage.setItem('velric_refresh_token', result.refresh_token);
+      }
+      
       setUser(user);
 
       return {
@@ -169,6 +195,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = (): void => {
     localStorage.clear();
+    deleteVelricToken(); // Delete cookie
     setUser(null);
     setIsSnackbarVisible(false);
     setSnackbarMessage(null);

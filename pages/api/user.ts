@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { withAuth, AuthenticatedUser } from "@/lib/apiAuth";
+import { withAuth } from "@/lib/apiAuth";
 
 type GetUserResponse =
   | {
@@ -22,6 +22,9 @@ type GetUserResponse =
  * GET /api/user
  * Returns the authenticated user's data based on the token
  * No userId parameter needed - user is identified from the token
+ * 
+ * Headers:
+ *   Authorization: Bearer <token>
  */
 export default async function handler(
   req: NextApiRequest,

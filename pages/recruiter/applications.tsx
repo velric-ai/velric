@@ -105,7 +105,12 @@ function ApplicationsContent() {
   const fetchApplications = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/recruiter/applications?recruiterId=${user.id}`);
+      const token = localStorage.getItem('velric_token');
+      const response = await fetch(`/api/recruiter/applications`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       
       // Check if response is ok
       if (!response.ok) {

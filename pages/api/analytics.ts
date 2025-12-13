@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { generateMissionNumber } from "@/utils/missionNumber";
+import { withAuth } from "@/lib/apiAuth";
 
 function createServerSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -19,6 +20,14 @@ type Data = {
   error?: string;
 };
 
+/**
+ * GET /api/analytics
+ * Returns the authenticated user's mission analytics based on the token
+ * No userId parameter needed - user is identified from the token
+ * 
+ * Headers:
+ *   Authorization: Bearer <token>
+ */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
@@ -27,25 +36,24 @@ export default async function handler(
     return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
-  const { userId } = req.query;
-
-  if (!userId || typeof userId !== "string") {
-    return res
-      .status(400)
-      .json({ success: false, error: "userId is required" });
-  }
-
   try {
+    // Authenticate using token
+    const user = await withAuth(req, res);
+    if (!user) {
+      // Error response already sent by withAuth
+      return;
+    }
+
     const supabaseClient = createServerSupabaseClient();
 
-    // Query all user_mission data for the user with mission details
+    // Query all user_mission data for the authenticated user with mission details
     const { data: userMissions, error } = await supabaseClient
       .from("user_mission")
       .select(`
         *,
         missions(title)
       `)
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     if (error) {

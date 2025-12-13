@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { supabase, USE_DUMMY } from "@/lib/supabaseClient";
+import { withAuth } from "@/lib/apiAuth";
 
 type InterviewRequestsResponse =
   | {
@@ -26,6 +27,14 @@ type InterviewRequestsResponse =
     }
   | { success: false; error: string };
 
+/**
+ * GET /api/recruiter/interview-requests
+ * Returns the authenticated recruiter's interview requests based on the token
+ * No recruiterId parameter needed - recruiter is identified from the token
+ * 
+ * Headers:
+ *   Authorization: Bearer <token>
+ */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<InterviewRequestsResponse>
@@ -39,14 +48,22 @@ export default async function handler(
   }
 
   try {
-    const { recruiterId } = req.query;
+    // Authenticate using token
+    const user = await withAuth(req, res);
+    if (!user) {
+      // Error response already sent by withAuth
+      return;
+    }
 
-    if (!recruiterId || typeof recruiterId !== "string") {
-      return res.status(400).json({
+    // Verify user is a recruiter
+    if (!user.is_recruiter) {
+      return res.status(403).json({
         success: false,
-        error: "Recruiter ID is required",
+        error: "Access denied. Recruiter access required.",
       });
     }
+
+    const recruiterId = user.id;
 
     if (USE_DUMMY) {
       const mockRequests = [
@@ -91,7 +108,7 @@ export default async function handler(
       });
     }
 
-    // Fetch interview requests for the recruiter
+    // Fetch interview requests for the authenticated recruiter
     const { data: interviewRequests, error } = await supabase
       .from("interview_requests")
       .select("*")

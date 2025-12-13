@@ -65,8 +65,13 @@ function SurveyPageContent() {
           return;
         }
 
-        // Fetch survey data by userId
-        const response = await fetch(`/api/survey/${userId}`).catch((error) => {
+        // Fetch survey data using token
+        const token = localStorage.getItem('velric_token');
+        const response = await fetch(`/api/survey`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }).catch((error) => {
           console.error('Error fetching survey:', error);
           setLoadError('Failed to load survey data. Please try again.');
           setIsLoadingSurvey(false);

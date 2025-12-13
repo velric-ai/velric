@@ -43,7 +43,13 @@ export default function RecruiterNotificationsDropdown({
   const fetchInterviewRequests = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/recruiter/interview-requests?recruiterId=${recruiterId}`);
+      const token = localStorage.getItem('velric_token');
+      const response = await fetch(`/api/recruiter/interview-requests`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'omit', // Don't send cookies
+      });
       
       if (!response.ok) {
         console.error("Failed to fetch interview requests");

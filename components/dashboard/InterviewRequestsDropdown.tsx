@@ -61,7 +61,13 @@ export default function InterviewRequestsDropdown({
   const fetchInterviewRequests = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/user/interview-requests?userId=${userId}`);
+      const token = localStorage.getItem('velric_token');
+      const response = await fetch(`/api/user/interview-requests`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'omit', // Don't send cookies
+      });
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Failed to fetch interview requests" }));
@@ -93,8 +99,13 @@ export default function InterviewRequestsDropdown({
   const handleAccept = async (requestId: string) => {
     setProcessingIds((prev) => new Set(prev).add(requestId));
     try {
+      const token = localStorage.getItem('velric_token');
       const response = await fetch(`/api/user/interview-requests/${requestId}/accept`, {
         method: "POST",
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'omit', // Don't send cookies
       });
 
       if (!response.ok) {
@@ -141,8 +152,13 @@ export default function InterviewRequestsDropdown({
   const handleReject = async (requestId: string) => {
     setProcessingIds((prev) => new Set(prev).add(requestId));
     try {
+      const token = localStorage.getItem('velric_token');
       const response = await fetch(`/api/user/interview-requests/${requestId}/reject`, {
         method: "POST",
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'omit', // Don't send cookies
       });
 
       if (!response.ok) {

@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { supabase, USE_DUMMY } from "@/lib/supabaseClient";
+import { withAuth } from "@/lib/apiAuth";
 
 type InterviewRequestsResponse =
   | {
@@ -25,6 +26,14 @@ type InterviewRequestsResponse =
     }
   | { success: false; error: string };
 
+/**
+ * GET /api/user/interview-requests
+ * Returns the authenticated user's interview requests based on the token
+ * No userId parameter needed - user is identified from the token
+ * 
+ * Headers:
+ *   Authorization: Bearer <token>
+ */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<InterviewRequestsResponse>
@@ -38,14 +47,14 @@ export default async function handler(
   }
 
   try {
-    const { userId } = req.query;
-
-    if (!userId || typeof userId !== "string") {
-      return res.status(400).json({
-        success: false,
-        error: "User ID is required",
-      });
+    // Authenticate using token
+    const user = await withAuth(req, res);
+    if (!user) {
+      // Error response already sent by withAuth
+      return;
     }
+
+    const userId = user.id;
 
     if (USE_DUMMY) {
       const mockRequests = [
@@ -73,7 +82,7 @@ export default async function handler(
       });
     }
 
-    // Fetch interview requests for the candidate
+    // Fetch interview requests for the authenticated candidate
     const { data: interviewRequests, error } = await supabase
       .from("interview_requests")
       .select("*")

@@ -196,26 +196,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Authentication check (simplified for demo)
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        success: false,
-        code: 'UNAUTHORIZED',
-        message: 'Authentication required'
-      });
+    // Authentication check using middleware
+    const { withAuth } = await import('@/lib/apiAuth');
+    const user = await withAuth(req, res);
+    if (!user) {
+      // Error response already sent by withAuth
+      return;
     }
-
-    const token = authHeader.substring(7);
-    if (!token || token === 'undefined') {
-      return res.status(401).json({
-        success: false,
-        code: 'INVALID_TOKEN',
-        message: 'Invalid authentication token'
-      });
-    }
-
-    console.log('[Survey Submit] ✅ Received auth token, userId:', token);
 
     // Parse and validate request body
     const {
@@ -296,8 +283,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       metadata: metadata || {}
     };
 
-    // Get user ID from token (token is the user ID from localStorage)
-    const userId = token;
+    // Get user ID from authenticated user
+    const userId = user.id;
 
     // Extract filename from portfolio URL if provided
     let portfolioFilename = null;

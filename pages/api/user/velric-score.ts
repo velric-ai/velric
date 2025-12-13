@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { withAuth } from "@/lib/apiAuth";
 
 function createServerSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -34,23 +35,21 @@ export default async function handler(
       .json({ success: false, error: "Method not allowed" });
   }
 
-  const { userId } = req.query;
-
-  if (!userId || typeof userId !== "string") {
-    return res.status(400).json({
-      success: false,
-      error: "userId is required",
-    });
-  }
-
   try {
+    // Authenticate using token
+    const user = await withAuth(req, res);
+    if (!user) {
+      // Error response already sent by withAuth
+      return;
+    }
+
     const supabase = createServerSupabaseClient();
 
-    // Fetch overall_velric_score from user_stats table
+    // Fetch overall_velric_score from user_stats table using authenticated user's ID
     const { data, error } = await supabase
       .from("user_stats")
       .select("overall_velric_score")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .single();
 
     if (error && error.code !== "PGRST116") {

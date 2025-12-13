@@ -3,8 +3,9 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import { supabase } from '@/lib/supabaseClient';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { getUser, createUser, checkUserExists } from '@/lib/auth';
+import { checkUserExists } from '@/lib/auth';
 import { useSnackbar } from '@/hooks/useSnackbar';
+import { setVelricToken } from '@/lib/cookieUtils';
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -53,9 +54,9 @@ export default function AuthCallback() {
           router.push('/auth/select-user-type');
           return;
         } else {
-          // For login: get existing user and store tokens
+          // For login: call the login API with Google OAuth tokens
           const sessionWithTokens = session as any;
-          console.log('[Callback] Login - Session tokens:', {
+          console.log('[Callback] Login - Calling login API with Google tokens:', {
             hasAccessToken: !!sessionWithTokens.accessToken,
             hasRefreshToken: !!sessionWithTokens.refreshToken,
             expiresAt: sessionWithTokens.expiresAt,
@@ -63,23 +64,56 @@ export default function AuthCallback() {
             email: session.user.email,
           });
           
-          const result = await getUser({
-            id: authUser.id,
-            email: session.user.email!,
-            accessToken: sessionWithTokens.accessToken,
-            refreshToken: sessionWithTokens.refreshToken,
-            expiresAt: sessionWithTokens.expiresAt,
-          });
+          try {
+            const loginResponse = await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                email: session.user.email!,
+                googleAccessToken: sessionWithTokens.accessToken,
+                googleRefreshToken: sessionWithTokens.refreshToken,
+                googleExpiresAt: sessionWithTokens.expiresAt,
+              }),
+            });
 
-          if (!result.success) {
-            // User not found, show error and redirect to signup
-            showSnackbar(result.error, 'error');
+            const loginResult = await loginResponse.json();
+
+            if (!loginResult.success) {
+              // User not found or error, show error and redirect to signup
+              showSnackbar(loginResult.error || 'Login failed', 'error');
+              setLoading(false);
+              setTimeout(() => router.push('/signup'), 2000);
+              return;
+            }
+
+            // Convert API response to match expected format
+            userData = {
+              id: loginResult.user.id,
+              email: loginResult.user.email,
+              name: loginResult.user.name,
+              onboarded: loginResult.user.onboarded,
+              isRecruiter: loginResult.user.is_recruiter,
+              createdAt: loginResult.user.created_at,
+              surveyCompletedAt: loginResult.user.survey_completed_at,
+              surveyCompleted: loginResult.user.survey_completed_at !== null,
+              profileComplete: loginResult.user.profile_complete,
+            };
+
+            // Store Google access token as velric_token in localStorage and cookie
+            if (loginResult.access_token) {
+              localStorage.setItem('velric_token', loginResult.access_token);
+              setVelricToken(loginResult.access_token); // Set cookie
+              console.log('[Callback] Stored velric_token in localStorage and cookie');
+            }
+          } catch (error: any) {
+            console.error('[Callback] Login API error:', error);
+            showSnackbar(error.message || 'Login failed', 'error');
             setLoading(false);
-            setTimeout(() => router.push('/signup'), 2000);
+            setTimeout(() => router.push('/login'), 2000);
             return;
           }
-
-          userData = result.data;
         }
 
         // Store user in localStorage for compatibility with existing code

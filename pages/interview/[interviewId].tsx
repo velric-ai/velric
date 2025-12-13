@@ -55,7 +55,13 @@ export default function TechnicalInterviewPage() {
         setIsLoading(true);
         setError("");
 
-        const response = await fetch(`/api/user/interview-requests?userId=${userId}`);
+        const token = localStorage.getItem('velric_token');
+        const response = await fetch(`/api/user/interview-requests`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'omit', // Don't send cookies
+        });
         const result = await response.json();
 
         if (!result.success) {
@@ -94,11 +100,14 @@ export default function TechnicalInterviewPage() {
       throw new Error("Missing interview or user information");
     }
 
+    const token = localStorage.getItem('velric_token');
     const response = await fetch(`/api/user/interview-requests/${interviewId}/submit-solution`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
       },
+      credentials: 'omit', // Don't send cookies
       body: JSON.stringify({
         code,
         language,

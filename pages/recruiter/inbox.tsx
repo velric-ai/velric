@@ -116,7 +116,13 @@ function InboxContent() {
   const fetchInterviewRequests = async () => {
     setIsLoadingRequests(true);
     try {
-      const response = await fetch(`/api/recruiter/interview-requests?recruiterId=${user.id}`);
+      const token = localStorage.getItem('velric_token');
+      const response = await fetch(`/api/recruiter/interview-requests`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'omit', // Don't send cookies
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Failed to fetch interview requests" }));

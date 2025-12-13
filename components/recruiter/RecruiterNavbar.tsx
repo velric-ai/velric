@@ -50,7 +50,13 @@ export default function RecruiterNavbar({
 
     const fetchInterviewCount = async () => {
       try {
-        const response = await fetch(`/api/recruiter/interview-requests?recruiterId=${user.id}`);
+        const token = localStorage.getItem('velric_token');
+        const response = await fetch(`/api/recruiter/interview-requests`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          credentials: 'omit', // Don't send cookies
+        });
         if (response.ok) {
           const result = await response.json();
           if (result.success) {
